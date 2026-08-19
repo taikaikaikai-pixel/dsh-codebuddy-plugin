@@ -1,0 +1,110 @@
+{
+  "at": "2026-08-18T11:00:46.067Z",
+  "gateway": "https://copilot.tencent.com",
+  "note": "账户标识字段（uid/uin/enterprise*/x-user-id/各 requestId 与 trace id）已脱敏，仅保留结构证据",
+  "results": [
+    {
+      "name": "accounts",
+      "method": "GET",
+      "path": "/v2/accounts",
+      "status": 200,
+      "ms": 1893,
+      "body": {
+        "code": 0,
+        "msg": "OK",
+        "requestId": "<redacted>",
+        "data": {
+          "accounts": [
+            {
+              "uid": "<redacted>",
+              "nickname": "<redacted>",
+              "uin": "<redacted>",
+              "type": "ultimate",
+              "lastLogin": false,
+              "enterpriseId": "<redacted>",
+              "enterpriseName": "<redacted>",
+              "enterpriseLogo": "<redacted>",
+              "enterpriseUserName": "<redacted>",
+              "pluginEnabled": true,
+              "deployStatus": {
+                "statusCode": 1,
+                "statusMsg": "success",
+                "detailMsg": "success"
+              },
+              "accountType": "unified",
+              "sso": {
+                "domain": "",
+                "domainModifiedTimes": 0
+              },
+              "oneidAccountId": "",
+              "isCurrentOneIdEnterprise": false,
+              "isAmbassador": false
+            },
+            {
+              "uid": "<redacted>",
+              "nickname": "<redacted>",
+              "uin": "<redacted>",
+              "type": "personal",
+              "lastLogin": true,
+              "pluginEnabled": true,
+              "deployStatus": {
+                "statusCode": 0,
+                "statusMsg": "",
+                "detailMsg": ""
+              },
+              "accountType": "",
+              "sso": {
+                "domain": "",
+                "domainModifiedTimes": 0
+              },
+              "oneidAccountId": "",
+              "isCurrentOneIdEnterprise": false,
+              "isAmbassador": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "dosage-notify",
+      "method": "POST",
+      "path": "/v2/billing/meter/get-dosage-notify",
+      "status": 200,
+      "ms": 243,
+      "body": {
+        "code": 0,
+        "msg": "OK",
+        "requestId": "<redacted>",
+        "data": {
+          "dosageNotifyCode": 0,
+          "dosageNotifyZh": "",
+          "dosageNotifyEn": "",
+          "skipUrl": ""
+        }
+      }
+    },
+    {
+      "name": "chat-response-headers",
+      "method": "POST",
+      "path": "/v2/chat/completions",
+      "status": 200,
+      "ms": 2577,
+      "quotaRelatedHeaders": [],
+      "quotaRelatedHeaderCount": 0,
+      "headers": {
+        "cache-control": "no-cache",
+        "connection": "keep-alive",
+        "content-type": "text/event-stream",
+        "date": "Tue, 18 Aug 2026 11:00:46 GMT",
+        "eo-cache-status": "MISS",
+        "eo-log-uuid": "<redacted>",
+        "server": "TencentEdgeOne",
+        "traceid": "<redacted>",
+        "transfer-encoding": "chunked",
+        "x-request-id": "<redacted>",
+        "x-user-id": "<redacted>",
+        "x-waf-uuid": "<redacted>"
+      }
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "session": "session-f52c817f-4bed-42e8-883b-ba85649e7636",
+  "model": "deepseek-v4-flash",
+  "provider": "codebuddy",
+  "reasoningEffort": "high",
+  "note": "user-reported 36% cache session; per-step usage as recorded by dsh (gateway-reported)",
+  "steps": [
+    {
+      "turn": 1,
+      "step": 1,
+      "prompt": 1513,
+      "cacheRead": 640,
+      "uncached": 873,
+      "out": 159
+    },
+    {
+      "turn": 1,
+      "step": 2,
+      "prompt": 1981,
+      "cacheRead": 1408,
+      "uncached": 573,
+      "out": 224
+    },
+    {
+      "turn": 1,
+      "step": 3,
+      "prompt": 6515,
+      "cacheRead": 1920,
+      "uncached": 4595,
+      "out": 515
+    },
+    {
+      "turn": 1,
+      "step": 4,
+      "prompt": 7447,
+      "cacheRead": 6400,
+      "uncached": 1047,
+      "out": 391
+    },
+    {
+      "turn": 1,
+      "step": 5,
+      "prompt": 22343,
+      "cacheRead": 7424,
+      "uncached": 14919,
+      "out": 547
+    },
+    {
+      "turn": 1,
+      "step": 6,
+      "prompt": 23569,
+      "cacheRead": 13184,
+      "uncached": 10385,
+      "out": 286
+    },
+    {
+      "turn": 1,
+      "step": 7,
+      "prompt": 24696,
+      "cacheRead": 7424,
+      "uncached": 17272,
+      "out": 570
+    },
+    {
+      "turn": 1,
+      "step": 8,
+      "prompt": 24973,
+      "cacheRead": 12032,
+      "uncached": 12941,
+      "out": 525
+    },
+    {
+      "turn": 1,
+      "step": 9,
+      "prompt": 34421,
+      "cacheRead": 18944,
+      "uncached": 15477,
+      "out": 540
+    },
+    {
+      "turn": 1,
+      "step": 10,
+      "prompt": 35452,
+      "cacheRead": 8960,
+      "uncached": 26492,
+      "out": 805
+    },
+    {
+      "turn": 1,
+      "step": 11,
+      "prompt": 44894,
+      "cacheRead": 7424,
+      "uncached": 37470,
+      "out": 713
+    },
+    {
+      "turn": 1,
+      "step": 12,
+      "prompt": 46453,
+      "cacheRead": 17792,
+      "uncached": 28661,
+      "out": 549
+    },
+    {
+      "turn": 1,
+      "step": 13,
+      "prompt": 46859,
+      "cacheRead": 46336,
+      "uncached": 523,
+      "out": 624
+    },
+    {
+      "turn": 1,
+      "step": 14,
+      "prompt": 55857,
+      "cacheRead": 12416,
+      "uncached": 43441,
+      "out": 402
+    },
+    {
+      "turn": 1,
+      "step": 15,
+      "prompt": 63977,
+      "cacheRead": 11392,
+      "uncached": 52585,
+      "out": 451
+    },
+    {
+      "turn": 1,
+      "step": 16,
+      "prompt": 73149,
+      "cacheRead": 32768,
+      "uncached": 40381,
+      "out": 517
+    },
+    {
+      "turn": 1,
+      "step": 17,
+      "prompt": 77739,
+      "cacheRead": 7680,
+      "uncached": 70059,
+      "out": 165
+    },
+    {
+      "turn": 1,
+      "step": 18,
+      "prompt": 85206,
+      "cacheRead": 32768,
+      "uncached": 52438,
+      "out": 2052
+    },
+    {
+      "turn": 1,
+      "step": 19,
+      "prompt": 85838,
+      "cacheRead": 34304,
+      "uncached": 51534,
+      "out": 1175
+    },
+    {
+      "turn": 2,
+      "step": 1,
+      "prompt": 85988,
+      "cacheRead": 34304,
+      "uncached": 51684,
+      "out": 841
+    },
+    {
+      "turn": 2,
+      "step": 2,
+      "prompt": 87116,
+      "cacheRead": 19840,
+      "uncached": 67276,
+      "out": 248
+    },
+    {
+      "turn": 2,
+      "step": 3,
+      "prompt": 96032,
+      "cacheRead": 34304,
+      "uncached": 61728,
+      "out": 239
+    },
+    {
+      "turn": 2,
+      "step": 4,
+      "prompt": 108657,
+      "cacheRead": 71552,
+      "uncached": 37105,
+      "out": 287
+    },
+    {
+      "turn": 2,
+      "step": 5,
+      "prompt": 118515,
+      "cacheRead": 20224,
+      "uncached": 98291,
+      "out": 249
+    },
+    {
+      "turn": 2,
+      "step": 6,
+      "prompt": 129770,
+      "cacheRead": 20992,
+      "uncached": 108778,
+      "out": 226
+    }
+  ]
+}

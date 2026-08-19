@@ -1,0 +1,114 @@
+[
+  {
+    "ts": "2026-08-17T09:01:52.556Z",
+    "name": "images/generations (CLI headers)",
+    "path": "/v2/images/generations",
+    "payload": {
+      "model": "hunyuan-image-v3.0-art",
+      "prompt": "a small red circle centered on a plain white background",
+      "size": "1024x1024",
+      "n": 1
+    },
+    "cliHeaders": true,
+    "status": 200,
+    "ms": 21705,
+    "body": {
+      "code": 0,
+      "msg": "OK",
+      "requestId": "bcd7dc5d-9c91-49e4-9457-d4c846dcafdc",
+      "data": {
+        "created": 1786957311,
+        "data": [
+          {
+            "url": "https://ai-corpus-backup-1258344699.cos.ap-beijing.myqcloud.com/corpus/multimodel/image/2026-08-17/aigc-annotated/img-3d340bee9a1a11f1a19eba0ea20530f5-1786957312-0.png?<signed-query-stripped>"
+          }
+        ],
+        "usage": {
+          "output_image_counts": 1,
+          "output_image_coefficient": 1,
+          "credit": 5.72
+        }
+      }
+    }
+  },
+  {
+    "ts": "2026-08-17T09:02:14.364Z",
+    "name": "images/generations (plain UA)",
+    "path": "/v2/images/generations",
+    "payload": {
+      "model": "hunyuan-image-v3.0-art",
+      "prompt": "a small red circle centered on a plain white background",
+      "size": "1024x1024",
+      "n": 1
+    },
+    "cliHeaders": false,
+    "status": 200,
+    "ms": 21807,
+    "body": {
+      "code": 0,
+      "msg": "OK",
+      "requestId": "32adf7e7-3f60-4cf1-9400-59371d62702b",
+      "data": {
+        "created": 1786957333,
+        "data": [
+          {
+            "url": "https://ai-corpus-backup-1258344699.cos.ap-beijing.myqcloud.com/corpus/multimodel/image/2026-08-17/aigc-annotated/img-4a2207d89a1a11f19853e67b6939361a-1786957334-0.png?<signed-query-stripped>"
+          }
+        ],
+        "usage": {
+          "output_image_counts": 1,
+          "output_image_coefficient": 1,
+          "credit": 5.72
+        }
+      }
+    }
+  },
+  {
+    "ts": "2026-08-17T09:02:14.586Z",
+    "name": "videos/generations",
+    "path": "/v2/videos/generations",
+    "payload": {
+      "model": "hunyuan-video-t2v",
+      "prompt": "a small red circle centered on a plain white background"
+    },
+    "cliHeaders": true,
+    "status": 400,
+    "ms": 222,
+    "body": {
+      "code": 14407,
+      "msg": "Create video failed with error: Video model [hunyuan-video-t2v] route config not found",
+      "requestId": "8d8547e0-e9df-4d05-82e5-bdd2f78d0333"
+    }
+  },
+  {
+    "ts": "2026-08-17T09:02:14.841Z",
+    "name": "3d/generations",
+    "path": "/v2/3d/generations",
+    "payload": {
+      "model": "hunyuan-3d",
+      "prompt": "a small red circle centered on a plain white background"
+    },
+    "cliHeaders": true,
+    "status": 400,
+    "ms": 255,
+    "body": {
+      "code": 14407,
+      "msg": "Create 3d failed with error: 3d model [hunyuan-3d] route config not found",
+      "requestId": "f794a10f-63bd-4e08-b21b-e756f1b57fd3"
+    }
+  },
+  {
+    "ts": "2026-08-17T09:02:14.951Z",
+    "name": "agenttool 3d",
+    "path": "/agenttool/v1/3d",
+    "payload": {
+      "prompt": "a small red circle centered on a plain white background"
+    },
+    "cliHeaders": true,
+    "status": 404,
+    "ms": 108,
+    "body": {
+      "error_msg": "404 Route Not Found"
+    }
+  }
+]
