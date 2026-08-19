@@ -131,6 +131,12 @@ describe-image:
 dsh plugin --profile web add /path/to/dsh-codebuddy-plugin
 ```
 
+或直接从 GitHub 安装（git 源依赖 `prepare` 构建脚本，pnpm ≥10 首次安装会提示构建授权，按提示把 key 加入 profile 目录 `pnpm-workspace.yaml` 的 `allowBuilds` 后重跑即可）：
+
+```sh
+dsh plugin --profile web add github:taikaikaikai-pixel/dsh-codebuddy-plugin
+```
+
 或通过 npm 包名安装（发布后）：
 
 ```sh
