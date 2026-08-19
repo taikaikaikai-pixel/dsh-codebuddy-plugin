@@ -1,6 +1,6 @@
 # dsh-codebuddy-plugin
 
-CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**18 个模型**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），以及 **`image_generate` 生图工具**（混元生图后端）。
+CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**模型清单跟随网关目录动态同步**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），**`image_generate` 生图工具**（混元生图后端），以及 **key 型 OpenAI 兼容上游注册表**（火山引擎 Ark、阿里云百炼等，模型统一进选择器）。
 
 ## 特性
 
@@ -13,7 +13,7 @@ CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提
 
 ## 模型列表
 
-2026-08-16 实测全部可用，全部支持 tool_calls；参数与网关自有目录（`GET /v3/config`）核对。
+下表是插件静态兜底清单（2026-08-16 实测全部可用，全部支持 tool_calls；参数与网关自有目录 `GET /v3/config` 核对）。**v0.8 起清单默认动态化**：启动时自动从 `/v3/config` 同步网关目录并入对话选择器（目录新模型自动出现，同名静态条目尺寸随目录刷新），静态清单只在网关不可达时兜底；设置卡"模型"分区可手动再同步、逐模型启停、逐模型调节上下文/输出上限。
 
 | 模型 | 厂商 | contextWindow | maxTokens | reasoningEfforts | 图片 |
 |------|------|---------------|-----------|------------------|------|
@@ -63,16 +63,24 @@ describe-image:
 
 ## 可选设置（Settings → 插件配置 → CodeBuddy）
 
-设置卡按插件功能分七区，顶部有功能概览行，修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
+设置卡按插件功能分八区，顶部有功能概览行，修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
 
 ### 模型
 
-"获取模型列表"按**当前登录凭据**（Key/OAuth）拉取网关目录（`GET /v3/config`）。列表中每个模型都可勾选**启用/禁用**：
+模型清单**默认跟网关目录走**：启动时自动同步 `/v3/config`（设置卡"目录同步"行可手动再同步，显示上次同步时间与目录规模）；网关拉不到时无感回落静态清单，选择器绝不变空。列表中每个模型：
 
-- 勾选即写入 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.codebuddy.models` 覆盖层，**对话的模型选择器实时刷新**（下次请求生效，无需重启 dsh）
-- 目录中不在插件静态清单的模型（徽标"目录"，如 glm-4.7）勾选即加入可用列表，上下文/输出上限/图片输入按目录数据生成
-- 静态清单模型（徽标"插件"）取消勾选即从选择器移除
-- 全部恢复默认（无禁用、无新增）时自动删除 settings 覆盖层，配置补丁层重新接管——插件更新静态清单不会被陈旧覆盖遮蔽
+- **勾选启用/禁用**：勾选状态 = 是否出现在对话模型选择器（写入 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.codebuddy.models` 覆盖层，下次请求生效，无需重启）
+- **行内调节上下文/输出上限**：ctx 与输出两栏可直接改（覆盖值存 `modelState.overrides`），不得超过目录给定的该模型实际上限；清空输入框即恢复目录默认
+- 徽标区分来源（"插件"静态 / "目录"网关）与能力（CLI / 图 / 思考档位）
+
+### 服务商
+
+key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark**、**阿里云百炼**、**iFlow 心流**、**Qwen Code**，或自定义（id + baseURL）+ API Key。
+
+- 添加时会先实测 `GET /models` 验证 key 并拉取目录，模型写进选择器**免重启**（provider 块落 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.<id>`，key 落 `~/.dsh/.credentials.yaml` 的 `<ID>_API_KEY`，文件权限 0600，只回脱敏显示）
+- 无 `/models` 端点的上游（iFlow、Qwen Code）自动改用最小 chat 探针验 key + 内置模型清单兜底
+- 每行可"刷新模型"（重拉目录）与"删除"（连同凭据一起清）
+- **本机凭据**行（v0.8 G7）：只读扫描本机已安装 agent 工具（iFlow、Qwen Code 等）的登录态/凭据文件，检测到即提示"一键导入"——导入是逐个确认的显式动作，扫描绝不回传任何 secret 值
 
 ### 网络搜索与抓取
 
@@ -109,7 +117,7 @@ describe-image:
 
 - **消耗量（精确）**：桥对每个 chat 请求的网关 `usage.credit` 恒开计量（搜索/抓取/生图路径同样入账），持久化在 `~/.dsh/codebuddy-plugin-usage.json`；展示今日/累计 credit 与请求数、最近轮次（按 >45s 间隔聚类的近似口径，含缓存命中率）
 - **账户额度信号**：套餐类型与企业名（`GET /v2/accounts`）、额度不足时网关的告警文案（`get-dosage-notify`，官方 CLI 同源）。额度是账户级的，与 WorkBuddy 共用
-- **数字剩余额度没有开放 API**（CLI/api-key 面实测无存档于 docs/probes/quota-2026-08-18.json）——准确余额以 [codebuddy.cn 套餐页](https://www.codebuddy.cn/profile/plan) 为准
+- **数字剩余额度（OAuth 模式）**：`/billing/meter/get-user-resource` 实测可用（资源包逐条 + 本周期/总量口径剩余，每分钟缓存）；api-key 模式该 API 不开放（OAuth 专享），卡片改显「手填总额 − 本插件计量累计」的**估算**值并标注（证据 docs/probes/oauth-token-2026-08-19.jsonl，规则 docs/rules/quota-signals.md R-Q7）
 - **桥状态**：运行中 / 端口占用（EADDRINUSE）/ 已禁用
 
 ### 登录

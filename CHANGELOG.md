@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.8.0 (2026-08-20)
+
+- **v0.8 Goal 落地：额度可见 + 模型动态化 + 多服务商凭据中心**（目标与验收见 `docs/goals/v0.8-额度可见-模型动态化-多服务商.md`，逐 G 项进展见 `docs/rules/STATE.md`）：
+  - **G1/G2 OAuth 真实登录 + token×端点矩阵**：真实浏览器登录落地（`authMode:"oauth"`）；八组真实 token 探测（证据 `docs/probes/oauth-token-2026-08-19.jsonl`）确立——token 权限 = `ck_` key 严格超集（`/billing/meter/*` 为 OAuth-only）；**找到数值剩余额度 API** `/billing/meter/get-user-resource`（CapacityRemainPrecise/资源包明细，两域名同构、Bearer 直达，推翻"plan API 走 cookie 体系进不去"旧结论，quota-signals.md R-Q7）；refresh 轮换不作废旧令牌（R-O6，expiresIn 60 天）；修复 `refreshOAuth` 读错字段名（refreshExpiresAt→refreshExpiresIn，良性）
+  - **G3 额度卡片**：设置卡"额度与用量"分区——OAuth 模式显示**真实剩余额度**（`fetchQuotaSnapshot`：numericQuota + resource{totalRemain/cycleRemain/packs}，60s 缓存不阻塞主链路）；api-key 模式为手填总额度（`quotaTotalManual`）− 计量累计的**估算**档并标注；轮次行加 token 拆解（prompt/缓存命中/输出）
+  - **G4 模型动态化**：模型清单默认跟 `/v3/config` 走——`dynamicCatalog` + `computeBaseModels()`（目录∪静态并集，纯静态 id 保留——目录≠可路由）+ `syncModelsFromGateway()` 单飞（启动自动 + 设置卡手动刷新，失败保留旧目录或回落静态，**选择器绝不变空**）；勾选语义唯一权威 = 服务端 `effectiveIds`；有动态目录时镜像恒铺（踩坑 #6 纪律修订）
+  - **G5 上下文长度组件**：每模型 ctx/输出上限行内可调——`modelState.overrides` + `setModelLimits`（服务端权威校验，null 回基值，不得超基清单上限）→ `computeEffectiveModels` 应用覆盖即时重铺镜像；model-list 响应加 `profiles`/`ceilings`；`LimitInput` 组件身份稳定防失焦
+  - **G6 多服务商注册表**：设置卡"服务商"分区——预设（火山 ark / 阿里百炼）或自定义 OpenAI 兼容上游，实测 GET /models 验 key → 写 settings.yaml + `~/.dsh/.credentials.yaml`（0600）→ **免重启热加载进选择器**（chokidar watch + 原地换路由）；删除连块带凭据清；`providers/openai-compat.js` 共享骨架 + `providers/ark`/`providers/bailian` preset，core/ 零改动；坏 provider 块毒化实测 → 写块前本地校验 + 实测目录是硬纪律
+  - **G7 本机登录态检测**：只读扫描器 `local-scan.js`（findings 只带路径/类型/元数据、绝无 secret）+ `credential-scan`/`credential-import` 路由 + 设置卡"本机凭据"行（一键导入/原因标注/去重）；iFlow、Qwen Code 命中可导入；探测发现 iFlow/portal.qwen.ai 均无 GET /models → openai-compat 新增 `probeChatKey`（chat 探针验 key + `fallbackModels` 兜底，规则 E-P1/P2 见 docs/rules/extra-providers.md），iflow/qwen 升为正式 preset；导入动作留待用户逐个确认
+- 回归：`npm run verify` 18/18、verify:bridge / verify:core / verify:providers / verify-rotation 全绿；浏览器回归 step20–30 全绿（新增 step26 数值额度区块 / step27 目录同步 / step28 上下文长度 / step29 服务商 / step30 凭据扫描）
+- 已知网关侧问题（非本插件）：`/v2/accounts` 持续 500→524 故障，step25 走降级分支
+
+## 0.7.5 (2026-08-19)
+
+- **架构重构：index.js（约 1863 行单文件）拆为 core/ + providers/codebuddy/ 两层，index.js 降为组合根**（零行为变更；每个字段/端点的去留由同日完成的六课题规则文档裁判，见 docs/rules/）：
+  - `core/`（provider 无关，证伪扫描保证零上游特化）：`json-store.js`（JSON 文件层 + env/credentials.yaml 解析）、`rotation.js`（`KeyRotator` 多凭据轮询/冷却/failover——模块状态改为**实例状态**，见踩坑 #20）、`usage-meter.js`（usage 计量存储/轮次聚类）、`bridge.js`（流式桥：会话归因注入、每会话 FIFO 并发闸、SSE→chat.completion 聚合、取证日志/dump；上游特化全部经 provider 钩子注入：bridgeHeaders / transformChatPayload / extractUsage / extractStreamError / bridgeResponseId / logHeaderNames / sentinelAuth / texts / logPrefix）
+  - `providers/codebuddy/`（薄适配器）：`headers.js`（CLIENT_HEADERS 逐字段规则/迷信判定——ua-validation.md §3：仅 UA 的 `codebuddy/含点版本段` 是规则，余皆迷信但为零行为变更保留）、`errors.js`（网关错误码语义表 11101/12403/14401/14407/11102/11103/11128/10001/11217/12153，逐条引规则文档）、`oauth.js`（设备流 + 单飞刷新，X-No-* 迷信头标注）、`catalog.js`（/v3/config 目录 + /v2/accounts + dosage 额度方言）、`agenttool.js`（search/webfetch；**删除实测死路径** `data?.usage` 计量——quota-signals.md R-Q2 实证 agenttool 响应体无计量字段，STATE.md 课题 4 放行）、`images.js`（生图工具；images 响应 usage 未经证伪，计量路径保留）
+  - `index.js` 组合根：Config/SETTINGS_FIELDS、模型管理（patch 解析 + settings.yaml 镜像）、凭据编排（core 轮转引擎 + provider OAuth 分支，迟绑定箭头解开双向依赖）、设置路由、apply 生命周期；**对外导出契约不变**（apply/Config/name/inject/makeSearchProvider/makeFetchProvider/makeImageGenTool/computeEffectiveModels/syncModelsToDshSettings/SETTINGS_PATH/AUTH_PATH/SETTINGS_FIELDS）
+- **新增证伪测试 `scripts/verify-core-generic.mjs`**（完成标准 2）：S 面静态扫描 core/ 四个模块零 provider 特化 token（上游域名/错误码/供应商头名）、零 providers/ 引用；R 面用内联 `mock-openai` 适配器 + mock OpenAI 兼容上游经 core/ 全链路驱动第二上游——聚合、SSE 透传、会话头注入、双 Key 500 failover + 冷却跳过、无 credit 字段的 OpenAI usage 计量（记 0）、**developer 角色原样透传**（证明 developer→system 重写归适配器所有，verify-bridge §9 锁另一半）
+- 回归：verify 18/18 在线、verify:bridge 44 断言、verify-rotation 25 断言、verify-core-generic 全绿
+
 ## 0.7.4 (2026-08-19)
 
 - **修复主聊天 content_filter（0.7.3"附带发现"之谜破解）**：pi-ai 的 openai-completions 序列化器对推理模型把 system prompt 写成 `role:"developer"`（`useDeveloperRole = model.reasoning && compat.supportsDeveloperRole`，本地桥 URL 不在非标准名单内 → supportsDeveloperRole=true）；2026-08-18 ~16:24 UTC 起网关内容审核对**含 developer 角色消息**的 payload 一律 `finish_reason: content_filter`，同字节 payload 仅改回 `system` 即放行（经 CODEBUDDY_BRIDGE_DUMP 抓取真实请求 + 逐字段 bisect 实证：developer→system 翻转即通，max_completion_tokens/store/strict/x-stainless 头组均无关）。0.7.3 猜的"x-stainless 头组/序列化顺序"证伪——OpenAI SDK 6.26.0 全保真回放也通过。这同时解释了"逐字节等价 curl 全过"：回放脚本一直手写的是 `system`。修复落点在桥：chat 请求出站前把 messages 里的 `developer` 角色重写为 `system`（网关对两者指令语义等价）。回归锁在 verify-bridge 第 9 节；真实 dsh 路径（3080 RPC 起会话）v4-flash 实测恢复 `stop`。**启示**："逐字节等价"的对比基准若靠手写重建而非抓包，差异字段会被重建过程悄悄抹掉——取证一律以 dump/抓包的真实字节为准。

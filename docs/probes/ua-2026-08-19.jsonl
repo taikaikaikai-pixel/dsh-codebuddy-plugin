@@ -1,0 +1,87 @@
+{"type":"run","at":"2026-08-19T03:28:38.237Z","set":"matrix","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"control-baseline","ua":"CLI/unknown CodeBuddy/2.136.0","note":"shipped UA, expect 200","status":200,"code":0,"msg":"OK","ms":285}
+{"type":"probe","endpoint":"/v3/config","name":"spell-rejected","ua":"CodeBuddyCode/1.0","note":"the spell says 12403","status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":187}
+{"type":"probe","endpoint":"/v3/config","name":"product-only","ua":"CodeBuddy/2.136.0","note":"no CLI prefix at all","status":200,"code":0,"msg":"OK","ms":199}
+{"type":"probe","endpoint":"/v3/config","name":"product-other","ua":"CLI/unknown OtherBuddy/2.136.0","note":"same shape, wrong product","status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":174}
+{"type":"probe","endpoint":"/v3/config","name":"cli-only","ua":"CLI/unknown","note":"no product token","status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":189}
+{"type":"probe","endpoint":"/v3/config","name":"version-major-bump","ua":"CLI/unknown CodeBuddy/9.9.9","note":"absurd future version","status":200,"code":0,"msg":"OK","ms":170}
+{"type":"probe","endpoint":"/v3/config","name":"version-patch-bump","ua":"CLI/unknown CodeBuddy/2.136.1","note":"patch +1","status":200,"code":0,"msg":"OK","ms":176}
+{"type":"probe","endpoint":"/v3/config","name":"version-low","ua":"CLI/unknown CodeBuddy/0.0.1","note":"ancient version","status":200,"code":0,"msg":"OK","ms":176}
+{"type":"probe","endpoint":"/v3/config","name":"version-two-part","ua":"CLI/unknown CodeBuddy/2.136","note":"not full semver","status":200,"code":0,"msg":"OK","ms":319}
+{"type":"probe","endpoint":"/v3/config","name":"version-nonnumeric","ua":"CLI/unknown CodeBuddy/abc","note":"not a number","status":200,"code":0,"msg":"OK","ms":191}
+{"type":"probe","endpoint":"/v3/config","name":"ide-ver-filled","ua":"CLI/1.0 CodeBuddy/2.136.0","note":"unknown → 1.0","status":200,"code":0,"msg":"OK","ms":174}
+{"type":"probe","endpoint":"/v3/config","name":"ide-other","ua":"VSC/unknown CodeBuddy/2.136.0","note":"CLI → VSC","status":200,"code":0,"msg":"OK","ms":192}
+{"type":"probe","endpoint":"/v3/config","name":"suffix-added","ua":"CLI/unknown CodeBuddy/2.136.0 Extra/1.0","note":"trailing token","status":200,"code":0,"msg":"OK","ms":182}
+{"type":"probe","endpoint":"/v3/config","name":"case-cli-lower","ua":"cli/unknown CodeBuddy/2.136.0","note":"lowercase cli","status":200,"code":0,"msg":"OK","ms":160}
+{"type":"probe","endpoint":"/v3/config","name":"case-product-lower","ua":"CLI/unknown codebuddy/2.136.0","note":"lowercase product","status":200,"code":0,"msg":"OK","ms":415}
+{"type":"probe","endpoint":"/v3/config","name":"no-xproduct","ua":"CLI/unknown CodeBuddy/2.136.0","note":"baseline UA, X-Product dropped","status":200,"code":0,"msg":"OK","ms":172}
+{"type":"probe","endpoint":"/v3/config","name":"no-ua-header","ua":null,"note":"User-Agent omitted entirely","status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":163}
+{"type":"probe","endpoint":"/v2/chat/completions","name":"chat-garbage-ua","ua":"Garbage/0.0","note":"H5: /v2 ignores UA, expect 200","status":400,"code":11101,"msg":"Non-stream chat request is currently not supported","ms":206}
+{"type":"probe","endpoint":"/v2/chat/completions","name":"chat-cli-ua","ua":"CLI/unknown CodeBuddy/2.136.0","note":"control, expect 200","status":400,"code":11101,"msg":"Non-stream chat request is currently not supported","ms":173}
+{"type":"run","at":"2026-08-19T03:31:00.031Z","set":"predict","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-notcodebuddy","ua":"NotCodeBuddy/1.0","note":"substring rule predicts pass","expect":200,"status":200,"code":0,"msg":"OK","ms":278}
+{"type":"probe","endpoint":"/v3/config","name":"predict-bare-product","ua":"CodeBuddy","note":"no slash → substring absent","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":178}
+{"type":"probe","endpoint":"/v3/config","name":"predict-uppercase","ua":"X/y CODEBUDDY/1","note":"uppercase token, minimal version","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":183}
+{"type":"probe","endpoint":"/v2/chat/completions","name":"predict-chat-stream-garbage-ua","ua":"Garbage/0.0","note":"stream:true + garbage UA → 200/code 0","expect":0,"status":200,"code":0,"msg":"data: {\"id\":\"ecaa173c843e4137b3b1b714ca3e4bdb\",\"model\":\"deepseek-v3\",\"object\":\"chat.completion.chunk\",\"created\":<redacted>","ms":2307}
+{"type":"run","at":"2026-08-19T03:32:52.754Z","set":"predict2","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-mixedcase-lowb","ua":"Codebuddy/1.0","note":"lowercase b is not whitelisted","expect":12403,"status":200,"code":0,"msg":"OK","ms":280}
+{"type":"probe","endpoint":"/v3/config","name":"predict-caps-b","ua":"codeBuddy/1.0","note":"capital B only is not whitelisted","expect":12403,"status":200,"code":0,"msg":"OK","ms":166}
+{"type":"probe","endpoint":"/v3/config","name":"predict-uppercase-fullver","ua":"X/y CODEBUDDY/2.136.0","note":"case isolated from version shape","expect":12403,"status":200,"code":0,"msg":"OK","ms":279}
+{"type":"run","at":"2026-08-19T03:34:11.628Z","set":"predict3","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-verlen1","ua":"CodeBuddy/a","note":"version length 1 → reject","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":275}
+{"type":"probe","endpoint":"/v3/config","name":"predict-verlen2","ua":"CodeBuddy/ab","note":"version length 2 → pass","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":177}
+{"type":"probe","endpoint":"/v3/config","name":"predict-verlen1-space","ua":"CodeBuddy/1 ","note":"trailing space: \\S rule rejects, . rule passes","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":163}
+{"type":"run","at":"2026-08-19T03:36:02.905Z","set":"predict4","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-verlen3-digit","ua":"CodeBuddy/111","note":"3-char numeric version passes","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":274}
+{"type":"probe","endpoint":"/v3/config","name":"predict-verlen4","ua":"CodeBuddy/abcd","note":"4-char version passes","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":173}
+{"type":"probe","endpoint":"/v3/config","name":"predict-verlen2-trailspace","ua":"CodeBuddy/ab ","note":"space does not count toward the 3 chars","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":210}
+{"type":"probe","endpoint":"/agenttool/v1/search","name":"predict-agenttool-bad-ua","ua":"CodeBuddy/ab","note":"same validator → 12403 before any search work","expect":12403,"status":200,"code":null,"msg":"{\"query\":\"kimi\",\"type\":\"text2text\",\"provider\":\"0\",\"results\":[{\"title\":\"GLM-5.3上线：60分跻身全球前沿，与Kimi K3并列开源模型第一\",\"url\":\"http","ms":2400}
+{"type":"probe","endpoint":"/agenttool/v1/search","name":"agenttool-baseline","ua":"CLI/unknown CodeBuddy/2.136.0","note":"control: real tiny search through the shipped UA","expect":0,"status":200,"code":null,"msg":"{\"query\":\"kimi\",\"type\":\"text2text\",\"provider\":\"0\",\"results\":[{\"title\":\"GLM-5.3上线：60分跻身全球前沿，与Kimi K3并列开源模型第一\",\"url\":\"http","ms":222}
+{"type":"run","at":"2026-08-19T03:39:16.836Z","set":"predict5","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-cli-anyver","ua":"CLI/unknown CodeBuddy/abcd","note":"CLI form frees version grammar","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":364}
+{"type":"probe","endpoint":"/v3/config","name":"predict-cli-minimal","ua":"CLI/x CodeBuddy/z","note":"minimal CLI form","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":170}
+{"type":"probe","endpoint":"/v3/config","name":"predict-semver2-standalone","ua":"CodeBuddy/2.136","note":"2-part semver, no CLI prefix","expect":200,"status":200,"code":0,"msg":"OK","ms":170}
+{"type":"probe","endpoint":"/v3/config","name":"predict-noncli-anyver","ua":"Wat/unknown CodeBuddy/zzz","note":"prefix must be CLI, version grammar not freed","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":221}
+{"type":"probe","endpoint":"/v3/config","name":"predict-cli-noslash","ua":"CLI CodeBuddy/abcd","note":"CLI without slash is not the CLI form","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":177}
+{"type":"probe","endpoint":"/agenttool/v1/search","name":"predict-agenttool-spell-ua","ua":"CodeBuddyCode/1.0","note":"spell claims 12403 on /agenttool; probe predicts the gate is absent","expect":200,"status":200,"code":null,"msg":"{\"query\":\"kimi\",\"type\":\"text2text\",\"provider\":\"0\",\"results\":[{\"title\":\"GLM-5.3上线：60分跻身全球前沿，与Kimi K3并列开源模型第一\",\"url\":\"http","ms":228}
+{"type":"probe","endpoint":"/agenttool/v1/search","name":"predict-agenttool-garbage","ua":"Garbage/0.0","note":"alien UA still passes /agenttool","expect":200,"status":200,"code":null,"msg":"{\"query\":\"kimi\",\"type\":\"text2text\",\"provider\":\"0\",\"results\":[{\"title\":\"GLM-5.3上线：60分跻身全球前沿，与Kimi K3并列开源模型第一\",\"url\":\"http","ms":237}
+{"type":"run","at":"2026-08-19T03:41:52.354Z","set":"predict6","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"retest-cli-abc","ua":"CLI/unknown CodeBuddy/abc","note":"matrix anomaly retest, CLI form","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":286}
+{"type":"probe","endpoint":"/v3/config","name":"retest-standalone-abc","ua":"CodeBuddy/abc","note":"matrix anomaly retest, standalone","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":177}
+{"type":"probe","endpoint":"/v3/config","name":"predict-vprefix","ua":"CodeBuddy/v1.2","note":"digit must immediately follow the slash","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":183}
+{"type":"probe","endpoint":"/v3/config","name":"predict-dot-nondigit","ua":"CodeBuddy/1.x","note":"digit must immediately follow the dot","expect":12403,"status":200,"code":0,"msg":"OK","ms":169}
+{"type":"probe","endpoint":"/v3/config","name":"predict-embedded","ua":"MyApp CodeBuddy/3.14 xyz","note":"token may sit anywhere in the UA","expect":200,"status":200,"code":0,"msg":"OK","ms":181}
+{"type":"probe","endpoint":"/v3/config","name":"predict-zerozero","ua":"CodeBuddy/0.0","note":"minimal semver token","expect":200,"status":200,"code":0,"msg":"OK","ms":182}
+{"type":"run","at":"2026-08-19T03:43:27.234Z","set":"predict7","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-dot-terminal","ua":"CodeBuddy/1.","note":"nothing needed after the dot","expect":200,"status":200,"code":0,"msg":"OK","ms":277}
+{"type":"probe","endpoint":"/v3/config","name":"predict-dot-first","ua":"CodeBuddy/.5","note":"version must start with a digit","expect":12403,"status":200,"code":0,"msg":"OK","ms":201}
+{"type":"probe","endpoint":"/v3/config","name":"predict-multidigit-dot","ua":"CodeBuddy/12.","note":"multi-digit major, terminal dot","expect":200,"status":200,"code":0,"msg":"OK","ms":182}
+{"type":"run","at":"2026-08-19T03:44:26.338Z","set":"predict8","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-baredot","ua":"CodeBuddy/.","note":"a lone dot is a valid version","expect":200,"status":200,"code":0,"msg":"OK","ms":279}
+{"type":"probe","endpoint":"/v3/config","name":"predict-doubledot","ua":"CodeBuddy/..","note":"two dots also valid","expect":200,"status":200,"code":0,"msg":"OK","ms":188}
+{"type":"probe","endpoint":"/v3/config","name":"predict-xdot","ua":"CodeBuddy/x.","note":"dot present but first char not in [\\d.]","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":195}
+{"type":"probe","endpoint":"/v3/config","name":"predict-dashdot","ua":"CodeBuddy/-.5","note":"first char `-` breaks the class","expect":12403,"status":200,"code":0,"msg":"OK","ms":181}
+{"type":"run","at":"2026-08-19T03:45:30.583Z","set":"predict9","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-plusdot","ua":"CodeBuddy/+.5","note":"+ is not a semver version char here","expect":12403,"status":200,"code":0,"msg":"OK","ms":283}
+{"type":"probe","endpoint":"/v3/config","name":"predict-underscoredot","ua":"CodeBuddy/_.5","note":"_ outside the class","expect":12403,"status":200,"code":0,"msg":"OK","ms":179}
+{"type":"probe","endpoint":"/v3/config","name":"predict-hyphen-mid","ua":"CodeBuddy/1-2.3","note":"hyphen inside the run, dot present","expect":200,"status":200,"code":0,"msg":"OK","ms":186}
+{"type":"probe","endpoint":"/v3/config","name":"retest-dashdot","ua":"CodeBuddy/-.5","note":"stability retest after the abc anomaly","expect":200,"status":200,"code":0,"msg":"OK","ms":170}
+{"type":"run","at":"2026-08-19T03:47:28.056Z","set":"predict10","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-symbol-letter-dot","ua":"CodeBuddy/-.x","note":"letter after the dot is unconstrained","expect":200,"status":200,"code":0,"msg":"OK","ms":278}
+{"type":"probe","endpoint":"/v3/config","name":"predict-letter-before-dot","ua":"CodeBuddy/a.1","note":"letter before the dot breaks the run","expect":12403,"status":200,"code":0,"msg":"OK","ms":166}
+{"type":"probe","endpoint":"/v3/config","name":"predict-cjk","ua":"CodeBuddy/汉.5","note":"CJK is outside the ASCII-letter class","expect":200,"error":"Cannot convert argument to a ByteString because the character at index 10 has a value of 27721 which is greater than 255.","ms":0}
+{"type":"probe","endpoint":"/v3/config","name":"predict-space-before-dot","ua":"CodeBuddy/ .","note":"space breaks the run","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":183}
+{"type":"run","at":"2026-08-19T03:49:35.430Z","set":"predict11","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"predict-two-letters-dot","ua":"CodeBuddy/ab.1","note":"two letters before dot → reject","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":321}
+{"type":"probe","endpoint":"/v3/config","name":"predict-letter-digit-dot","ua":"CodeBuddy/a1.2","note":"letter+digit before dot → reject (v1.2 pattern)","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":213}
+{"type":"probe","endpoint":"/v3/config","name":"predict-digit-letter-dot","ua":"CodeBuddy/1a.2","note":"digit first → (a) applies","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":182}
+{"type":"probe","endpoint":"/v3/config","name":"predict-v-dot","ua":"CodeBuddy/v.2","note":"v alone before dot matches (b)","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":178}
+{"type":"probe","endpoint":"/v3/config","name":"predict-x-dot-digit","ua":"CodeBuddy/x.5","note":"x. failed only because nothing followed the dot","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":178}
+{"type":"probe","endpoint":"/v3/config","name":"predict-upper-dot-digit","ua":"CodeBuddy/Z.9","note":"uppercase letter also matches (b)","expect":200,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":178}
+{"type":"run","at":"2026-08-19T03:51:02.859Z","set":"predict12","only":null,"gateway":"https://copilot.tencent.com"}
+{"type":"probe","endpoint":"/v3/config","name":"flap-a1-1","ua":"CodeBuddy/a.1","note":"flapping test 1/4","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":312}
+{"type":"probe","endpoint":"/v3/config","name":"flap-a1-2","ua":"CodeBuddy/a.1","note":"flapping test 2/4","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":166}
+{"type":"probe","endpoint":"/v3/config","name":"flap-a1-3","ua":"CodeBuddy/a.1","note":"flapping test 3/4","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":172}
+{"type":"probe","endpoint":"/v3/config","name":"flap-a1-4","ua":"CodeBuddy/a.1","note":"flapping test 4/4","expect":12403,"status":400,"code":12403,"msg":"check ua, get coding copilot version error","ms":185}
+{"type":"probe","endpoint":"/v3/config","name":"control-good","ua":"CodeBuddy/1.0","note":"known-good control","expect":200,"status":200,"code":0,"msg":"OK","ms":190}
+{"type":"probe","endpoint":"/v3/config","name":"retest-abc-final","ua":"CodeBuddy/abc","note":"second anomaly confirmation","expect":12403,"status":200,"code":0,"msg":"OK","ms":217}

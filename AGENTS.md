@@ -11,7 +11,10 @@
 | 层 | 文件 | 职责 | 改动生效方式 |
 |----|------|------|--------------|
 | 静态配置 | `cordis.patch.yml` | 覆盖 dsh-base 的 `llm-pi-ai`（provider 路由**指向本地桥**+模型清单）、`agent-default-model`、`web`（provider 钉选）、`insert` 入口 | 重启 dsh |
-| 宿主运行时 | `index.js` | 注册 ctx.web 搜索/抓取后端、ctx.tools 生图工具、流式桥（127.0.0.1:3901，**含主聊天在内全部请求的唯一凭据入口**；api-key 模式多 Key 轮询+failover+冷却；**恒开 usage 计量** → `~/.dsh/codebuddy-plugin-usage.json` 供设置卡"额度与用量"分区）、OAuth 设备流、设置路由 | 重启 dsh |
+| 组合根 | `index.js` | Config/schema、模型管理（patch 解析 + settings.yaml 镜像）、凭据编排（core 轮转 + provider OAuth 分支）、设置路由、apply 生命周期；对外导出契约 | 重启 dsh |
+| 凭据边缘层 | `core/` | **provider 无关**：json-store（文件层/env 解析）、rotation（KeyRotator 轮询/冷却/failover，实例状态）、usage-meter（计量存储）、bridge（流式桥：会话归因/并发闸/SSE 聚合/取证；上游特化全走 provider 钩子）。**禁止出现任何 CodeBuddy 特化**——verify-core-generic 静态扫描锁 | 重启 dsh |
+| 上游适配器 | `providers/codebuddy/` | 全部 CodeBuddy 网关事实：headers（逐字段规则/迷信判定，ua-validation.md §3）、errors（错误码表）、oauth（设备流）、catalog（/v3/config+额度方言）、agenttool（search/webfetch）、images（生图）。裁判依据 docs/rules/ | 重启 dsh |
+| 多服务商（G6/G7） | `providers/openai-compat.js` + `providers/ark`、`providers/bailian`、`providers/iflow`、`providers/qwen` | key 型 OpenAI 兼容上游注册表：共享骨架（GET /models 验目录 + provider 块组装；**/models 404 时 probeChatKey 探针验 key + fallbackModels 兜底清单**，裁判 docs/rules/extra-providers.md）+ 每上游 preset（baseURL/认证方言）。登记册在插件文件层 `managedProviders`，块写 settings.yaml、key 写 .credentials.yaml（踩坑 #21） | 免重启（热加载） |
 | 浏览器半 | `lib/client.js` | Settings → 插件配置 的 CodeBuddy 设置卡（`settings.plugin.item` slot；复用宿主 `dsh-client-ui-primitives` 组件 + `--dsw-alias-*` tokens + 注入式 cbc- 样式，见踩坑 #15） | 刷新页面（注意浏览器缓存，测试加 `--disable-http-cache`） |
 
 设置数据流：设置卡 → `POST /dsh-codebuddy-plugin/settings`（自有路由）→ `~/.dsh/codebuddy-plugin.json`（文件层）→ `Config({entry, file})` 活解析。OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json`，**永不回传浏览器**（key 也只回脱敏 `ck_a…5678`）。
@@ -23,7 +26,7 @@
 - `/v3/config`：网关自有模型目录（官方 CLI 用），`x-api-key` 头认证（OAuth 用 Authorization），同 UA 要求；响应 `{code, data:{models, agents}}`
 - `/v2/images/generations`：OpenAI 形态生图端点，`hunyuan-image-v3.0-art` 实测出图（~22s/张，plain UA 即可，无需 CLI UA）；`/v2/videos/generations`、`/v2/3d/generations` 路由存在但当前账号一律 14407 `route config not found`（无可用模型，官方 CLI 包内也无对应客户端调用）→ 视频/3D 不接入。证据：docs/probes/media-2026-08-17.json（`probe-media.mjs`）
 - OAuth 设备流：`POST /v2/plugin/auth/state?platform=CLI`（三个 `X-No-*` 头）→ 浏览器打开 authUrl → 轮询 `GET /v2/plugin/auth/token?state=`（`11217`=未完成）→ `GET /v2/plugin/login/account`；刷新 `POST /v2/plugin/auth/token/refresh`（`X-Refresh-Token`）
-- **额度信号盘点**（2026-08-18，`scripts/probe-quota.mjs`，证据 docs/probes/quota-2026-08-18.json）：`GET /v2/accounts`（ck_ Key 直调可用）返回账户元数据（type/enterprise/lastLogin，当前账户=lastLogin:true 条目）；`POST /v2/billing/meter/get-dosage-notify`（官方 CLI BillingService 的低额告警源，ck_ 可用）健康时返回空文案；**数字剩余额度无 CLI/api-key 可达 API**——chat 响应头无 quota 字段，CLI 包内端点全集（`/v2/accounts`、`/v2/billing/meter/get-dosage-notify`、`/v3/config`、`/v2/report` 等）无 quota 查询，用户中心网页 plan API（字段 credit/limitNum/exclusiveGift.remainCredits）走浏览器 cookie 体系进不去。计费只有每请求 `usage.credit` 自报
+- **额度信号盘点**（2026-08-18，`scripts/probe-quota.mjs`，证据 docs/probes/quota-2026-08-18.json）：`GET /v2/accounts`（ck_ Key 直调可用）返回账户元数据（type/enterprise/lastLogin，当前账户=lastLogin:true 条目）；`POST /v2/billing/meter/get-dosage-notify`（官方 CLI BillingService 的低额告警源，ck_ 可用）健康时返回空文案；chat 响应头无 quota 字段，计费只有每请求 `usage.credit` 自报。**数字剩余额度 API 已找到**（2026-08-19 G2，quota-signals.md R-Q7）：控制台计费路径族 `/billing/meter/get-user-resource` 等接受 **OAuth Bearer**（两域名同构；`ck_` key 401 不进）——`POST {}` 返回资源包列表（`CapacityRemainPrecise`/`CycleCapacity*`/`TotalDosage`，数值剩余额度主源）；`get-enterprise-user-usage`（`X-Enterprise-Id` 头）返回套餐 `credit/limitNum`；daily/request 用量明细需 `X-Enterprise-Id` 作用域（个人=`"personal"` 字面量）。详见 docs/rules/quota-signals.md §R-Q7
 - **WorkBuddy 与 CodeBuddy 同账户体系**：`www.workbuddy.cn/v2/plugin/auth/state` 实测返回同形态 `{state, authUrl}`（同一设备流）；官方 CLI product.json 的 `internalDomain` 互含 workbuddy.cn，认证 id 同为 `Tencent-Cloud.coding-copilot` → 额度账户级共享，无需单独通道
 - 会话头体系（CLI 使用，v0.5.5 目标）：`X-Conversation-ID / X-Session-ID / X-Conversation-Request-ID / X-Conversation-Message-ID / X-Agent-Type / X-Agent-Intent`
 - dsh 内置"获取可用模型"对本网关**永远失效**（无 OpenAI `GET /models`，404）
@@ -38,7 +41,7 @@
 3. **客户端模块格式**：`window.__ModuleLoader__.load({id, factory})`，factory 内 `require('react')`；包需声明 `exports["./client"]` 与 `dsh.client.manifest`。手写 `React.createElement`（无构建步骤）。
 4. **React hooks 规则**：`useSyncExternalStore(scope.subscribe,…)` 必须传绑定包装（裸方法引用丢 `this`）；hook 不能在条件分支后调用。改 UI 后必跑浏览器回归。
 5. **合成事件**：脚本派发的原生 blur 不触发 React onBlur，用真实 `input.blur()`；受控 checkbox 可能双 change，写操作加去抖。
-6. **模型同步的纯净态**：`llm-pi-ai.providers.codebuddy.models` 写入 `~/.dsh/settings.yaml` 即时生效（选择器实时刷新）；但状态归零时必须**删除**该覆盖层，否则陈旧清单遮蔽插件更新的静态模型。禁用"目录新增"模型只删 extra、**不写 disabled**（否则永远非纯净）。
+6. **模型同步的纯净态**：`llm-pi-ai.providers.codebuddy.models` 写入 `~/.dsh/settings.yaml` 即时生效（选择器实时刷新）；但状态归零时必须**删除**该覆盖层，否则陈旧清单遮蔽插件更新的静态模型。禁用"目录新增"模型只删 extra、**不写 disabled**（否则永远非纯净）。**v0.8 G4 修订**：动态目录（`/v3/config` 启动同步）存活期间镜像**恒铺**——镜像内容每次启动随网关刷新，不属"陈旧遮蔽"；仅当无动态目录且无 disabled/extra 时才删覆盖层（`syncModelsToDshSettings` 的 pristine 判定含 `dynamicCatalog == null`）。
 7. **错误提示要带原因**：catch 里只写"（网络）"曾把 `reload is not a function` 误导成网络问题排查了一圈。
 8. **dsh web 增删插件后必须重启**进程才会刷新启动清单（运行中的清单是内存缓存）。
 9. 本插件 JS 不能 import `@deepseek-ai/*`（除非装进自己的 node_modules——加载器按插件路径解析）；provider 接口用鸭子类型零依赖实现，仅 `schemastery`/`yaml` 两个运行时依赖（锁 dsh 0.1.0-rc.6 线）。
@@ -52,6 +55,8 @@
 17. **`server.listen` 不挂 error 监听 = 宿主进程炸弹**：桥绑 3901 遇 EADDRINUSE（第二个 dsh 实例——`dsh web --help` 都会加载插件抢绑）时 unhandled 'error' 事件直接崩掉整个 dsh。listen 前挂 `server.on('error')` 降级为告警 + 状态字段（`bridgeRuntime`），绝不抛出。同类教训：轮询型 UI 断言必须先等"正在读取"消失再读文本（step25 首跑 3 连挂就是首次 pull 未返回）；轮询断言的基线计数器要和文本显示的口径一致——step25 曾拿全量 `totalRequests` 对比卡片"今日"计数，跨本地午夜后必然分叉、断言永不成立（文本基线应取 `usage.today.requests`）。
 18. **dsh rc.7 把 `settings.plugin.item` 槽位从 list 改成 keyed**（0.7.3 适配）：tab 改为从 api-proxy `settings.describe` 读 Host 命名空间清单，按 `renderSlot(…, {entryKey: ns})` 逐个派发——**卡片想出现，必须同时满足**：宿主半 `ctx.inject(['settings'])` + `settings.register('dsh-codebuddy-plugin', Config)` 注册命名空间（只作派发声明，读写仍走自有路由；注册是本 fiber 的 effect）＋ 浏览器半注册带 `key: "dsh-codebuddy-plugin"`。rc.6 的硬编码白名单 `WEB_SETTINGS_NAMESPACES` 与 `settings-not-exposed` 已删，第三方插件自曝配置面是官方落地的新路径。rc.6↔rc.7 兼容写法：注册项同时带 `key` 和 `id/order/label`——list 槽位只校验 `id`、keyed 只校验 `key`，多余字段都被忽略。踩坑 #2 因此**部分过时**：rc.7 起命名空间注册对设置页可见了（但官方 `installSettingsSection` 仍不是我们数据流的载体）。
 19. **"逐字节等价"若靠手写重建 = 自欺欺人**（0.7.4 破解 content_filter 事件的代价）：pi-ai 会把推理模型的 system prompt 序列化成 `role:"developer"`，而此前所有"等价回放"都手写 `system`——差异字段被重建过程抹掉，导致把网关审核误判成"时变风控/按客户端形态"。正解是开 `CODEBUDDY_BRIDGE_DUMP` 抓真实请求体，再以 dump 为基准逐字段 bisect（一次翻转即定位 developer 角色）。网关对 developer/system 指令语义等价，桥直接重写即可。
+20. **共享层的运行状态必须是实例状态，不是模块状态**（0.7.5 拆 core/ 时保住的老语义）：verify-rotation 靠 `import('index.js?case=A')`/`?case=B` 拿两个独立插件实例来隔离轮询游标/冷却表——若这些状态沉进 `core/rotation.js` 的模块全局，两个实例经相对路径 import 命中的仍是**同一个** core 模块（query 不传染给子导入），隔离即破。纪律：core/ 一律导出工厂/类（`new KeyRotator()`、`createUsageMeter()`、`createBridge()`），实例在 index.js 模块作用域各创建一次；providers/codebuddy/ 同理（`createCodeBuddyProvider` 闭包持有 refresh 单飞锁/pending 态/quota 缓存）。写跨层测试断言轮询顺序前先想清楚游标在第几个请求上（verify-core-generic R4 用全新 rotator 钉死游标）。
+21. **settings.yaml 用户层一个坏 provider 块 = 全层连坐**（G6 实测 2026-08-19）：手写 `api: bogus` 的 provider 进 settings.yaml 后重启，**整个 llm-pi-ai 用户层被丢弃**（dsh-settings publish/解析 catch 后保持上一份好值/回退 base）——patch 层的 codebuddy 幸存，用户手写的 qianwenai/kimiclaw/kimi-coding 全灭。所以插件写 provider 块必须"本地校验（id 正则/api 枚举/URL）+ 实测 GET /models 后才落盘"。同机制其余事实：provider 块可纯 settings.yaml 覆盖层新增（`z.dict(profile)` 深合并、chokidar 热加载原地换路由、**免重启**）；凭据只有 `apiKeyEnv` 一个字段（无字面量 apiKey），每请求活解析、来源序 = 启动环境快照 > `~/.dsh/.credentials.yaml`（chokidar 活层，**文件必须 0600** 否则凭据缝抛错）> .env（冻结）；rc.7 的 Models 页自带 CustomProviderCard 就是这套（settings.mutate + credentials.set RPC，key ref 惯例 `<ROUTE>_API_KEY`）——插件因踩坑 #2 走自写文件，同一落点同一形状。
 
 ## 常用命令
 
@@ -63,6 +68,8 @@ node scripts/verify-models.mjs --sync           # 对比 /v3/config 目录漂移
 node scripts/verify-models.mjs --efforts [id…]  # 探测 reasoning_effort 档位
 node scripts/verify-bridge.mjs                  # 离线桥回归（mock 网关，断言响应完成）
 node scripts/verify-rotation.mjs                # 离线多 Key 轮询回归（mock 网关按 Key 行为表）
+node scripts/verify-core-generic.mjs            # core/ 通用性证伪（静态纯净扫描 + 第二上游全链路）
+node scripts/verify-providers.mjs               # 多服务商骨架离线回归（/models 404 兜底 + 认证方言）
 node scripts/measure-latency.mjs --mock|--real  # 识图/搜索端到端延迟分布（JSONL 落盘）
 node scripts/probe-media.mjs                    # 生图/视频/3D 端点探测（证据落盘 docs/probes/）
 npm run verify                                  # 同在线探测
@@ -78,7 +85,7 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 ## 版本现状
 
-0.1.0 初始 → 0.2 文档同步 → 0.3 对齐 /v3/config + verify 脚本 → 0.4 思考强度可调 → 0.5 ctx.web 后端 + 流式桥 + 识图 → 0.5.1 设置卡 → 0.5.2 OAuth + 多 Key → 0.5.3 功能分区 + 一键开关 → 0.5.4 模型逐个启停同步选择器 → 0.5.5 会话管理 A+B → 0.5.6 桥三 bug 修复 + 设置卡重构 → 0.6 主聊天走桥（OAuth 覆盖模型对话）→ 0.6.1 桥取证日志 + 缓存/额度诊断存档 → 0.7 设置卡流畅度 + 搜索修复与错误硬化 + 生图接入 + 多 Key 轮询 → 0.7.1 设置卡迁移 dsh 原生 UI 资源（primitives+tokens+注入样式）+ 回归目录重建 → 0.7.2 桥 EADDRINUSE 崩溃修复 + "额度与用量"设置卡分区（桥恒开 usage 计量 + 轮次聚类 + 账户额度信号；数字剩余额度无 API 已实证存档）→ 0.7.3 适配 dsh rc.7（settings.plugin.item 槽位 keyed 化：宿主半注册 settings 命名空间 + 浏览器半注册加 key，双版兼容写法见踩坑 #18；其余 rc.7 变化逐包 diff 实证无关）→ 0.7.4 主聊天 content_filter 修复（根因=pi-ai 把推理模型 system prompt 写成 developer 角色触发网关审核，桥出站重写 developer→system；dump+bisect 取证法见踩坑 #19）（详见 CHANGELOG.md）。
+0.1.0 初始 → 0.2 文档同步 → 0.3 对齐 /v3/config + verify 脚本 → 0.4 思考强度可调 → 0.5 ctx.web 后端 + 流式桥 + 识图 → 0.5.1 设置卡 → 0.5.2 OAuth + 多 Key → 0.5.3 功能分区 + 一键开关 → 0.5.4 模型逐个启停同步选择器 → 0.5.5 会话管理 A+B → 0.5.6 桥三 bug 修复 + 设置卡重构 → 0.6 主聊天走桥（OAuth 覆盖模型对话）→ 0.6.1 桥取证日志 + 缓存/额度诊断存档 → 0.7 设置卡流畅度 + 搜索修复与错误硬化 + 生图接入 + 多 Key 轮询 → 0.7.1 设置卡迁移 dsh 原生 UI 资源（primitives+tokens+注入样式）+ 回归目录重建 → 0.7.2 桥 EADDRINUSE 崩溃修复 + "额度与用量"设置卡分区（桥恒开 usage 计量 + 轮次聚类 + 账户额度信号；数字剩余额度无 API 已实证存档）→ 0.7.3 适配 dsh rc.7（settings.plugin.item 槽位 keyed 化：宿主半注册 settings 命名空间 + 浏览器半注册加 key，双版兼容写法见踩坑 #18；其余 rc.7 变化逐包 diff 实证无关）→ 0.7.4 主聊天 content_filter 修复（根因=pi-ai 把推理模型 system prompt 写成 developer 角色触发网关审核，桥出站重写 developer→system；dump+bisect 取证法见踩坑 #19）→ 0.7.5 架构重构（index.js 拆 core/ provider 无关凭据边缘层 + providers/codebuddy/ 薄适配器，规则文档裁判逐字段去留；证伪测试 verify-core-generic 证明第二 OpenAI 兼容上游接入 core/ 零改动；踩坑 #20 实例状态纪律）（详见 CHANGELOG.md）。
 
 ## v0.5.5：会话管理 A + B（已完成 2026-08-17）
 
