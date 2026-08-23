@@ -3,8 +3,9 @@
 > 日期：2026-08-23
 > 方法：GitHub 社区逆向（linqiu919/trae2api，2025-06 停更）提供历史参照 → 本机
 > 二进制 strings 提取当前协议面 → **无凭据在线探测**校准错误信封与端点存活。
-> 全程未使用任何真实凭据；带凭据联调由 `scripts/probe-trae-live.mjs` 承担
-> （需要用户完成一次浏览器登录）。
+> §1–§4 全程未使用任何真实凭据；带凭据联调由 `scripts/probe-trae-live.mjs` 承担
+> ——**2026-08-23/24 已执行完毕**（§2 已校准段、§5 对照表；生产级交叉参照
+> github.com/autumnsentiment/Trae2api-cn 的 raw client）。
 
 ## 0. 一句话结论
 
@@ -41,11 +42,27 @@ TraeWork CN 的聊天面是**任务制私有 RPC**（`/api/agent/v3/*`，SSE）�
   → 官方 SOLO 的 agent 环 = create_task → SSE 事件 → commit_toolcall 循环；
   **`llm_utils_chat` 是工具型一次性聊天**（title.rs / video.rs / telemetry 用它），
   是 dsh provider 场景（纯 LLM 调用）的正确目标。
-- llm_utils_chat 请求信封字段（serde 结构提取，置信度中）：
-  `role/content/type/usage/function/messages` + `session_id/conversation_id` +
-  `scene_params/metadata/queue_id/request_seq` + `is_custom_model` +
-  `model_name`。**未经带凭据联调**——`buildChatRequest`（providers/trae/gateway.js）
-  是唯一组装点，live probe 发现偏差只改它。
+- llm_utils_chat 请求信封（**2026-08-23/24 带凭据联调已校准**，证据
+  docs/probes/trae-chat-live-*.json）：
+  - 体：`{messages, model, function, request_id, session_id, stream:true}`；
+    `messages[].content` 必须是 `{type:"text",text}` 块数组（字符串 → 400/4001
+    "cannot unmarshal string …LLMRawMessageContent"）；`function` 必填——缺则
+    SSE error 2001 "function is empty, cannot resolve model by usage="，
+    实用值 `inline_chat`；`scene_params` 若带必须是 string（内嵌 JSON）。
+  - 头（绑定层逐项实测收敛）：`x-app-id` = product.json 固定 appId
+    `6eefa01c-1036-4c7e-9ca5-d891f63bfcd8`（**≠ OAuth client_id**；缺省 4001
+    "expr_path=app_id"）；version-code 类头必须是**数字串**（'0.1.52' 判 missing，
+    实测 `20260401` 过）；三头同 JWT（`Authorization: Cloud-IDE-JWT` +
+    `X-Cloudide-Token` + `x-ide-token`）+ 设备指纹头组 + `x-request-id`。
+  - **`model` 字段不被路由**：inline_chat 函数位由服务端解析到账户当前默认
+    模型（两次实测 `provider_model_name` 均为 `kimi-k2.6`，与请求的
+    glm-5.3 / DeepSeek-V4-Pro 无关）——dsh 侧多模型清单实为同一出口。
+  - SSE 事件语法（实测）：`metadata` / `timing_cost`（含 provider_model_name）
+    / `output`（data.response、data.reasoning_content）/ `token_usage`
+    （计数在 data 顶层：prompt/completion/total + cache_read_input_tokens）
+    / `done`（finish_reason）；错误走 `event:error` data{code,message}。
+    2026-08-23 实测 response 为逐段增量；解析器按 Trae2api-cn 生产参照做
+    累计快照前缀差分（两形态兼容），单点 createTraeStreamParser。
 - 认证头两套并存（harness.dll）：`authorization` + `x-ide-token`（ide_token 语义）
   与 `x-cloudide-token`；设备头组：`x-app-id`、`x-ide-version-code`、
   `x-app-version-code`、`x-user-region`、`x-tt-env`、`x-use-ppe`、`x-env-lane`、
@@ -95,17 +112,44 @@ TraeWork CN 的聊天面是**任务制私有 RPC**（`/api/agent/v3/*`，SSE）�
 | PKCE/设备密钥自持 | 同上（"私钥为首次登录/设备注册时生成"→ 自注册同理） | 高 |
 | ExchangeToken 端点/信封 | §1 无凭据实测（10101 两层） | 高 |
 | 聊天网关域名+端点 | §1 401/1001 实测 + 二进制路由族 | 高 |
-| llm_utils_chat 请求信封 | 二进制 serde 字段 + trae2api 旧信封交叉 | **中（待联调）** |
-| SSE 事件语法 | 未知 → parseTraeEvent 容错字段发现 | **低（待联调）** |
-| 双认证头形态 | traework-cn.md §7 + 二进制双头组 | 中 |
+| llm_utils_chat 请求信封 | §2 带凭据联调（4001/2001 逐字段收敛）+ Trae2api-cn 生产参照 | **高（已联调）** |
+| SSE 事件语法 | §2 实测事件流（metadata/timing_cost/output/token_usage/done） | **高（已联调）** |
+| 双认证头形态 | traework-cn.md §7 + 二进制双头组 + §2 三头实测 | 高 |
 
-联调路径（用户一次性动作）：
+联调状态：**2026-08-23/24 已完成**（`--chat` 真实对话成功，证据
+docs/probes/trae-chat-live-*.json；verify-trae-provider 50 断言锁形态）。
+再校准路径（上游改协议时重跑）：
 ```sh
 node scripts/probe-trae-live.mjs --login      # 浏览器登录 + DeviceProof 刷新自证
 node scripts/probe-trae-live.mjs --chat "你好" # 真实对话，原始证据落 docs/probes/
 ```
-若 401：先试 `--sig raw`（DER→IEEE-P1363）；信封偏差：修 buildChatRequest；
-事件语法偏差：修 parseTraeEvent（均在 providers/trae/gateway.js，单点）。
+若 401：先试 `--sig raw`（DER→IEEE-P1363）；信封/事件语法改动单点在
+providers/trae/gateway.js（buildChatRequest / createTraeStreamParser）。
+
+### 5.1 模型路由与限制（2026-08-24 带凭据实测，重要）
+
+- **请求模型可能被服务端改派**：llm_utils_chat 的 model 字段被 function/套餐默认
+  覆盖——function=inline_chat 一律路由 kimi-k2.6（请求 glm-5.3 / DeepSeek-V4-Pro /
+  glm-5.2 均被改派，唯一真值源 = timing_cost 事件的 `provider_model_name`）；
+  function=chat_v3 / solo_agent_lite → `seed-code-lite-dev-0602-v1-part1`。网关对策：
+  解析 timing_cost，改派时以 SSE 注释行 `: trae-reroute requested=… actual=…`
+  告知（OpenAI 解析器忽略、不污染调用方会话历史），计量/日志记真实模型——
+  绝不假装请求模型被服务。
+- **限流 4011 很紧**：短时连续探测即触发（"requests have exceeded the rate
+  limit"）；联调时请求间隔 ≥20s。
+- **/api/ide/v1/chat（老端点）存活但拒现代模型**：老 TraeRequest 信封被接受
+  （user_input/intent_name/model_name…），但 model_name 校验 4023 "the model is
+  unknown"（glm-5.3 / glm-5.2 均拒）——本账号该端点注册表不含现代 preset 名，
+  不作为模型选择通道。
+- **额度面可用**：`POST api.trae.cn/trae/api/v2/pay/ide_user_ent_usage`
+  `{"require_usage":true,"req_source":1}`（三认证头 + IDE 指纹）→
+  `user_entitlement_pack_list`（本账号 500 credits 包）；GetUserInfo 的昵称字段
+  是 **ScreenName**（Name/Nickname 均为空）。
+- **remote 协议（未来路线，不进 v0.8.4）**：`POST {base}/api/remote/v1/chat_sessions`
+  （initial_message.model_name + `model_selection_strategy:"manual"` +
+  agent_type:"solo_agent_remote"）→ `GET /chat_sessions/{id}/events` SSE → stop。
+  真正的手动模型选择在 remote 面，但那是 agent 形态会话（Trae 系统提示/工具
+  框架在服务端），作 dsh LLM provider 会双重 agent 化——留作后续课题。
 
 ## 6. 免责声明
 

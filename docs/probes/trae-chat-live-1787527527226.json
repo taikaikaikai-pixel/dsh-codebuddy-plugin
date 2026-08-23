@@ -1,0 +1,51 @@
+{
+  "at": "2026-08-23T23:25:27.226Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "conversation_id": "probe-live",
+      "session_id": "probe-live",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "1+1等于几？只回答数字。"
+            }
+          ]
+        }
+      ],
+      "function": "inline_chat",
+      "model_name": "DeepSeek-V4-Pro",
+      "is_custom_model": false,
+      "scene_params": "{}",
+      "request_seq": 1,
+      "stream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sun, 23 Aug 2026 23:25:27 GMT",
+      "eagleid": "7544534117875275259566001e",
+      "server": "Tengine",
+      "server-timing": "inner; dur=1169, cdn-cache;desc=MISS,edge;dur=0,origin;dur=1198",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "timing-allow-origin": "*",
+      "transfer-encoding": "chunked",
+      "via": "ens-dynamic1.cn8729[1198,0]",
+      "x-tt-logid": "20260824072525838FA62FE5A63B64E044",
+      "x-tt-timestamp": "1787527527.140",
+      "x-tt-trace-host": "0105dba5438c12d8d6e0c60642398be11477f933c8d0135be1f9164831829e27ec1f04ed12fa9caefd4e99bef79a6f2d5ff9ae815b092f374a4857f9409c7d240452587dfa0d57ba8562d6c41fa7df96216dd6f6d6622defb3e3fad0b6cfc5a6dc",
+      "x-tt-trace-id": "00-260824072525838FA62FE5A63B64E044-47DCD5B297CDA134-00",
+      "x-tt-trace-tag": "id=03;cdn-cache=miss;type=dyn"
+    },
+    "bodyHead": "event:metadata\ndata:{\"model\":\"\",\"session_id\":\"probe-live\",\"prompt_completion_id\":0,\"ab_versions\":null,\"app_version\":\"\",\"ide_version\":null,\"ide_version_type\":null,\"prompt_cache_pool_record\":null}\n\nevent:timing_cost\ndata:{\"name\":\"llm_raw_chat_v2\",\"preprocess_timing\":125,\"postprocess_timing\":20,\"queue_timing\":0,\"platform_first_token_timing\":990,\"account_type\":\"\",\"is_retry\":false,\"middleware_processing_time\":35,\"server_processing_time\":1172,\"first_sse_event_time\":1151,\"preprocessing_detail\":{\"check_risk\":69,\"build_llm_prompt\":0,\"chat_completion_prepare\":0,\"other\":56},\"platform_detail\":{\"preprocess_timing\":26,\"first_token_timing\":913,\"network_latency\":50,\"provider_first_token\":0,\"provider_network_latency\":0,\"other\":1},\"post_processing_detail\":{\"post_security_check\":19,\"other\":1},\"provider_model_name\":\"kimi-k2.6\"}\n\nevent:output\ndata:{\"response\":\"2\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nevent:token_usage\ndata:{\"name\":\"\",\"prompt_tokens\":19,\"completion_tokens\":2,\"total_tokens\":21,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":3,\"reasoning_tokens\":0,\"prompt_tokens_total\":0,\"completion_tokens_total\":0,\"total_tokens_total\":0,\"cache_creation_input_tokens_total\":0,\"cache_read_input_tokens_total\":0,\"reasoning_tokens_total\":0,\"cluster\":\"normal_context\"}\n\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 1359
+  }
+}

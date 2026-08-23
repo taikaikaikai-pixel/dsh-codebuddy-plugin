@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.4 (2026-08-24)
+
+- **修复"登录态有问题"：聊天协议全面校准到真实线上形态**（用户实测报告驱动；无凭据探测 + Trae2api-cn（github.com/autumnsentiment/Trae2api-cn，生产级参照）+ 带凭据联调三源校准）：
+  - **登录一直是真的**——实测令牌有效（GetUserInfo 返回完整账号、账号有 500 credits 包）；"假登录"的体感来自聊天信封不对导致的失败链
+  - **请求信封重写**：`{messages[content 为 {type,text} 块数组], model, function:"inline_chat", request_id, session_id, stream:true}` + 生成参数/工具透传；三头同 JWT（+x-ide-token）+ `x-app-id`（product.json UUID，≠OAuth client_id——用错 TCC record not found）+ 数字 version-code + x-request-id/x-uid + 空 UA；设备指纹头与登录上报一致
+  - **SSE 语法落实**：metadata/timing_cost/output/token_usage/done 事件；**response/reasoning_content 是累计快照**——createTraeStreamParser 前缀差分（直接当增量会大面积重复）；排队（request_wait_in_queue/position）提示一次；工具调用（tool_calls/tool_call_info）按 id 累积转 OpenAI tool_call 流
+  - **模型改派诚实披露**：服务端按 function/套餐改派模型（inline_chat→kimi-k2.6，与请求 model 无关；真值源 timing_cost.provider_model_name）——网关以 SSE 注释行 `: trae-reroute` 告知（不污染调用方历史）、计量记真实模型、非流式 message.note 标注
+  - 账号昵称字段修正（ScreenName）；probe-trae-live.mjs 同步校准（--chat 用真实信封）
+  - 回归：verify-trae-provider **51 断言**（mock 云端说真实语法：累计快照/事件名/改派/排队/工具）；**真实端到端实测通过**——dsh 网关路径流式（皮亚诺公理回答、usage 61 tok）与非流式（"成功了"+served-by note）双绿
+  - 已知限制存档（trae-cloud-api.md §5.1）：限流 4011 紧（联调间隔 ≥20s）；/api/ide/v1/chat 老端点 4023 拒现代模型名；remote 协议（真手动模型选择）是 agent 形态、留作后续课题
+
 ## 0.8.3 (2026-08-23)
 
 - **v0.8.1→0.8.3 直达：TraeWork CN 订阅额度通道**（目标"从 dsh 消耗 Trae 订阅额度"；本轮三个里程碑按 CHANGELOG 三条目推进，一次交付）

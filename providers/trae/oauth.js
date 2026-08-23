@@ -337,10 +337,10 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
           const r = accBody?.Result
           if (r && typeof r === 'object') {
             account = {
-              nickname: r.Name ?? r.Nickname ?? r.UserName ?? r.DisplayName ?? null,
+              // 2026-08-24 实测：GetUserInfo 的昵称字段是 ScreenName。
+              nickname: r.ScreenName ?? r.Name ?? r.Nickname ?? r.UserName ?? r.DisplayName ?? null,
               uid: r.UserId ?? r.UserID ?? r.Uid ?? null,
               email: r.Email ?? null,
-              raw: undefined, // 原始响应不整体落盘（含企业等资料，按需逐字段）
             }
           }
         } catch { /* best-effort */ }

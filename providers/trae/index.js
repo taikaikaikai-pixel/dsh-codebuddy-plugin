@@ -79,6 +79,7 @@ export function createTraeProvider(deps) {
     settings: deps.settings,
     withCredentials: deps.withCredentials,
     readAuthDevice: () => deps.readAuth().device ?? null,
+    readAuthMeta: () => ({ uid: deps.readAuth().account?.uid ?? null }),
     meter: deps.meter,
     runtime: deps.runtime,
     forensics: deps.forensics,

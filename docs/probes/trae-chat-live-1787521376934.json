@@ -1,0 +1,49 @@
+{
+  "at": "2026-08-23T21:42:56.934Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "conversation_id": "probe-live",
+      "session_id": "probe-live",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "你好，请用一句话自我介绍。"
+            }
+          ]
+        }
+      ],
+      "model_name": "glm-5.3",
+      "is_custom_model": false,
+      "scene_params": "{}",
+      "request_seq": 1
+    }
+  },
+  "response": {
+    "status": 400,
+    "contentType": "application/json; charset=utf-8",
+    "headers": {
+      "connection": "keep-alive",
+      "content-length": "108",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 23 Aug 2026 21:42:56 GMT",
+      "server": "volc-dcdn",
+      "server-timing": "inner; dur=12, cdn-cache;desc=MISS, origin;dur=38, edge;dur=0",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "via": "n173-071-139.ahhefei-mp02-ct.Creative",
+      "x-dsa-origin-status": "400",
+      "x-dsa-trace-id": "1787521376fbe66dd5a4b0c0811a4cabccdcc9f548",
+      "x-request-ip": "36.59.114.96",
+      "x-tt-logid": "20260824054256BAB1C4C88935FDCA74AA",
+      "x-tt-timestamp": "1787521376.902",
+      "x-tt-trace-host": "0127b0cf403cfc4744f72d0413359221a6e23c6e1b8d29b6ebc4647984933c2a4103be19d0e369427bdc506b6858f15e69286a443eb3a03492a6b0bd51862302afbe9cae7a2403fc97684f379676653c6b5be9a1024324638fcf8962d84df95567",
+      "x-tt-trace-id": "00-260824054256BAB1C4C88935FDCA74AA-5653590E7058F1F9-00",
+      "x-tt-trace-tag": "id=5"
+    },
+    "bodyHead": "{\"code\":4001,\"message\":\"bad request: binding: expr_path=app_version_code, cause=missing required parameter\"}",
+    "bodyBytes": 108
+  }
+}

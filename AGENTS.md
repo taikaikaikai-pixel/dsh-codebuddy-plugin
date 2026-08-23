@@ -40,7 +40,8 @@
 - 聊天网关在 `trae-api-cn.mchost.guru`：`POST /api/agent/v3/llm_utils_chat`（工具型一次性聊天，dsh provider 的目标）与 `create_agent_task`（官方 agent 环）；未认证一律 401 `{code:1001}`。api.trae.cn / api.trae.com.cn 上**没有** /api/agent/v3（404）
 - OAuth 在 `api.trae.cn`：`POST /trae/api/v3/oauth/ExchangeToken`（AuthCode 模式换 token / RefreshToken 模式+DeviceProof 刷新，同一端点）；假 ClientID → 400 code 10101 "Invalid client."，真 ClientID+假 AuthCode → 10101 "无效参数"；错误信封火山系 ResponseMetadata.Error；旧路径 `/cloudide/api/v3/trae/oauth/ExchangeToken` 仍存活但请求体已演进
 - 客户端 id：SOLO Lite 分支 `en1oxy7wnw8j9n`、TRAE 分支 `ono9krqynydwx5`；认证双头 `Authorization: Cloud-IDE-JWT <token>` + `x-cloudide-token`（+`X-User-Region: CN`）
-- **llm_utils_chat 请求信封与 SSE 事件语法未经带凭据联调**（置信度中/低，二进制 serde 字段提取）——校准路径：`node scripts/probe-trae-live.mjs --login` 后 `--chat "文本"`，偏差只改 `buildChatRequest`/`parseTraeEvent`（providers/trae/gateway.js 单点）
+- **llm_utils_chat 信封与 SSE 语法已带凭据联调打通**（2026-08-23/24 实测，证据 docs/probes/trae-chat-live-*.json）：请求体 `{messages[content 为 {type,text} 块数组——字符串 400/4001], model, function:"inline_chat"（必填，缺则 2001）, request_id, session_id, stream:true}`；头需三头同 JWT（Authorization/X-Cloudide-Token/x-ide-token）+ `x-app-id`（固定 UUID `6eefa01c-…`，**≠OAuth client_id**）+ 数字串 version-code（'0.1.52' 判 missing，用 20260401）；SSE=metadata/timing_cost/output(response/reasoning_content)/token_usage(顶层计数)/done，解析器按累计快照前缀差分（createTraeStreamParser）。**model 字段不被 inline_chat 路由**——服务端恒走账户默认模型（实测 provider_model_name=kimi-k2.6，与请求值无关）
+- **模型改派与其余限制**（trae-cloud-api.md §5.1）：改派真值源=timing_cost.provider_model_name，网关以 SSE 注释行披露且计量记真实模型；限流 4011 紧（联调间隔 ≥20s）；/api/ide/v1/chat 老端点 4023 拒现代模型名；额度面 `/trae/api/v2/pay/ide_user_ent_usage` 可用（本账号 500 credits 包）；GetUserInfo 昵称字段=ScreenName；remote 协议（chat_sessions+manual 模型选择）是 agent 形态、留作后续课题
 - 官方本地 harness（:40005 axum，chat/start_chat/subscribe_events）**懒启动**且启动参数未知；其数据库加密；令牌不在 state.vscdb/凭据管理器任何可读位置——harness 驱动路线存档未采用（trae-cloud-api.md §3）
 
 ## 踩坑记录（每条都付过学费）
@@ -101,7 +102,7 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 ## 版本现状
 
-0.1.0 初始 → 0.2 文档同步 → 0.3 对齐 /v3/config + verify 脚本 → 0.4 思考强度可调 → 0.5 ctx.web 后端 + 流式桥 + 识图 → 0.5.1 设置卡 → 0.5.2 OAuth + 多 Key → 0.5.3 功能分区 + 一键开关 → 0.5.4 模型逐个启停同步选择器 → 0.5.5 会话管理 A+B → 0.5.6 桥三 bug 修复 + 设置卡重构 → 0.6 主聊天走桥（OAuth 覆盖模型对话）→ 0.6.1 桥取证日志 + 缓存/额度诊断存档 → 0.7 设置卡流畅度 + 搜索修复与错误硬化 + 生图接入 + 多 Key 轮询 → 0.7.1 设置卡迁移 dsh 原生 UI 资源（primitives+tokens+注入样式）+ 回归目录重建 → 0.7.2 桥 EADDRINUSE 崩溃修复 + "额度与用量"设置卡分区（桥恒开 usage 计量 + 轮次聚类 + 账户额度信号；数字剩余额度无 API 已实证存档）→ 0.7.3 适配 dsh rc.7（settings.plugin.item 槽位 keyed 化：宿主半注册 settings 命名空间 + 浏览器半注册加 key，双版兼容写法见踩坑 #18；其余 rc.7 变化逐包 diff 实证无关）→ 0.7.4 主聊天 content_filter 修复（根因=pi-ai 把推理模型 system prompt 写成 developer 角色触发网关审核，桥出站重写 developer→system；dump+bisect 取证法见踩坑 #19）→ 0.7.5 架构重构（index.js 拆 core/ provider 无关凭据边缘层 + providers/codebuddy/ 薄适配器，规则文档裁判逐字段去留；证伪测试 verify-core-generic 证明第二 OpenAI 兼容上游接入 core/ 零改动；踩坑 #20 实例状态纪律）→ 0.8.0 额度可见 + 模型动态化 + 多服务商凭据中心 → 0.8.1–0.8.3 **TraeWork CN 订阅额度通道**（0.8.1 目录提取器+自持设备密钥 OAuth+目录镜像；0.8.2 OpenAI↔Trae 翻译网关 :3902+patch 路由+组合根接线；0.8.3 联调脚本+证据归档+43 断言离线回归；聊天信封/SSE 语法待 probe-trae-live 一次性联调校准，踩坑 #22–#25）（详见 CHANGELOG.md）。
+0.1.0 初始 → 0.2 文档同步 → 0.3 对齐 /v3/config + verify 脚本 → 0.4 思考强度可调 → 0.5 ctx.web 后端 + 流式桥 + 识图 → 0.5.1 设置卡 → 0.5.2 OAuth + 多 Key → 0.5.3 功能分区 + 一键开关 → 0.5.4 模型逐个启停同步选择器 → 0.5.5 会话管理 A+B → 0.5.6 桥三 bug 修复 + 设置卡重构 → 0.6 主聊天走桥（OAuth 覆盖模型对话）→ 0.6.1 桥取证日志 + 缓存/额度诊断存档 → 0.7 设置卡流畅度 + 搜索修复与错误硬化 + 生图接入 + 多 Key 轮询 → 0.7.1 设置卡迁移 dsh 原生 UI 资源（primitives+tokens+注入样式）+ 回归目录重建 → 0.7.2 桥 EADDRINUSE 崩溃修复 + "额度与用量"设置卡分区（桥恒开 usage 计量 + 轮次聚类 + 账户额度信号；数字剩余额度无 API 已实证存档）→ 0.7.3 适配 dsh rc.7（settings.plugin.item 槽位 keyed 化：宿主半注册 settings 命名空间 + 浏览器半注册加 key，双版兼容写法见踩坑 #18；其余 rc.7 变化逐包 diff 实证无关）→ 0.7.4 主聊天 content_filter 修复（根因=pi-ai 把推理模型 system prompt 写成 developer 角色触发网关审核，桥出站重写 developer→system；dump+bisect 取证法见踩坑 #19）→ 0.7.5 架构重构（index.js 拆 core/ provider 无关凭据边缘层 + providers/codebuddy/ 薄适配器，规则文档裁判逐字段去留；证伪测试 verify-core-generic 证明第二 OpenAI 兼容上游接入 core/ 零改动；踩坑 #20 实例状态纪律）→ 0.8.0 额度可见 + 模型动态化 + 多服务商凭据中心 → 0.8.1–0.8.3 **TraeWork CN 订阅额度通道**（0.8.1 目录提取器+自持设备密钥 OAuth+目录镜像；0.8.2 OpenAI↔Trae 翻译网关 :3902+patch 路由+组合根接线；0.8.3 联调脚本+证据归档+43 断言离线回归，踩坑 #22–#25）→ **2026-08-23/24 带凭据联调打通 Trae 聊天面**（信封+SSE 语法逐字段实测校准：content 块数组/function 必填/x-app-id≠client_id/数字 version-code/三头同 JWT；发现 inline_chat 不做模型路由、恒走账户默认模型；verify-trae-provider 50 断言）（详见 CHANGELOG.md）。
 
 ## v0.8.x：TraeWork CN 订阅额度通道（0.8.1→0.8.3 直达，2026-08-23）
 
@@ -109,8 +110,8 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 - **0.8.1 凭据与目录**：`providers/trae/oauth.js` 设备流（PKCE+回环回调+ExchangeToken 双模式）；`catalog.js` 复用 scripts/trae-model-catalog.mjs 纯函数读本机 state.vscdb；设置卡 TraeWork CN 分区（启用/登录/同步/端口/域名）。
 - **0.8.2 聊天桥**：翻译网关 :3902（`traeBridgePort`）+ patch 哨兵路由 + apply 生命周期（迟绑定 `traeSettingsFn`、启用自动同步目录、Trae 用量进同一 usage-meter）。
-- **0.8.3 联调与稳固化**：`scripts/probe-trae-live.mjs`（--login/--chat/--sig）；`docs/reverse/trae-cloud-api.md` 证据归档（无凭据探测锚点：mchost 401/1001、ExchangeToken 10101 两层、GetUserInfo 20310）；verify-trae-provider 43 断言（mock 用我们注册的公钥**验 DeviceProof 签名**，自持密钥链路端到端证通）。
-- **已知边界（诚实标注）**：llm_utils_chat 请求信封与 SSE 事件语法未经真实联调（置信度中/低）——用户跑一次 `--login` 后 `--chat` 即可校准，改动单点在 buildChatRequest/parseTraeEvent；dsh 侧主聊天选 trae 模型前需先启用通道+登录+同步目录（设置卡有全流程）。
+- **0.8.3 联调与稳固化**：`scripts/probe-trae-live.mjs`（--login/--chat/--sig）；`docs/reverse/trae-cloud-api.md` 证据归档（无凭据探测锚点：mchost 401/1001、ExchangeToken 10101 两层、GetUserInfo 20310）；verify-trae-provider 50 断言（mock 用我们注册的公钥**验 DeviceProof 签名**，自持密钥链路端到端证通；2026-08-23/24 联调后锁真实信封/SSE 形态）。
+- **已知边界（诚实标注）**：聊天面已于 2026-08-23/24 带凭据联调打通（真实对话成功，verify 50 断言）；剩余边界=**模型选择不生效**（inline_chat 函数位由服务端路由到账户默认模型，dsh 侧 24 个 trae 模型清单实为同一出口，多模型价值待上游形态确认）；dsh 侧主聊天选 trae 模型前需先启用通道+登录+同步目录（设置卡有全流程）。
 
 ## v0.5.5：会话管理 A + B（已完成 2026-08-17）
 

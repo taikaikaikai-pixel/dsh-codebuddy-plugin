@@ -1,25 +1,37 @@
 /**
  * providers/trae/gateway.js — OpenAI ↔ Trae 翻译网关（Trae 聊天桥）。
  *
- * 与 core/bridge.js 的分工：core 桥是"透传代理"（上游说 OpenAI 方言，只做
- * 头注入/SSE 聚合）；本网关是"协议翻译器"——Trae 云端说私有方言
- * （/api/agent/v3/*，SSE 事件非 OpenAI 形态），请求与响应都要改写，因此
- * 独立成 Trae 适配器文件而不是给 core/ 加钩子（core 的 30 项回归语义不动）。
- * 复用 core 的原语：SessionLimiter（会话并发闸）与 usage-meter（计量）。
+ * 与 core/bridge.js 的分工：core 桥是"透传代理"（上游说 OpenAI 方言）；本网关是
+ * "协议翻译器"——Trae 云端说私有方言，请求/响应都要改写。复用 core 原语：
+ * SessionLimiter（会话并发闸）与 usage-meter（计量）。
  *
- * 出站协议（证据与置信度，docs/reverse/trae-cloud-api.md 为裁判）：
- *   POST {chatBaseURL}/api/agent/v3/llm_utils_chat   —— 置信度：中
- *     请求信封字段名来自 harness.dll serde 结构提取（role/content/messages/
- *     model_name/is_custom_model/conversation_id/session_id/scene_params/
- *     request_seq）；**未经带凭据联调**，live probe（scripts/probe-trae-live.mjs）
- *     负责校准——发现偏差只改 buildChatRequest 一处。
- *   认证：Authorization: Cloud-IDE-JWT <token> + x-cloudide-token（双头形态，
- *   traework-cn.md §7）+ 设备头组（harness 二进制提取）。
- *   流式：SSE，事件语法未知 → parseTraeEvent 用"容错字段发现"提取
- *     文本增量/用量/结束/错误（候选字段名并集），同样由 live probe 校准。
+ * 出站协议（2026-08-24 带凭据实测校准，证据 docs/reverse/trae-cloud-api.md §5；
+ * 生产级参照 github.com/autumnsentiment/Trae2api-cn 的 raw client）：
+ *   POST {chatBaseURL}/api/agent/v3/llm_utils_chat
+ *   头（IDE 指纹全套——缺设备头曾被间歇拒绝）：
+ *     Authorization / X-Cloudide-Token / x-ide-token 三头同值（JWT）
+ *     x-app-id（product.json appId `6eefa01c-…`，**不是 OAuth client_id**——
+ *       用错报 TCC "record not found"）；缺省报 4001 "expr_path=app_id"
+ *     x-ide-version 3.3.67 / x-ide-version-code 20260401（数字串，'0.1.52' 会判
+ *       missing）/ x-ide-version-type stable
+ *     x-device-id / x-machine-id / x-device-brand（设备指纹，与登录上报一致）
+ *     x-request-id（每请求 uuid）/ x-uid（账号 uid）/ User-Agent 置空
+ *   体：{messages[native], model, function:"inline_chat", request_id, session_id,
+ *       stream:true, max_tokens?, tools?[OpenAI 原生], tool_choice?, 生成参数透传}
+ *     native message：content 为 [{type:"text",text}] 块数组（字符串直发 400/4001
+ *     "cannot unmarshal string …LLMRawMessageContent"）；assistant.tool_calls 与
+ *     tool 角色原生透传。function 必填（缺则 2001 "function is empty, cannot
+ *     resolve model by usage="）
+ *   SSE（事件名在 event: 行或 data.event 字段）：
+ *     error → 抛错（1001 未认证 / 4011 限流 / 2001 模型解析失败）
+ *     request_wait_in_queue / data.position → 排队提示（位置变化才发）
+ *     token_usage → usage（data.usage 或 data 顶层计数）
+ *     文本：data.response / data.reasoning_content 为**累计快照**——前缀差分出
+ *       增量（不是逐段 delta！直接当增量会大面积重复）；finish_reason 可出现在
+ *       中间快照，只有 event:done 或 data.stop_reason 才真正结束
+ *     工具调用：data.tool_calls 数组或 data.tool_call_info{name,params,id}
  *
- * 生命周期纪律（踩坑 #17）：listen 失败绝不抛出——降级为 runtime.lastError，
- * 插件其余功能不受影响。
+ * 生命周期纪律（踩坑 #17）：listen 失败绝不抛出——降级为 runtime.lastError。
  */
 
 import { createServer } from 'node:http'
@@ -29,114 +41,276 @@ import { appendFileSync } from 'node:fs'
 import { SessionLimiter } from '../../core/bridge.js'
 import { normalizeTraeError, TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './errors.js'
 
-/** Trae 出站静态头组（设备/版本标识；harness.dll strings 提取的字段名）。 */
-function traeOutboundHeaders(device) {
+/** Trae 云端客户端指纹（product.json appId + Trae2api-cn 生产实测值，2026-08-24 校准）。 */
+export const TRAE_APP_ID = '6eefa01c-1036-4c7e-9ca5-d891f63bfcd8'
+export const TRAE_IDE_VERSION = '3.3.67'
+export const TRAE_IDE_VERSION_CODE = '20260401'
+const CHAT_PATH = '/api/agent/v3/llm_utils_chat'
+const DEFAULT_FUNCTION = 'inline_chat'
+
+/**
+ * 出站 IDE 头组（凭证三头由调用处合入）。设备指纹取自 oauth.js 生成的设备
+ * 身份（device_id/machine_id 与登录时上报的一致）。
+ */
+export function traeOutboundHeaders(device, uid, requestId) {
   const h = {
     'Content-Type': 'application/json',
-    Accept: 'text/event-stream,application/json',
-    'X-User-Region': 'CN',
-    'x-ide-version': '0.1.52',
-    'x-app-version-code': '0.1.52',
+    Accept: 'text/event-stream',
+    Connection: 'keep-alive',
+    'x-app-id': TRAE_APP_ID,
+    'x-ide-version': TRAE_IDE_VERSION,
+    'x-ide-version-code': TRAE_IDE_VERSION_CODE,
+    'x-ide-version-type': 'stable',
+    'x-device-cpu': 'AMD',
+    'x-device-type': 'windows',
+    'x-os-version': 'Windows 10',
+    'x-system-type': 'Windows',
+    'x-request-id': requestId,
+    'User-Agent': '',
   }
   if (device?.deviceId) h['x-device-id'] = device.deviceId
   if (device?.machineId) h['x-machine-id'] = device.machineId
   if (device?.deviceBrand) h['x-device-brand'] = device.deviceBrand
-  if (device?.deviceCpu) h['x-device-cpu'] = device.deviceCpu
-  if (device?.osVersion) h['x-os-version'] = device.osVersion
+  if (uid) h['x-uid'] = String(uid)
   return h
 }
 
-/**
- * OpenAI messages → Trae llm_utils_chat 请求信封。
- *
- * 置信度中：字段名来自二进制提取。系统消息保留 role:system（结构体 role 为
- * 自由字符串）。多模态 content 数组折叠为纯文本（Trae 走 multi_media 字段，
- * 未接）。stream 由本网关强制（Trae 端点行为未证，保守直发）。
- */
-export function buildChatRequest(payload, conversationId) {
-  const messages = (Array.isArray(payload.messages) ? payload.messages : [])
-    .filter((m) => m && typeof m === 'object')
-    .map((m) => {
-      const content = typeof m.content === 'string'
-        ? m.content
-        : Array.isArray(m.content)
-          ? m.content.filter((p) => p?.type === 'text').map((p) => p.text).join('\n')
-          : ''
-      return { role: String(m.role ?? 'user'), content }
-    })
-  return {
-    conversation_id: conversationId,
-    session_id: conversationId,
-    messages,
-    model_name: typeof payload.model === 'string' ? payload.model : '',
-    is_custom_model: false,
-    scene_params: {},
-    request_seq: 1,
+/** OpenAI content（字符串或分段数组）→ Trae 原生 text 块数组（非文本段折叠丢弃）。 */
+function toTextBlocks(content) {
+  if (typeof content === 'string') return [{ type: 'text', text: content }]
+  if (Array.isArray(content)) {
+    const texts = content
+      .filter((p) => p && typeof p === 'object' && p.type === 'text' && typeof p.text === 'string')
+      .map((p) => ({ type: 'text', text: p.text }))
+    if (texts.length) return texts
   }
+  return [{ type: 'text', text: '' }]
 }
 
-/**
- * 容错解析一个 Trae SSE data JSON → {text?, usage?, finish?, error?}。
- * 事件语法未经联调，按候选字段并集提取；全部未命中返回空对象（跳过）。
- */
-export function parseTraeEvent(chunk, eventName) {
-  if (chunk == null || typeof chunk !== 'object') return {}
-  const out = {}
-
-  // 错误：code !== 0 的信封（mchost 形态）或显式 error 字段。
-  if (chunk.error != null || (chunk.code != null && chunk.code !== 0)) {
-    out.error = normalizeTraeError(200, chunk)
-    return out
+/** OpenAI 工具调用 → Trae 原生（形态同构，arguments 归一为字符串）。 */
+function nativeToolCalls(toolCalls) {
+  if (!Array.isArray(toolCalls)) return undefined
+  const out = []
+  for (const c of toolCalls) {
+    if (!c || typeof c !== 'object') continue
+    const fn = c.function && typeof c.function === 'object' ? c.function : null
+    out.push({
+      id: typeof c.id === 'string' && c.id ? c.id : `trae-call-${out.length}`,
+      type: 'function',
+      function: {
+        name: String(fn?.name ?? ''),
+        arguments: typeof fn?.arguments === 'string' ? fn.arguments : JSON.stringify(fn?.arguments ?? {}),
+      },
+    })
   }
+  return out.length ? out : undefined
+}
 
-  // 文本增量：候选字段按优先级。
-  const candidates = [
-    chunk.delta, chunk.text, chunk.content, chunk.message?.content,
-    chunk.data?.delta, chunk.data?.content, chunk.data?.text,
-    Array.isArray(chunk.choices) ? chunk.choices[0]?.delta?.content : null,
-  ]
-  for (const c of candidates) {
-    if (typeof c === 'string' && c.length > 0) { out.text = c; break }
-  }
-
-  // 用量：usage 形态归一为 OpenAI 计数（缺字段的留给计量层兜底）。
-  const u = chunk.usage ?? chunk.Usage ?? chunk.data?.usage
-  if (u && typeof u === 'object') {
-    out.usage = {
-      prompt_tokens: u.prompt_tokens ?? u.promptTokens ?? null,
-      completion_tokens: u.completion_tokens ?? u.completionTokens ?? null,
-      total_tokens: u.total_tokens ?? u.totalTokens ?? null,
+/** OpenAI messages → Trae native messages（content 块化；tool_calls/tool 角色原生）。 */
+export function toNativeMessages(messages) {
+  const out = []
+  for (const m of (Array.isArray(messages) ? messages : [])) {
+    if (!m || typeof m !== 'object') continue
+    const role = String(m.role ?? 'user')
+    if (role === 'tool') {
+      out.push({
+        role: 'tool',
+        tool_call_id: String(m.tool_call_id ?? m.toolCallId ?? ''),
+        ...(typeof m.name === 'string' && m.name ? { name: m.name } : {}),
+        content: toTextBlocks(m.content),
+      })
+      continue
     }
-  }
-
-  // 结束：显式事件名或布尔/枚举字段。
-  const finishFlag = chunk.is_end ?? chunk.isEnd ?? chunk.finished ?? chunk.done
-  if (finishFlag === true || ['finish', 'done', 'end', 'message_end'].includes(String(eventName ?? ''))) {
-    out.finish = typeof chunk.finish_reason === 'string' ? chunk.finish_reason : 'stop'
+    const native = { role, content: toTextBlocks(m.content) }
+    const calls = nativeToolCalls(m.tool_calls)
+    if (role === 'assistant' && calls) native.tool_calls = calls
+    out.push(native)
   }
   return out
 }
 
-/** OpenAI chunk 形态工厂。 */
-function oaiChunk(id, model, delta, finishReason = null) {
+/** 透传白名单：上游声明接受的生成参数（Trae2api-cn RAW_GENERATION_FIELDS 同源）。 */
+const GENERATION_FIELDS = [
+  'temperature', 'top_p', 'stop', 'presence_penalty', 'frequency_penalty', 'seed',
+  'reasoning_effort', 'stream_options', 'response_format', 'service_tier', 'user',
+  'logprobs', 'top_logprobs', 'parallel_tool_calls',
+]
+
+/** OpenAI 工具定义透传（上游接受 OpenAI 原生形态）。 */
+function nativeTools(tools) {
+  if (!Array.isArray(tools) || !tools.length) return undefined
+  const out = tools
+    .filter((t) => t && typeof t === 'object' && t.function && typeof t.function === 'object')
+    .map((t) => ({ type: 'function', function: t.function }))
+  return out.length ? out : undefined
+}
+
+/**
+ * OpenAI chat payload → Trae llm_utils_chat 请求体（2026-08-24 实测校准形态）。
+ * 返回 {body, requestId}（requestId 同时用于 x-request-id 头）。
+ */
+export function buildChatRequest(payload, sessionId) {
+  const requestId = randomUUID()
+  const body = {
+    messages: toNativeMessages(payload.messages),
+    model: typeof payload.model === 'string' ? payload.model : 'glm-5.3',
+    function: DEFAULT_FUNCTION,
+    request_id: requestId,
+    session_id: sessionId,
+    stream: true,
+  }
+  const maxTokens = payload.max_tokens ?? payload.max_completion_tokens
+  if (Number.isFinite(maxTokens) && maxTokens > 0) body.max_tokens = Math.floor(maxTokens)
+  const tools = nativeTools(payload.tools)
+  if (tools) body.tools = tools
+  if (payload.tool_choice !== undefined && payload.tool_choice !== null) {
+    const named = payload.tool_choice?.type === 'function' ? payload.tool_choice.function?.name : null
+    body.tool_choice = named ? 'required' : String(payload.tool_choice)
+  }
+  for (const f of GENERATION_FIELDS) {
+    if (payload[f] !== undefined && payload[f] !== null) body[f] = payload[f]
+  }
+  return { body, requestId }
+}
+
+/** 累计快照 → 增量（前缀差分；回退公共前缀——镜像 Trae2api-cn ProtocolTextAccumulator）。 */
+export function cumulativeDelta(previous, current) {
+  if (typeof current !== 'string' || current === '') return ''
+  if (typeof previous !== 'string' || previous === '') return current
+  if (current.startsWith(previous)) return current.slice(previous.length)
+  if (previous.startsWith(current)) return ''
+  let i = 0
+  const limit = Math.min(previous.length, current.length)
+  while (i < limit && previous[i] === current[i]) i += 1
+  return current.slice(i)
+}
+
+/** usage 字段名宽容映射（snake/camel 都收）。 */
+function mapUsage(u) {
+  if (!u || typeof u !== 'object') return null
+  const num = (...keys) => {
+    for (const k of keys) {
+      if (typeof u[k] === 'number' && Number.isFinite(u[k])) return u[k]
+    }
+    return null
+  }
+  const mapped = {
+    prompt_tokens: num('prompt_tokens', 'promptTokens', 'input_tokens'),
+    completion_tokens: num('completion_tokens', 'completionTokens', 'output_tokens'),
+    total_tokens: num('total_tokens', 'totalTokens'),
+  }
+  return mapped.total_tokens != null || mapped.prompt_tokens != null || mapped.completion_tokens != null ? mapped : null
+}
+
+/**
+ * 有状态流解析器：吃 (eventName, dataObj)，产出翻译事件
+ * {text?, reasoning?, toolCall?, usage?, queue?, finish?, error?}。
+ * 文本累计差分、工具调用按 id 去重累积、done/stop_reason 终结语义均在此。
+ */
+export function createTraeStreamParser() {
+  const state = {
+    response: '', reasoning: '', usage: null, finish: null, done: false,
+    lastQueuePos: null, toolOrder: [], toolArgs: new Map(),
+    providerModel: null,
+  }
   return {
+    isDone: () => state.done,
+    usage: () => state.usage,
+    finish: () => state.finish,
+    /** 服务端实际使用的模型（timing_cost.provider_model_name；模型改派时以此为准）。 */
+    providerModel: () => state.providerModel,
+    handle(eventName, obj) {
+      if (!obj || typeof obj !== 'object') return {}
+      const event = typeof obj.event === 'string' && obj.event ? obj.event : eventName
+      if (event === 'error') {
+        state.done = true
+        return { error: normalizeTraeError(200, obj) }
+      }
+      if (event === 'timing_cost') {
+        // timing_cost 携带 provider_model_name = 实际派发的模型（2026-08-24
+        // 实测：请求模型可能被 function/套餐默认改派，此字段是唯一真值源）。
+        if (typeof obj.provider_model_name === 'string' && obj.provider_model_name) {
+          state.providerModel = obj.provider_model_name
+        }
+        return {}
+      }
+      if (event === 'metadata') return {}
+      if (event === 'request_wait_in_queue' || obj.position != null) {
+        const pos = obj.position ?? 0
+        if (pos !== state.lastQueuePos) {
+          state.lastQueuePos = pos
+          return { queue: pos }
+        }
+        return {}
+      }
+      if (event === 'token_usage') {
+        state.usage = mapUsage(obj.usage ?? obj)
+        return {}
+      }
+      const out = {}
+      const reasoningSnap = typeof obj.reasoning_content === 'string' ? obj.reasoning_content : ''
+      const responseSnap = typeof obj.response === 'string' ? obj.response : ''
+      const rd = cumulativeDelta(state.reasoning, reasoningSnap)
+      const td = cumulativeDelta(state.response, responseSnap)
+      if (reasoningSnap) state.reasoning = reasoningSnap
+      if (responseSnap) state.response = responseSnap
+      if (rd) out.reasoning = rd
+      if (td) out.text = td
+      // 工具调用：数组形态或单条 tool_call_info，按 id 累积（arguments 视为累计快照）。
+      const rawCalls = Array.isArray(obj.tool_calls) ? obj.tool_calls.slice() : []
+      const info = obj.tool_call_info
+      if (info && typeof info === 'object') {
+        rawCalls.push({
+          id: info.tool_call_id ?? info.id,
+          function: { name: info.name, arguments: typeof info.params === 'string' ? info.params : JSON.stringify(info.params ?? {}) },
+        })
+      }
+      for (const c of rawCalls) {
+        if (!c || typeof c !== 'object') continue
+        const id = typeof c.id === 'string' && c.id ? c.id : `trae-call-${state.toolOrder.length}`
+        if (!state.toolOrder.includes(id)) state.toolOrder.push(id)
+        const args = typeof c.function?.arguments === 'string' ? c.function.arguments : JSON.stringify(c.function?.arguments ?? {})
+        state.toolArgs.set(id, { id, name: String(c.function?.name ?? ''), arguments: args })
+        out.toolCall = { index: state.toolOrder.indexOf(id), ...state.toolArgs.get(id) }
+      }
+      if (obj.usage) {
+        const u = mapUsage(obj.usage)
+        if (u) state.usage = u
+      }
+      if (obj.finish_reason) state.finish = String(obj.finish_reason)
+      if (event === 'done' || obj.stop_reason) {
+        state.done = true
+        state.finish = String(obj.finish_reason ?? obj.stop_reason ?? state.finish ?? 'stop')
+        out.finish = state.finish
+      }
+      return out
+    },
+  }
+}
+
+/** OpenAI chunk 形态工厂。 */
+function oaiChunk(id, model, delta, finishReason = null, usage = null) {
+  const chunk = {
     id,
     object: 'chat.completion.chunk',
     created: Math.floor(Date.now() / 1000),
     model,
     choices: [{ index: 0, delta, ...(finishReason ? { finish_reason: finishReason } : {}) }],
   }
+  if (usage) chunk.usage = usage
+  return chunk
 }
 
 /**
  * @param {{
  *   settings: () => object,            // 需要 traeChatBaseURL / maxConcurrentPerSession
  *   withCredentials: (attempt: (cred) => Promise<Response>) => Promise<{cred,res,err}>,
- *   readAuthDevice: () => object|null, // 设备身份（出站设备头组）
+ *   readAuthDevice: () => object|null, // 设备身份（出站设备指纹头）
+ *   readAuthMeta: () => { uid?: * },   // 账号 uid（x-uid 头）
  *   meter: { record: Function },
  *   runtime: { running, port, lastError },
  *   forensics?: { logPath: () => string|undefined },
- *   getCatalogIds: () => string[],     // 已同步目录 id（/models 用）
+ *   getCatalogIds: () => string[],
  * }} deps
  */
 export function createTraeGateway(deps) {
@@ -151,7 +325,7 @@ export function createTraeGateway(deps) {
     } catch { /* best-effort */ }
   }
 
-  /** 提取会话 id（与 core 桥同源的候选序）。 */
+  /** 提取会话 id（与 core 桥同源的候选序；复用为 Trae session_id）。 */
   function extractSessionId(headers, payload) {
     for (const c of [headers['x-conversation-id'], headers['x-session-id'], headers['session_id'], payload?.conversation_id, payload?.session_id]) {
       if (typeof c === 'string' && c.trim()) return c.trim()
@@ -170,22 +344,24 @@ export function createTraeGateway(deps) {
     }
     const model = typeof payload.model === 'string' ? payload.model : ''
     const wantStream = payload.stream === true
-    const sessionId = extractSessionId(req.headers, payload)
-    const conversationId = sessionId ?? randomUUID()
+    const sessionId = extractSessionId(req.headers, payload) ?? randomUUID()
     const t0 = Date.now()
 
     const release = await limiter.acquire(sessionId, s.maxConcurrentPerSession ?? 4)
     try {
+      const { body, requestId } = buildChatRequest(payload, sessionId)
       const { cred, res: upstream0, err } = await deps.withCredentials((c) => {
+        const token = String(c.authorization).replace(/^Cloud-IDE-JWT\s+/, '')
         const headers = {
-          ...traeOutboundHeaders(deps.readAuthDevice()),
-          Authorization: c.authorization,
-          ...Object.fromEntries(Object.entries(c.headers ?? {}).map(([k, v]) => [k, v])),
+          ...traeOutboundHeaders(deps.readAuthDevice?.(), deps.readAuthMeta?.()?.uid, requestId),
+          Authorization: `Cloud-IDE-JWT ${token}`,
+          'X-Cloudide-Token': token,
+          'x-ide-token': token,
         }
-        return fetch(`${s.traeChatBaseURL}/api/agent/v3/llm_utils_chat`, {
+        return fetch(`${s.traeChatBaseURL}${CHAT_PATH}`, {
           method: 'POST',
           headers,
-          body: JSON.stringify(buildChatRequest(payload, conversationId)),
+          body: JSON.stringify(body),
         })
       })
       if (!cred || err) {
@@ -197,22 +373,32 @@ export function createTraeGateway(deps) {
       const upstream = upstream0
       if (!upstream.ok) {
         const parsed = normalizeTraeError(upstream.status, await upstream.json().catch(() => null))
-        res.writeHead(upstream.status === 401 ? 401 : 502, { 'Content-Type': 'application/json' })
+        const status = upstream.status === 401 || upstream.status === 429 ? upstream.status : 502
+        res.writeHead(status, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: { message: `trae ${parsed.code ?? ''} ${parsed.message}`.trim(), code: parsed.code } }))
         gwLog({ dir: 'err', status: upstream.status, code: parsed.code, model, ms: Date.now() - t0 })
         return
       }
 
-      // 翻译转发：Trae SSE → OpenAI SSE（流式）或聚合（非流式）。
       const id = `trae-gateway-${randomUUID().slice(0, 8)}`
       let content = ''
       let usage = null
       let finishReason = null
-      if (wantStream) res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })
+      let rerouteNotified = false
+      const parser = createTraeStreamParser()
+      if (wantStream) {
+        res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })
+        res.write(`data: ${JSON.stringify(oaiChunk(id, model, { role: 'assistant' }))}\n\n`)
+      }
+      const send = (chunk) => {
+        if (wantStream) res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+      }
+
       const reader = upstream.body.getReader()
       const decoder = new TextDecoder()
       let buf = ''
       let lastEventName = null
+      let queueEmitted = false
       for (;;) {
         const { done, value } = await reader.read()
         if (done) break
@@ -223,59 +409,82 @@ export function createTraeGateway(deps) {
           buf = buf.slice(nl + 1)
           if (!line) { lastEventName = null; continue }
           if (line.startsWith('event:')) { lastEventName = line.slice(6).trim(); continue }
+          if (line.startsWith('id:')) continue
           if (!line.startsWith('data:')) continue
           const data = line.slice(5).trim()
-          if (data === '[DONE]') { finishReason = finishReason ?? 'stop'; continue }
+          if (data === '[DONE]') { parser.handle('done', {}); continue }
           let chunk = null
           try { chunk = JSON.parse(data) } catch { continue }
-          const ev = parseTraeEvent(chunk, lastEventName)
+          const ev = parser.handle(lastEventName, chunk)
           if (ev.error) {
-            if (wantStream && !res.headersSent) { /* fallthrough to error emit below */ }
             const msg = `trae ${ev.error.code ?? ''} ${ev.error.message}`.trim()
-            if (wantStream) {
-              res.write(`data: ${JSON.stringify({ error: { message: msg, code: ev.error.code } })}\n\n`)
-              res.write('data: [DONE]\n\n')
-              res.end()
-            } else {
+            if (!res.headersSent) {
               res.writeHead(502, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: { message: msg, code: ev.error.code } }))
+            } else {
+              send({ error: { message: msg, code: ev.error.code } })
+              res.write('data: [DONE]\n\n')
+              res.end()
             }
             gwLog({ dir: 'err', model, ms: Date.now() - t0, code: ev.error.code })
             return
           }
+          if (ev.queue != null && !queueEmitted) {
+            queueEmitted = true
+            send(oaiChunk(id, model, { content: `（Trae 排队中，位置 ${ev.queue}）\n` }))
+          }
+          // 模型改派提示（一次）：请求模型 ≠ timing_cost 报告的实际模型时，
+          // 以 SSE 注释行告知（OpenAI 解析器忽略、原始流/日志可见——不污染
+          // 调用方会话历史），计量/日志用真实模型——绝不假装请求模型被服务。
+          const actual = parser.providerModel()
+          if (actual && !rerouteNotified && model && actual !== model) {
+            rerouteNotified = true
+            if (wantStream) res.write(`: trae-reroute requested=${model} actual=${actual}\n\n`)
+          }
+          if (ev.reasoning) send(oaiChunk(id, model, { reasoning_content: ev.reasoning }))
           if (ev.text) {
             content += ev.text
-            if (wantStream) res.write(`data: ${JSON.stringify(oaiChunk(id, model, { content: ev.text }))}\n\n`)
+            send(oaiChunk(id, model, { content: ev.text }))
           }
-          if (ev.usage) usage = ev.usage
-          if (ev.finish) finishReason = ev.finish
+          if (ev.toolCall) {
+            send(oaiChunk(id, model, {
+              tool_calls: [{
+                index: ev.toolCall.index,
+                id: ev.toolCall.id,
+                type: 'function',
+                function: { name: ev.toolCall.name, arguments: ev.toolCall.arguments },
+              }],
+            }))
+          }
         }
       }
-      if (finishReason == null) finishReason = 'stop'
+      finishReason = parser.finish() ?? 'stop'
+      usage = parser.usage()
+      const actualModel = parser.providerModel() ?? model
       if (wantStream) {
-        const final = oaiChunk(id, model, {}, finishReason)
-        if (usage) final.usage = usage
-        res.write(`data: ${JSON.stringify(final)}\n\n`)
+        send(oaiChunk(id, model, {}, finishReason, usage))
         res.write('data: [DONE]\n\n')
         res.end()
       } else {
         res.writeHead(200, { 'Content-Type': 'application/json' })
+        const message = { role: 'assistant', content }
+        if (parser.providerModel() && parser.providerModel() !== model) {
+          message.note = `served by ${parser.providerModel()} (requested ${model})`
+        }
         res.end(JSON.stringify({
           id,
           object: 'chat.completion',
           created: Math.floor(Date.now() / 1000),
           model,
-          choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: finishReason }],
+          choices: [{ index: 0, message, finish_reason: finishReason }],
           usage: usage ?? {},
         }))
       }
-      if (usage) deps.meter.record({ ts: t0, kind: 'chat', model: model || null, usage })
-      gwLog({ dir: 'out', model, ms: Date.now() - t0, bytes: content.length, usage, finishReason })
+      if (usage) deps.meter.record({ ts: t0, kind: 'chat', model: actualModel || null, usage })
+      gwLog({ dir: 'out', model, actualModel, rerouted: actualModel !== model, ms: Date.now() - t0, bytes: content.length, usage, finishReason })
     } catch (err) {
-      if (!res.headersSent) {
-        res.writeHead(500, { 'Content-Type': 'application/json' })
-      }
-      res.end(JSON.stringify({ error: { message: `trae gateway error: ${err?.message ?? err}` } }))
+      if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'application/json' })
+      try { res.end(JSON.stringify({ error: { message: `trae gateway error: ${err?.message ?? err}` } })) } catch { res.end() }
     } finally {
       release()
     }

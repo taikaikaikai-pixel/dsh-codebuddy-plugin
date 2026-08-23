@@ -29,7 +29,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { createTraeOAuth } from '../providers/trae/oauth.js'
-import { buildChatRequest } from '../providers/trae/gateway.js'
+import { buildChatRequest, TRAE_APP_ID, TRAE_IDE_VERSION, TRAE_IDE_VERSION_CODE } from '../providers/trae/gateway.js'
 
 const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
 const AUTH_PATH = join(DSH_HOME, 'trae-plugin-auth.json')
@@ -106,25 +106,33 @@ if (!cred) {
   process.exit(1)
 }
 const payload = { model: process.env.TRAE_MODEL ?? 'glm-5.3', stream: true, messages: [{ role: 'user', content: text }] }
-const body = JSON.stringify(buildChatRequest(payload, 'probe-live'))
+const { body: reqBody, requestId } = buildChatRequest(payload, 'probe-live')
+const token = String(cred.authorization).replace(/^Cloud-IDE-JWT\s+/, '')
+const authStore = readJson(AUTH_PATH)
 const res = await fetch(`${SETTINGS.traeChatBaseURL}/api/agent/v3/llm_utils_chat`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    Accept: 'text/event-stream,application/json',
-    Authorization: cred.authorization,
-    'x-cloudide-token': cred.headers['x-cloudide-token'],
-    'X-User-Region': 'CN',
-    'x-ide-version': '0.1.52',
+    Accept: 'text/event-stream',
+    Authorization: `Cloud-IDE-JWT ${token}`,
+    'X-Cloudide-Token': token,
+    'x-ide-token': token,
+    'x-app-id': TRAE_APP_ID,
+    'x-ide-version': TRAE_IDE_VERSION,
+    'x-ide-version-code': TRAE_IDE_VERSION_CODE,
+    'x-request-id': requestId,
+    ...(authStore.account?.uid ? { 'x-uid': String(authStore.account.uid) } : {}),
+    ...(authStore.device?.deviceId ? { 'x-device-id': authStore.device.deviceId } : {}),
+    ...(authStore.device?.machineId ? { 'x-machine-id': authStore.device.machineId } : {}),
   },
-  body,
+  body: JSON.stringify(reqBody),
 })
 const raw = await res.text()
 const outPath = `docs/probes/trae-chat-live-${Date.now()}.json`
 mkdirSync('docs/probes', { recursive: true })
 writeFileSync(outPath, JSON.stringify({
   at: new Date().toISOString(),
-  request: { url: `${SETTINGS.traeChatBaseURL}/api/agent/v3/llm_utils_chat`, body: JSON.parse(body) },
+  request: { url: `${SETTINGS.traeChatBaseURL}/api/agent/v3/llm_utils_chat`, body: reqBody },
   response: {
     status: res.status,
     contentType: res.headers.get('content-type'),

@@ -31,7 +31,7 @@ import { DatabaseSync } from 'node:sqlite'
 
 import { createTraeOAuth } from '../providers/trae/oauth.js'
 import { catalogToProfiles } from '../providers/trae/catalog.js'
-import { buildChatRequest, parseTraeEvent, createTraeGateway } from '../providers/trae/gateway.js'
+import { buildChatRequest, createTraeStreamParser, createTraeGateway, cumulativeDelta, TRAE_APP_ID, TRAE_IDE_VERSION, TRAE_IDE_VERSION_CODE } from '../providers/trae/gateway.js'
 import { normalizeTraeError } from '../providers/trae/errors.js'
 import { createTraeProvider } from '../providers/trae/index.js'
 
@@ -177,12 +177,21 @@ function mockTraeChat({ authedToken = 'tok-live', status = 200 } = {}) {
         return
       }
       res.writeHead(200, { 'content-type': 'text/event-stream' })
-      res.write(`data: ${JSON.stringify({ delta: '你好' })}\n\n`)
-      res.write(`data: ${JSON.stringify({ delta: '，' })}\n\n`)
-      res.write(`data: ${JSON.stringify({ delta: '世界' })}\n\n`)
-      res.write(`data: ${JSON.stringify({ usage: { prompt_tokens: 10, completion_tokens: 3, total_tokens: 13 } })}\n\n`)
-      res.write('event: finish\n')
-      res.write(`data: ${JSON.stringify({ is_end: true })}\n\n`)
+      // 事件语法 = 2026-08-24 带凭据联调校准形态（response/reasoning_content 为累计快照）
+      res.write('event: metadata\n')
+      res.write(`data: ${JSON.stringify({ model: '', session_id: 's', prompt_completion_id: 0 })}\n\n`)
+      res.write('event: timing_cost\n')
+      res.write(`data: ${JSON.stringify({ name: 'llm_raw_chat_v2', provider_model_name: 'kimi-k2.6' })}\n\n`)
+      res.write('event: output\n')
+      res.write(`data: ${JSON.stringify({ response: '你好', reasoning_content: null })}\n\n`)
+      res.write('event: output\n')
+      res.write(`data: ${JSON.stringify({ response: '你好，', reasoning_content: '思' })}\n\n`)
+      res.write('event: output\n')
+      res.write(`data: ${JSON.stringify({ response: '你好，世界', reasoning_content: '思' })}\n\n`)
+      res.write('event: token_usage\n')
+      res.write(`data: ${JSON.stringify({ prompt_tokens: 10, completion_tokens: 3, total_tokens: 13 })}\n\n`)
+      res.write('event: done\n')
+      res.write(`data: ${JSON.stringify({ finish_reason: 'stop' })}\n\n`)
       res.end()
     })
   })
@@ -359,6 +368,7 @@ try {
       try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
     },
     readAuthDevice: () => ({ deviceId: '123', machineId: 'abc', deviceBrand: 'b', deviceCpu: 'c', osVersion: 'v' }),
+    readAuthMeta: () => ({ uid: 'u-001' }),
     meter: { record: (r) => meterCalls.push(r) },
     runtime: traeRuntime,
     getCatalogIds: () => ids,
@@ -377,26 +387,38 @@ try {
   const streamText = await streamRes.text()
   const sseLines = streamText.split('\n').filter((l) => l.startsWith('data:')).map((l) => l.slice(5).trim())
   let assembled = ''
+  let reasoning = ''
   let streamUsage = null
   let sawDone = false
   for (const line of sseLines) {
     if (line === '[DONE]') { sawDone = true; continue }
     const c = JSON.parse(line)
     if (c.choices?.[0]?.delta?.content) assembled += c.choices[0].delta.content
+    if (c.choices?.[0]?.delta?.reasoning_content) reasoning += c.choices[0].delta.reasoning_content
     if (c.usage) streamUsage = c.usage
     if (c.choices?.[0]?.finish_reason) check('流式 finish_reason=stop', c.choices[0].finish_reason === 'stop')
   }
   check('流式：SSE 200 且 OpenAI chunk 形态', streamRes.status === 200 && sseLines.length >= 4)
-  check('流式：文本增量拼接（你好，世界）', assembled === '你好，世界')
+  check('流式：文本增量拼接（你好，世界，无改派通知混入）', assembled === '你好，世界')
+  check('流式：reasoning_content 透传不混入正文', reasoning === '思')
   check('流式：usage 进末块 + [DONE] 收尾', streamUsage?.total_tokens === 13 && sawDone)
+  check('模型改派：SSE 注释行 + 计量记真实模型（timing_cost.provider_model_name）',
+    streamText.includes(': trae-reroute requested=glm-5.3 actual=kimi-k2.6')
+    && meterCalls.some((m) => m.model === 'kimi-k2.6' && m.usage?.total_tokens === 13))
   const outbound = chatMock.state.requests[0]
-  check('出站头：双头 + 区域 + 设备头', outbound.headers['authorization'] === 'Cloud-IDE-JWT tok-live'
-    && outbound.headers['x-cloudide-token'] === 'tok-live' && outbound.headers['x-user-region'] === 'CN'
-    && outbound.headers['x-device-id'] === '123' && outbound.headers['x-machine-id'] === 'abc')
+  check('出站头：三头同 JWT + IDE 指纹 + 设备头', outbound.headers['authorization'] === 'Cloud-IDE-JWT tok-live'
+    && outbound.headers['x-cloudide-token'] === 'tok-live' && outbound.headers['x-ide-token'] === 'tok-live'
+    && outbound.headers['x-app-id'] === TRAE_APP_ID
+    && outbound.headers['x-ide-version'] === TRAE_IDE_VERSION && outbound.headers['x-ide-version-code'] === TRAE_IDE_VERSION_CODE
+    && typeof outbound.headers['x-request-id'] === 'string'
+    && outbound.headers['x-device-id'] === '123' && outbound.headers['x-machine-id'] === 'abc'
+    && outbound.headers['x-uid'] === 'u-001')
   check('出站路径 = /api/agent/v3/llm_utils_chat', outbound.url === '/api/agent/v3/llm_utils_chat')
-  check('出站信封：messages/model_name/conversation_id 保留 system 角色', outbound.body.model_name === 'glm-5.3'
-    && outbound.body.messages[0].role === 'system' && outbound.body.messages[1].content === 'hi'
-    && typeof outbound.body.conversation_id === 'string')
+  check('出站信封：model/function/session_id/request_id + content 块化保留 system 角色',
+    outbound.body.model === 'glm-5.3' && outbound.body.function === 'inline_chat' && outbound.body.stream === true
+    && outbound.body.messages[0].role === 'system'
+    && outbound.body.messages[1].content?.[0]?.type === 'text' && outbound.body.messages[1].content[0].text === 'hi'
+    && typeof outbound.body.session_id === 'string' && typeof outbound.body.request_id === 'string')
 
   // 非流式聚合
   const aggRes = await fetch(`http://127.0.0.1:${gwPort}/v1/chat/completions`, {
@@ -472,21 +494,43 @@ try {
   })
   check('坏 payload → 400', badRes.status === 400)
 
-  check('计量：usage 记录含模型名', meterCalls.some((m) => m.model === 'glm-5.3' && m.usage?.total_tokens === 13))
+  check('计量：非流式请求也记录（真实模型口径）', meterCalls.filter((m) => m.usage?.total_tokens === 13).length >= 2)
   stop()
   chatMock.server.closeAllConnections?.()
   chatMock.server.close()
 
   // =========================================================================
   console.log('== 单元：信封与事件解析 ==')
-  const env = buildChatRequest({ model: 'm1', messages: [{ role: 'user', content: [{ type: 'text', text: 'a' }, { type: 'image_url' }] }] }, 'conv-1')
-  check('buildChatRequest 折叠多模态 content 为文本', env.messages[0].content === 'a' && env.model_name === 'm1' && env.conversation_id === 'conv-1' && env.is_custom_model === false)
-  const ev1 = parseTraeEvent({ delta: 'x' }, null)
-  const ev2 = parseTraeEvent({ code: 1001, message: 'auth' }, null)
-  const ev3 = parseTraeEvent({ is_end: true }, 'finish')
-  const ev4 = parseTraeEvent({ data: { usage: { promptTokens: 5 } } }, null)
-  check('parseTraeEvent：增量/错误/结束/用量四态', ev1.text === 'x' && ev2.error?.code === 1001 && ev3.finish === 'stop' && ev4.usage?.prompt_tokens === 5)
-  check('parseTraeEvent：OpenAI 形态兼容', parseTraeEvent({ choices: [{ delta: { content: 'y' } }] }, null).text === 'y')
+  const { body: envBody, requestId: envReqId } = buildChatRequest({
+    model: 'm1', max_tokens: 64, temperature: 0.5,
+    messages: [{ role: 'user', content: [{ type: 'text', text: 'a' }, { type: 'image_url' }] }],
+  }, 'conv-1')
+  check('buildChatRequest：content 块化 + function/stream + 生成参数透传',
+    envBody.messages[0].content?.length === 1 && envBody.messages[0].content[0].type === 'text' && envBody.messages[0].content[0].text === 'a'
+    && envBody.model === 'm1' && envBody.session_id === 'conv-1' && envBody.function === 'inline_chat' && envBody.stream === true
+    && envBody.max_tokens === 64 && envBody.temperature === 0.5 && typeof envBody.request_id === 'string' && envReqId === envBody.request_id)
+  check('buildChatRequest：默认模型 + tool 角色原生透传',
+    buildChatRequest({ messages: [] }, 's').body.model === 'glm-5.3'
+    && buildChatRequest({ messages: [{ role: 'tool', tool_call_id: 'c1', content: 'out' }] }, 's').body.messages[0].tool_call_id === 'c1')
+
+  // createTraeStreamParser：累计快照差分 / 思考 / 用量 / 排队 / 工具 / 终结
+  const p = createTraeStreamParser()
+  const pa = p.handle('output', { response: '你好', reasoning_content: '思' })
+  const pb = p.handle('output', { response: '你好，世界', reasoning_content: '思考' })
+  check('流解析：累计快照前缀差分', pa.text === '你好' && pb.text === '，世界' && pa.reasoning === '思' && pb.reasoning === '考')
+  p.handle('token_usage', { prompt_tokens: 16, completion_tokens: 19, total_tokens: 35 })
+  check('流解析：token_usage 顶层计数', p.usage()?.total_tokens === 35)
+  const pq1 = p.handle('request_wait_in_queue', { position: 2 })
+  const pq2 = p.handle('request_wait_in_queue', { position: 2 })
+  check('流解析：排队位置变化才报', pq1.queue === 2 && Object.keys(pq2).length === 0)
+  const pt = p.handle('output', { response: '你好，世界', tool_call_info: { id: 't1', name: 'fn', params: { a: 1 } } })
+  check('流解析：tool_call_info 归一为 OpenAI 工具调用', pt.toolCall?.id === 't1' && pt.toolCall.name === 'fn' && pt.toolCall.arguments === '{"a":1}')
+  const pd = p.handle('done', { finish_reason: 'stop' })
+  check('流解析：done 终结语义', pd.finish === 'stop' && p.isDone() === true && p.finish() === 'stop')
+  const pe = createTraeStreamParser().handle('error', { code: 1001, message: 'auth' })
+  check('流解析：error 事件归一', pe.error?.code === 1001)
+  check('cumulativeDelta：前缀差分/回退/纯增量三态', cumulativeDelta('abc', 'abcdef') === 'def'
+    && cumulativeDelta('abc', 'ab') === '' && cumulativeDelta('', 'x') === 'x')
   const nerr = normalizeTraeError(400, { ResponseMetadata: { Error: { Code: '10101', Message: 'Invalid client.' } } })
   check('normalizeTraeError：火山信封/裸码/非 JSON 三态', nerr.code === '10101' && normalizeTraeError(401, { code: 1001 }).code === 1001 && normalizeTraeError(500, null).message === 'HTTP 500')
 } finally {

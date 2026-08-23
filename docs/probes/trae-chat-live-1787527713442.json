@@ -1,0 +1,48 @@
+{
+  "at": "2026-08-23T23:28:33.442Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "hi"
+            }
+          ]
+        }
+      ],
+      "model": "glm-5.2",
+      "function": "inline_chat",
+      "request_id": "9c8ff73b-239a-4146-a341-c5d127f2ce88",
+      "session_id": "probe-live",
+      "stream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sun, 23 Aug 2026 23:28:33 GMT",
+      "eagleid": "7544534217875277118948298e",
+      "server": "Tengine",
+      "server-timing": "inner; dur=1420, cdn-cache;desc=MISS,edge;dur=0,origin;dur=1459",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "timing-allow-origin": "*",
+      "transfer-encoding": "chunked",
+      "via": "ens-dynamic2.cn8729[1459,0]",
+      "x-tt-logid": "20260824072831D81A8B416B3367FFCCF7",
+      "x-tt-timestamp": "1787527713.339",
+      "x-tt-trace-host": "0105dba5438c12d8d6e0c60642398be114b2053a75e044653bd7f12c1299ca03d5acd6f29adfe4e2caf18b65781ecbb18234978898a2585e2ba77559a5754dddfcd7c8350c5db3249896da1ba5f93af8282bdada1687b30e29189834165bd1098f",
+      "x-tt-trace-id": "00-260824072831D81A8B416B3367FFCCF7-6B7D0D1055CD6319-00",
+      "x-tt-trace-tag": "id=03;cdn-cache=miss;type=dyn"
+    },
+    "bodyHead": "id:1\nevent:metadata\ndata:{\"model\":\"\",\"session_id\":\"probe-live\",\"prompt_completion_id\":0,\"ab_versions\":null,\"app_version\":\"\",\"ide_version\":null,\"ide_version_type\":null,\"prompt_cache_pool_record\":null}\n\nid:2\nevent:timing_cost\ndata:{\"name\":\"llm_raw_chat_v2\",\"preprocess_timing\":65,\"postprocess_timing\":24,\"queue_timing\":0,\"platform_first_token_timing\":1303,\"account_type\":\"\",\"is_retry\":false,\"middleware_processing_time\":35,\"server_processing_time\":1429,\"first_sse_event_time\":1403,\"preprocessing_detail\":{\"check_risk\":13,\"build_llm_prompt\":0,\"chat_completion_prepare\":0,\"other\":52},\"platform_detail\":{\"preprocess_timing\":28,\"first_token_timing\":1247,\"network_latency\":28,\"provider_first_token\":0,\"provider_network_latency\":0,\"other\":0},\"post_processing_detail\":{\"post_security_check\":24,\"other\":0},\"provider_model_name\":\"kimi-k2.6\"}\n\nid:3\nevent:output\ndata:{\"response\":\"Hi\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:4\nevent:output\ndata:{\"response\":\" there! How can I help you today?\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:5\nevent:token_usage\ndata:{\"name\":\"\",\"prompt_tokens\":10,\"completion_tokens\":11,\"total_tokens\":21,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":8,\"reasoning_tokens\":0,\"prompt_tokens_total\":0,\"completion_tokens_total\":0,\"total_tokens_total\":0,\"cache_creation_input_tokens_total\":0,\"cache_read_input_tokens_total\":0,\"reasoning_tokens_total\":0,\"cluster\":\"normal_context\"}\n\nid:6\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 1543
+  }
+}
