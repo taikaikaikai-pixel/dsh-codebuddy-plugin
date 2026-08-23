@@ -1,6 +1,6 @@
 # dsh-codebuddy-plugin
 
-CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**模型清单跟随网关目录动态同步**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），**`image_generate` 生图工具**（混元生图后端），以及 **key 型 OpenAI 兼容上游注册表**（火山引擎 Ark、阿里云百炼等，模型统一进选择器）。
+CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**模型清单跟随网关目录动态同步**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），**`image_generate` 生图工具**（混元生图后端），以及 **key 型 OpenAI 兼容上游注册表**（火山引擎 Ark、阿里云百炼等，模型统一进选择器）；v0.8.3 起内置 **TraeWork CN 订阅额度通道**（自持设备密钥的 OAuth + 本地 OpenAI↔Trae 翻译网关 + 本机目录同步，详见下节）。
 
 ## 特性
 
@@ -39,6 +39,17 @@ CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提
 思考强度档位 2026-08-16 经 `--efforts` 逐一实测：所有列出的模型均接受对应档位且无报错；标注 `off` 的模型不传参数时实测无思考输出，未标注 `off` 的模型默认即思考。各档位的思考长度由模型自适应决定，非严格递增。
 
 目录已不列出、但 `/v2` 端点仍正常服务的旧 id（deepseek-v3 / v3.2 / r1、kimi-k3、hy3-preview、auto）继续保留，参数按各模型官方规格。
+
+## TraeWork CN 订阅额度通道（v0.8.3）
+
+把字节 TraeWork CN / TRAE SOLO CN 的订阅额度接成 dsh 的第二上游（provider id `trae`）：
+
+- **凭据**：插件用**自持 ECDSA P-256 设备密钥**走完整 OAuth 设备流（浏览器授权一次），refresh 的 DeviceProof 由自己签名——不读取、不提取官方 IDE 的任何凭据；令牌只存 `~/.dsh/trae-plugin-auth.json`
+- **翻译网关**：`127.0.0.1:3902`（`traeBridgePort` 可调）把 OpenAI Chat Completions 翻译成 Trae 云端协议（`trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat`，SSE 互转），dsh 主聊天选择 trae 模型即走此通道
+- **模型目录**：从本机 TRAE SOLO CN 的缓存数据库（state.vscdb）只读提取（24 个 preset 模型：DeepSeek-V4、GLM-5.x、Kimi-K3、Doubao-Seed、Qwen3.8 等），启用通道自动同步进选择器；提取器带敏感字段 scrub（详见 `docs/reverse/trae-model-catalog.md`）
+- **使用**：设置卡 → 插件配置 → CodeBuddy → `TraeWork CN（订阅额度）` 分区：启用通道 → 登录（浏览器授权）→ 模型自动出现在选择器
+- **首次联调**：聊天信封/SSE 语法来自二进制逆向（置信度中），换机器或协议变动后跑一次 `node scripts/probe-trae-live.mjs --login` 再 `--chat "你好"` 校准（证据与依据见 `docs/reverse/trae-cloud-api.md`）
+- 回归：`npm run verify:trae-provider`（43 断言，mock 全链路）+ 浏览器 step31（12 断言）
 
 ## 网络搜索与网页抓取
 

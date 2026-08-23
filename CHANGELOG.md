@@ -10,7 +10,7 @@
 ## 0.8.2 (2026-08-23)
 
 - **Trae 聊天桥（OpenAI↔Trae 翻译网关）**：`providers/trae/gateway.js`——127.0.0.1:3902（`traeBridgePort`）本地网关，`POST /v1/chat/completions` 接 OpenAI 方言，出站转 `/api/agent/v3/llm_utils_chat`（信封=buildChatRequest），SSE 互转（parseTraeEvent 容错字段发现：增量/用量/结束/错误四态）→ OpenAI chunk 流或聚合 chat.completion；`GET /v1/models` 回已同步目录（dsh 内置"获取可用模型"在本通道可用）；复用 core 的 SessionLimiter（会话并发闸）与 usage-meter（Trae 用量进同一张用量视图）；上游 401/1001、凭据不可用 503、坏 payload 400 全结构化映射；listen 失败降级不炸宿主（踩坑 #17 纪律）
-- **patch 路由**：`cordis.patch.yml` 的 llm-pi-ai.providers 新增 `trae`（openai-completions → `http://127.0.0.1:3902/v1`，哨兵 `Authorization: Bearer dsh-trae-bridge`——机制同 codebuddy 路由，踩坑 #11）；**不带静态模型清单**——清单由镜像独占（见 0.8.1），杜绝陈旧遮蔽
+- **patch 路由**：`cordis.patch.yml` 的 llm-pi-ai.providers 新增 `trae`（openai-completions → `http://127.0.0.1:3902/v1`，哨兵 `Authorization: Bearer dsh-trae-bridge`——机制同 codebuddy 路由，踩坑 #11）；**必须带静态模型基线**（24 个，目录快照生成）——实测 pi-ai 对无 models 的 patch provider 直接拒绝加载整棵插件树；可见性由镜像恒铺管理：禁用/未同步=空数组（实测 pi-ai 接受），启用+同步=有效清单
 - **组合根接线**：apply() 内 `traeSettingsFn` 迟绑定 + `syncTraeBridge` 生命周期（启用起网关+自动目录同步，禁用停网关+撤镜像，热加载免重启）；`trae-model-sync`/`trae-model-list`/`traeModelSetEnabled` 设置路由
 
 ## 0.8.1 (2026-08-23)

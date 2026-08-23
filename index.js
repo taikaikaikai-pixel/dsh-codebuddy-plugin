@@ -712,8 +712,11 @@ function readTraeModelState() {
 }
 
 /**
- * 镜像 providers.trae.models：启用且有目录 → 有效清单；否则删除路径（选择器
- * 里 Trae 模型整体消失，patch 路由留着等重新启用——热加载原地增删，免重启）。
+ * 镜像 providers.trae.models **恒铺**（2026-08-23 实测修正）：pi-ai 要求 patch
+ * provider 必须带模型清单（否则整棵插件树加载失败），故 patch 里有 24 个静态
+ * 基线——禁用时**删路径会回落静态清单**（选择器显示不可用模型）。正解：
+ * 禁用/未同步 → 铺空数组（实测 pi-ai 接受且不毒化层，选择器隐藏通道）；
+ * 启用+已同步 → 有效清单（剔除 disabled）。启用开关即热增删，免重启。
  */
 function syncTraeModelsToDshSettings() {
   let doc
@@ -724,15 +727,11 @@ function syncTraeModelsToDshSettings() {
   }
   const s = Config({ ...readFileLayer() }) // entry 侧无 trae 字段，schema 默认补齐
   const view = traeProvider.catalogView()
-  const path = ['llm-pi-ai', 'providers', 'trae', 'models']
-  if (s.traeEnabled !== true || !view) {
-    if (!doc.getIn(path)) return false
-    doc.deleteIn(path)
-    writeFileSync(DSH_SETTINGS_PATH, String(doc))
-    return true
-  }
   const disabled = readTraeModelState().disabled
-  const next = YAML.parse(YAML.stringify(view.profiles.filter((p) => !disabled[p.id])))
+  const next = s.traeEnabled === true && view
+    ? YAML.parse(YAML.stringify(view.profiles.filter((p) => !disabled[p.id])))
+    : []
+  const path = ['llm-pi-ai', 'providers', 'trae', 'models']
   const current = doc.getIn(path)
   if (YAML.stringify(current ?? null) === YAML.stringify(next)) return false
   doc.setIn(path, next)

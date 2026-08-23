@@ -69,7 +69,7 @@
 22. **GitHub 逆向项目是"历史参照"不是"协议真相"**（v0.8.x 接 Trae 时验证）：linqiu919/trae2api 给了完整旧协议（/api/ide/v1/chat + x-ide-token + 无 DeviceProof 的刷新），但 2026-08 客户端已换成 /api/agent/v3 任务制 + mchost 网关 + ECDSA 设备签名——**盲抄旧仓库必然失败**。正确姿势：GitHub 定方向（端点族/信封形态/历史语义）→ 本机二进制 strings 提取当前字段 → 无凭据在线探测校准（401/400 错误信封就是免费指纹，不需要任何真实账号）→ 带凭据联调只留一步（probe-trae-live.mjs）。
 23. **别找存量 token，没有**（v0.8.x 实测排除法）：Trae 登录令牌不在 state.vscdb（无 `secret://` 键，只有无关的 mcpOAuth）、不在 Windows 凭据管理器（cmdkey 无条目）、harness 数据库 AES 加密（node:sqlite 直接 "file is not a database"）——令牌只在 Electron 内存/加密存储。唯一正路是**自持设备密钥走完整设备流**：自己生成 P-256 密钥对、DeviceInfo.DevicePublicKey 上报注册，refresh 的 DeviceProof 自己签（traework-cn.md 判断 #5"仅拿 refresh token 不足以复刻"只否定偷 IDE token 的路线，不适用自注册）。
 24. **官方本地 harness 是懒启动的黑盒**：IDE 常驻（13 个进程）≠ harness 在线（:40005 无监听，AI 面板交互才拉起）；启动器 x64/run_helper.exe 裸拉无参即退（参数/握手未知）。想"驱动官方 harness 免协议逆向"的路线卡在两处未知数；**直连云端**路线只卡"一次用户登录"——自主可推进性决定架构取舍。另外 harness 的 Rust axum 路由（/api/v1/chat/start_chat 等）与云端路由（/api/agent/v3/*）在 strings 里混在一起，提取时必须按命名空间分辨，别把本地 RPC 当云端端点。
-25. **第二上游接入的"镜像独占清单"模式**：patch 的 providers.trae **不带静态模型**，清单只由 settings.yaml 镜像独占（启用+目录已同步才铺，禁用即删路径）——与 codebuddy 的"静态基+镜像覆盖"不同（那边有 patch 静态 18 模型保底）。原因：Trae 目录来自本机缓存天然动态、无网关兜底清单可静态化；禁用时选择器必须整体清空，镜像删除即达（chokidar 热加载）。同一个 llm-pi-ai 行内两个 provider 并列（codebuddy+trae）是 patch 的正常写法，别拆成两个同 id 行——单 patch 文件内同 id 两行的合并语义未证实。
+25. **第二上游接入的"静态基线+空数组遮蔽"模式**（2026-08-23 实测翻车修正）：pi-ai 要求 patch 里的 provider **必须带 models 清单**——providers.trae 只写路由不带模型会令**整棵插件树加载失败**（"provider resolves no models; the installed catalog does not describe this route"，即踩坑 #21 的 patch 级变体）。正解：patch 带 24 个静态基线（目录快照生成）+ settings.yaml 镜像**恒铺**——启用+同步铺有效清单、禁用/未同步铺**空数组**（实测 pi-ai 接受 `models: []` 且不毒化层；**删路径会回落静态清单**，选择器就显示不可用模型——禁用绝不能删）。同一个 llm-pi-ai 行内两个 provider 并列（codebuddy+trae）是 patch 的正常写法，别拆成两个同 id 行——单 patch 文件内同 id 两行的合并语义未证实。
 
 ## 常用命令
 
@@ -105,7 +105,7 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 ## v0.8.x：TraeWork CN 订阅额度通道（0.8.1→0.8.3 直达，2026-08-23）
 
-目标：从 dsh 消耗 Trae 订阅额度。架构与 CodeBuddy 通道同构（OAuth 边缘 + 本地网关 + 目录镜像），差异三点：凭据只有 OAuth 一支（自持 ECDSA P-256 设备密钥，refresh 的 DeviceProof 自签）；网关是**协议翻译器**不是透传代理（providers/trae/gateway.js，OpenAI↔Trae SSE 互转）；模型清单**镜像独占**（patch 的 providers.trae 不带静态模型，启用+同步才铺、禁用即删，踩坑 #25）。
+目标：从 dsh 消耗 Trae 订阅额度。架构与 CodeBuddy 通道同构（OAuth 边缘 + 本地网关 + 目录镜像），差异三点：凭据只有 OAuth 一支（自持 ECDSA P-256 设备密钥，refresh 的 DeviceProof 自签）；网关是**协议翻译器**不是透传代理（providers/trae/gateway.js，OpenAI↔Trae SSE 互转）；模型可见性=patch 静态基线 + 镜像**恒铺**（禁用/未同步铺空数组遮蔽基线，启用+同步铺有效清单，踩坑 #25）。
 
 - **0.8.1 凭据与目录**：`providers/trae/oauth.js` 设备流（PKCE+回环回调+ExchangeToken 双模式）；`catalog.js` 复用 scripts/trae-model-catalog.mjs 纯函数读本机 state.vscdb；设置卡 TraeWork CN 分区（启用/登录/同步/端口/域名）。
 - **0.8.2 聊天桥**：翻译网关 :3902（`traeBridgePort`）+ patch 哨兵路由 + apply 生命周期（迟绑定 `traeSettingsFn`、启用自动同步目录、Trae 用量进同一 usage-meter）。
