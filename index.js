@@ -57,6 +57,8 @@ import { createUsageMeter } from './core/usage-meter.js'
 import { createBridge } from './core/bridge.js'
 import { createCodeBuddyProvider } from './providers/codebuddy/index.js'
 import { CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/codebuddy/errors.js'
+import { createTraeProvider, TRAE_SENTINEL_AUTH } from './providers/trae/index.js'
+import { TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/trae/errors.js'
 import { PROVIDER_ID_RE, createOpenAICompatProvider, keyRefFor } from './providers/openai-compat.js'
 import { scanLocalCredentials, readImportCredential } from './local-scan.js'
 import arkProvider from './providers/ark/index.js'
@@ -72,6 +74,7 @@ export const inject = ['web']
 const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
 export const SETTINGS_PATH = join(DSH_HOME, 'codebuddy-plugin.json')
 export const AUTH_PATH = join(DSH_HOME, 'codebuddy-plugin-auth.json')
+export const TRAE_AUTH_PATH = join(DSH_HOME, 'trae-plugin-auth.json')
 const DSH_SETTINGS_PATH = join(DSH_HOME, 'settings.yaml')
 const DSH_CREDENTIALS_PATH = join(DSH_HOME, '.credentials.yaml')
 const PATCH_FILE = join(dirname(fileURLToPath(import.meta.url)), 'cordis.patch.yml')
@@ -104,6 +107,15 @@ export const Config = z.object({
   // 「手填总额 − 本插件计量累计」并标注"估算"；0 = 未设置。OAuth 模式不用
   // （真实数值来自 /billing/meter/get-user-resource，quota-signals.md R-Q7）。
   quotaTotalManual: z.number().min(0).default(0),
+  // ---- TraeWork CN（Trae 订阅额度通道，v0.8.x）----
+  // 默认关闭：开启后同步本机 state.vscdb 模型目录到选择器（providers.trae），
+  // 并在 traeBridgePort 上启动 OpenAI↔Trae 翻译网关；主聊天经 patch 的 trae
+  // 路由（哨兵 Authorization）走该网关消耗 Trae 订阅额度。
+  traeEnabled: z.boolean().default(false),
+  traeAuthBaseURL: z.string().default('https://api.trae.cn'),
+  traeChatBaseURL: z.string().default('https://trae-api-cn.mchost.guru'),
+  traeLoginHost: z.string().default('https://www.trae.cn'),
+  traeBridgePort: z.number().step(1).min(1).max(65535).default(3902),
 })
 
 /** Field metadata the settings card renders (labels live client-side). */
@@ -125,6 +137,11 @@ export const SETTINGS_FIELDS = [
   { key: 'imageGenModel', kind: 'text' },
   { key: 'keyCooldownMs', kind: 'number' },
   { key: 'quotaTotalManual', kind: 'number' },
+  { key: 'traeEnabled', kind: 'boolean' },
+  { key: 'traeAuthBaseURL', kind: 'text' },
+  { key: 'traeChatBaseURL', kind: 'text' },
+  { key: 'traeLoginHost', kind: 'text' },
+  { key: 'traeBridgePort', kind: 'number' },
 ]
 
 /** Validate a baseURL candidate before it can reach a provider. */
@@ -635,6 +652,109 @@ async function withKeyRotation(settings, attempt) {
 }
 
 // ---------------------------------------------------------------------------
+// TraeWork CN 通道（v0.8.x）：第二上游 = OAuth 订阅额度 + 私有协议翻译网关。
+// 凭据只有 OAuth 一支（Trae 订阅跟账号走）；设备密钥自持（providers/trae/
+// oauth.js）。模型目录来自本机 state.vscdb（提取器纯函数复用），镜像进
+// settings.yaml 的 llm-pi-ai.providers.trae.models——patch 层只带路由不带
+// 模型，清单永远由镜像独占（无"陈旧遮蔽"问题，纯净态=删镜像路径）。
+// ---------------------------------------------------------------------------
+
+const readTraeAuth = () => readJson(TRAE_AUTH_PATH)
+const writeTraeAuth = (v) => writeJson(TRAE_AUTH_PATH, v)
+
+const traeRuntime = { running: false, port: null, lastError: null }
+
+/** Trae 凭据候选（OAuth 单候选，无轮换）；空候选错误带稳定标记。 */
+async function withTraeCredentials(settingsFn, attempt) {
+  const s = settingsFn()
+  let cred = null
+  try {
+    cred = await traeProvider.oauth.resolveTraeCredential(s)
+  } catch (err) {
+    const e = new Error(`trae credential error: ${err?.message ?? err}`)
+    e.credentialUnavailable = true
+    return { cred: null, res: null, err: e }
+  }
+  if (!cred) {
+    const e = new Error(TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE)
+    e.credentialUnavailable = true
+    return { cred: null, res: null, err: e }
+  }
+  try {
+    const res = await attempt(cred)
+    return { cred, res, err: null }
+  } catch (err) {
+    return { cred, res: null, err }
+  }
+}
+
+// 迟绑定：网关需要"本代"的 settings 解析函数；apply() 每代重设该模块级
+// 变量（与 codebuddy 侧 hoisted 函数的迟绑定等价，形态不同只因工厂签名）。
+let traeSettingsFn = () => ({ traeEnabled: false })
+
+const traeProvider = createTraeProvider({
+  readAuth: readTraeAuth,
+  writeAuth: writeTraeAuth,
+  settings: () => traeSettingsFn(),
+  withCredentials: (attempt) => withTraeCredentials(() => traeSettingsFn(), attempt),
+  meter,
+  runtime: traeRuntime,
+  forensics: { logPath: () => process.env.TRAE_BRIDGE_LOG },
+})
+
+function readTraeModelState() {
+  const state = readFileLayer().traeModelState
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return { disabled: {} }
+  return {
+    disabled: state.disabled && typeof state.disabled === 'object' && !Array.isArray(state.disabled)
+      ? state.disabled : {},
+  }
+}
+
+/**
+ * 镜像 providers.trae.models：启用且有目录 → 有效清单；否则删除路径（选择器
+ * 里 Trae 模型整体消失，patch 路由留着等重新启用——热加载原地增删，免重启）。
+ */
+function syncTraeModelsToDshSettings() {
+  let doc
+  try {
+    doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
+  } catch {
+    doc = new YAML.Document()
+  }
+  const s = Config({ ...readFileLayer() }) // entry 侧无 trae 字段，schema 默认补齐
+  const view = traeProvider.catalogView()
+  const path = ['llm-pi-ai', 'providers', 'trae', 'models']
+  if (s.traeEnabled !== true || !view) {
+    if (!doc.getIn(path)) return false
+    doc.deleteIn(path)
+    writeFileSync(DSH_SETTINGS_PATH, String(doc))
+    return true
+  }
+  const disabled = readTraeModelState().disabled
+  const next = YAML.parse(YAML.stringify(view.profiles.filter((p) => !disabled[p.id])))
+  const current = doc.getIn(path)
+  if (YAML.stringify(current ?? null) === YAML.stringify(next)) return false
+  doc.setIn(path, next)
+  writeFileSync(DSH_SETTINGS_PATH, String(doc))
+  return true
+}
+
+function setTraeModelEnabled({ id, enabled }) {
+  if (typeof id !== 'string' || !id.trim()) throw new Error('traeModelSetEnabled 需要 id')
+  const view = traeProvider.catalogView()
+  if (!view || !view.profiles.some((p) => p.id === id)) throw new Error(`${id} 不在 Trae 目录里（先同步目录）`)
+  const layer = readFileLayer()
+  const state = readTraeModelState()
+  if (enabled) delete state.disabled[id]
+  else state.disabled[id] = true
+  layer.traeModelState = state
+  writeFileLayer(layer)
+  syncTraeModelsToDshSettings()
+  return state
+}
+
+// ---------------------------------------------------------------------------
 // Bridge runtime state (module-level, shared across apply() generations —
 // production runs one plugin instance per process, so last-apply-wins is
 // correct; scripts/verify-bridge.mjs §10 pins the semantics).
@@ -686,6 +806,20 @@ function settingsView(resolveNow) {
       running: bridgeRuntime.running,
       port: bridgeRuntime.port,
       lastError: bridgeRuntime.lastError,
+    },
+    trae: {
+      oauth: traeProvider.credentialView(),
+      bridge: {
+        running: traeRuntime.running,
+        port: traeRuntime.port,
+        lastError: traeRuntime.lastError,
+      },
+      models: {
+        disabled: Object.keys(readTraeModelState().disabled),
+        sync: traeProvider.catalogView()
+          ? { at: traeProvider.catalogView().at, count: traeProvider.catalogView().count, candidate: traeProvider.catalogView().candidate }
+          : null,
+      },
     },
     models: {
       staticIds: readStaticModels().map((m) => m.id),
@@ -864,6 +998,39 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               sendJSON(response, 200, { ok: true, oauth: provider.oauth.oauthStatus() })
               return
             }
+            // ---- TraeWork CN 通道（v0.8.x）----
+            if (body?.action === 'trae-oauth-start') {
+              traeProvider.oauth.startOAuth(resolveNow())
+                .then((r) => sendJSON(response, 200, { ok: true, authUrl: r.authUrl }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'trae-oauth-status') {
+              sendJSON(response, 200, { ok: true, trae: traeProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'trae-oauth-logout') {
+              traeProvider.oauth.logout()
+              sendJSON(response, 200, { ok: true, trae: traeProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'trae-model-sync') {
+              traeProvider.syncCatalog(body?.dbPath && typeof body.dbPath === 'string' ? { dbPath: body.dbPath } : {})
+                .then((r) => {
+                  syncTraeModelsToDshSettings()
+                  sendJSON(response, 200, { ok: r.ok, sync: r, trae: settingsView(resolveNow).trae })
+                })
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'trae-model-list') {
+              sendJSON(response, 200, {
+                ok: true,
+                view: traeProvider.catalogView(),
+                disabled: Object.keys(readTraeModelState().disabled),
+              })
+              return
+            }
             if (body?.action === 'usage') {
               provider.catalog.quotaSnapshot(resolveNow)
                 .then((quota) => sendJSON(response, 200, {
@@ -941,6 +1108,22 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               applyLive()
               return
             }
+            if (patch.traeModelSetEnabled !== undefined) {
+              const withKeys = { ...nextUser }
+              setTraeModelEnabled(patch.traeModelSetEnabled)
+              const after = readFileLayer()
+              delete withKeys.traeModelState
+              Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
+              writeFileLayer(after)
+              sendJSON(response, 200, {
+                ok: true,
+                value: settingsView(resolveNow).value,
+                user: after,
+                trae: settingsView(resolveNow).trae,
+              })
+              applyLive()
+              return
+            }
             for (const [key, value] of Object.entries(patch)) {
               if (key === 'apiKeysAdd' || key === 'apiKeysRemove') continue
               // Whitelist by SETTINGS_FIELDS, not Config({}) keys: fields
@@ -951,8 +1134,12 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               else nextUser[key] = value
             }
             // Validate through the schema before persisting.
-            validateBaseURL(Config({ ...entryConfig, ...nextUser }).baseURL)
-            const resolved = Config({ ...entryConfig, ...nextUser })
+            const candidate = Config({ ...entryConfig, ...nextUser })
+            validateBaseURL(candidate.baseURL)
+            for (const f of ['traeAuthBaseURL', 'traeChatBaseURL', 'traeLoginHost']) {
+              validateBaseURL(candidate[f])
+            }
+            const resolved = candidate
             if (resolved.activeApiKey && !resolved.apiKeys.some((k) => k.name === resolved.activeApiKey)) {
               throw new Error('activeApiKey 不在 apiKeys 列表中')
             }
@@ -1078,6 +1265,44 @@ export function apply(ctx, config = {}) {
     syncProviders()
     syncImageTool()
     syncBridge()
+    syncTraeBridge()
+  }
+
+  // TraeWork CN 通道生命周期：迟绑定本代 settings；启用时起翻译网关、
+  // 尝试目录同步（静默失败——state.vscdb 不在本机时 Trae 分区只是空转）；
+  // 禁用时停网关并按纯净态纪律撤掉 providers.trae.models 镜像。
+  traeSettingsFn = resolveNow
+  let stopTraeBridge = null
+  let traeRunningPort = null
+  const syncTraeBridge = () => {
+    const s = resolveNow()
+    if (s.traeEnabled !== true) {
+      if (stopTraeBridge) {
+        stopTraeBridge()
+        stopTraeBridge = null
+        traeRunningPort = null
+      }
+      traeRuntime.running = false
+      traeRuntime.port = null
+      traeRuntime.lastError = null
+      syncTraeModelsToDshSettings()
+      return
+    }
+    if (stopTraeBridge && traeRunningPort === s.traeBridgePort) return
+    if (stopTraeBridge) stopTraeBridge()
+    traeRunningPort = s.traeBridgePort
+    traeRuntime.running = false
+    traeRuntime.port = s.traeBridgePort
+    traeRuntime.lastError = null
+    stopTraeBridge = traeProvider.gateway.listen(traeRunningPort)
+    traeProvider.syncCatalog().then((r) => {
+      if (r.ok) {
+        syncTraeModelsToDshSettings()
+        process.stderr.write(`[dsh-codebuddy-plugin] trae catalog synced (${r.count} models)\n`)
+      } else if (traeProvider.catalogView()) {
+        syncTraeModelsToDshSettings()
+      }
+    })
   }
 
   applyLive()
@@ -1097,6 +1322,7 @@ export function apply(ctx, config = {}) {
   })
   ctx.on('dispose', () => {
     if (stopBridge) stopBridge()
+    if (stopTraeBridge) stopTraeBridge()
     if (disposeSearch) disposeSearch()
     if (disposeFetch) disposeFetch()
     if (disposeImageTool) disposeImageTool()

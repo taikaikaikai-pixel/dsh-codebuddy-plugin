@@ -1,6 +1,6 @@
 {
   "name": "dsh-codebuddy-plugin",
-  "version": "0.8.0",
+  "version": "0.8.2",
   "description": "CodeBuddy (copilot.tencent.com) provider bundle for DeepSeek Harness (dsh): 18 models (DeepSeek, GLM, Kimi, MiniMax, Hunyuan, auto) with adjustable reasoning efforts, CodeBuddy web search / web fetch backends for the stock dsh tools, and a settings card in the Web UI.",
   "type": "module",
   "main": "index.js",
@@ -27,7 +27,8 @@
     "verify:bridge": "node scripts/verify-bridge.mjs",
     "verify:core": "node scripts/verify-core-generic.mjs",
     "verify:providers": "node scripts/verify-providers.mjs",
-    "verify:trae": "node scripts/verify-trae-model-catalog.mjs"
+    "verify:trae": "node scripts/verify-trae-model-catalog.mjs",
+    "verify:trae-provider": "node scripts/verify-trae-provider.mjs"
   },
   "keywords": [
     "dsh-plugin",

@@ -263,6 +263,26 @@
             contextWindow: 262144
             maxTokens: 32768
 
+      # TraeWork CN channel (v0.8.x): OAuth subscription quota via the
+      # plugin's OpenAI<->Trae translation gateway at 127.0.0.1:3902
+      # (default; must match traeBridgePort). The route is static; the MODEL
+      # LIST is not — it is mirrored exclusively by index.js into
+      # ~/.dsh/settings.yaml (llm-pi-ai.providers.trae.models) from the local
+      # TRAE SOLO CN state.vscdb catalog, so the picker only shows Trae models
+      # while the channel is enabled and synced (disable = mirror removed,
+      # hot-reloaded). Same sentinel-Authorization mechanics as the codebuddy
+      # route: pi-ai sends the static header, the gateway replaces it per
+      # request with the resolved OAuth credential (Cloud-IDE-JWT +
+      # x-cloudide-token). reasoning_effort dialect unverified against the
+      # Trae gateway — compat left off until the live probe pins it
+      # (docs/reverse/trae-cloud-api.md).
+      trae:
+        displayName: TraeWork CN
+        api: openai-completions
+        baseURL: http://127.0.0.1:3902/v1
+        headers:
+          Authorization: Bearer dsh-trae-bridge
+
 - id: agent-default-model
   config:
     provider: codebuddy
