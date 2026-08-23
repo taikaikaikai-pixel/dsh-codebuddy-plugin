@@ -26,7 +26,8 @@
     "verify": "node scripts/verify-models.mjs",
     "verify:bridge": "node scripts/verify-bridge.mjs",
     "verify:core": "node scripts/verify-core-generic.mjs",
-    "verify:providers": "node scripts/verify-providers.mjs"
+    "verify:providers": "node scripts/verify-providers.mjs",
+    "verify:trae": "node scripts/verify-trae-model-catalog.mjs"
   },
   "keywords": [
     "dsh-plugin",
