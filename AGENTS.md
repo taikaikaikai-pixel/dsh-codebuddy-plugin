@@ -4,7 +4,7 @@
 
 ## 项目是什么
 
-把腾讯 CodeBuddy 网关（`copilot.tencent.com`）接入 DeepSeek Harness（dsh）的插件：18 个模型（可运行时增删）+ dsh 原生 `web_search`/`web_fetch` 的 CodeBuddy 后端 + `image_generate` 生图工具 + 本地流式桥 + Web UI 设置卡。纯 ESM，Node ≥ 22。
+把腾讯 CodeBuddy 网关（`copilot.tencent.com`）接入 DeepSeek Harness（dsh）的插件：18 个模型（可运行时增删）+ dsh 原生 `web_search`/`web_fetch` 的 CodeBuddy 后端 + `image_generate` 生图工具 + 本地流式桥 + Web UI 设置卡；v0.8.x 起增加第二上游 **TraeWork CN 通道**（OAuth 订阅额度 + OpenAI↔Trae 翻译网关 :3902 + 本机 state.vscdb 目录）。纯 ESM，Node ≥ 22。
 
 ## 三层架构（改动时先想清楚落在哪层）
 
@@ -14,6 +14,7 @@
 | 组合根 | `index.js` | Config/schema、模型管理（patch 解析 + settings.yaml 镜像）、凭据编排（core 轮转 + provider OAuth 分支）、设置路由、apply 生命周期；对外导出契约 | 重启 dsh |
 | 凭据边缘层 | `core/` | **provider 无关**：json-store（文件层/env 解析）、rotation（KeyRotator 轮询/冷却/failover，实例状态）、usage-meter（计量存储）、bridge（流式桥：会话归因/并发闸/SSE 聚合/取证；上游特化全走 provider 钩子）。**禁止出现任何 CodeBuddy 特化**——verify-core-generic 静态扫描锁 | 重启 dsh |
 | 上游适配器 | `providers/codebuddy/` | 全部 CodeBuddy 网关事实：headers（逐字段规则/迷信判定，ua-validation.md §3）、errors（错误码表）、oauth（设备流）、catalog（/v3/config+额度方言）、agenttool（search/webfetch）、images（生图）。裁判依据 docs/rules/ | 重启 dsh |
+| 上游适配器（v0.8.x） | `providers/trae/` | 全部 TraeWork CN 事实：oauth（**自持 ECDSA P-256 设备密钥**的设备流+DeviceProof 刷新，令牌存 `~/.dsh/trae-plugin-auth.json`）、catalog（本机 state.vscdb 目录→dsh profiles，复用 scripts/trae-model-catalog.mjs 纯函数——CLI 入口有 import.meta 守卫可安全当库导入）、gateway（OpenAI↔Trae 翻译网关 :3902：**不是 core 桥**——协议要改写不能透传，但复用 SessionLimiter/usage-meter 原语）、errors（mchost `{code}`/火山 ResponseMetadata/裸非 JSON 三态信封）。裁判依据 docs/reverse/traework-cn.md + trae-cloud-api.md | 网关端口/域名热生效；patch 路由改动重启 dsh |
 | 多服务商（G6/G7） | `providers/openai-compat.js` + `providers/ark`、`providers/bailian`、`providers/iflow`、`providers/qwen` | key 型 OpenAI 兼容上游注册表：共享骨架（GET /models 验目录 + provider 块组装；**/models 404 时 probeChatKey 探针验 key + fallbackModels 兜底清单**，裁判 docs/rules/extra-providers.md）+ 每上游 preset（baseURL/认证方言）。登记册在插件文件层 `managedProviders`，块写 settings.yaml、key 写 .credentials.yaml（踩坑 #21） | 免重启（热加载） |
 | 浏览器半 | `lib/client.js` | Settings → 插件配置 的 CodeBuddy 设置卡（`settings.plugin.item` slot；复用宿主 `dsh-client-ui-primitives` 组件 + `--dsw-alias-*` tokens + 注入式 cbc- 样式，见踩坑 #15） | 刷新页面（注意浏览器缓存，测试加 `--disable-http-cache`） |
 
@@ -33,6 +34,14 @@
 - **提示缓存按内容寻址、自动生效，与头无关**（2026-08-17 对照实测）：usage 每 chunk 带 `prompt_cache_hit_tokens/prompt_cache_miss_tokens/credit`；会话亲和三头与 `prompt_cache_key` 对命中**零影响**（2.6k/15.8k 两档 anon==session）；命中粒度 128 token。**按模型分策略**：deepseek-v4-pro 缓存工作（阈值 ≤2684 tok），deepseek-v3 在 ≤16.3k tok 全部 0 命中——v3 无缓存折扣。credit 实测单价：v4-pro miss ≈0.26/1k tok、hit ≈1/24；v3 ≈0.03/1k。命中可用性在 15.8k 规模有网关内部波动（0→全命中非单调），亲和头不能消除。详见 docs/diagnosis-cache-quota.md
 - **缓存按模型分策略实测表**（2026-08-18，docs/probes/cache-models-2026-08-18.jsonl）：v4-pro / v4-flash / kimi-k2.7 / hy3 有稳定跨请求前缀缓存（同 prompt 连发命中 95–100%，kimi 全量命中含尾部）；**glm-5.1/5.2 缓存条目秒-分钟级失效**，连发同 prompt 出现 0→83%→83%→0 非单调（4 次综合命中率 ≈41%——"命中率只有 40 多"类现象多源于此，与链路无关）；deepseek-v3 恒 0。**规模警告**：v4-flash 在 40k+ 真实增长内容下条目保留不稳定（coverage 21%→100% 乱跳，直连同尺寸合成内容却 100%——网关内部状态相关，诊断文档 §7）；v4-pro 99k 规模仍 agg 93%。**桥对缓存透明**：直连 vs 经桥同 payload 命中逐字节一致（2.6k 档均 95.4%）；dsh 每步注入的秒级时间戳只动尾部 ~19 tok（17.5k prompt 跨会话重发命中 99.9%，docs/probes/cache-dsh-path-2026-08-18.jsonl）
 - **内容审核 developer 角色事件**（2026-08-18 16:24 UTC 起，0.7.4 已解）：网关内容审核开始对**含 `role:"developer"` 消息**的 chat payload 一律 `finish_reason: content_filter`，仅改回 `system` 即放行。触发源在 pi-ai：openai-completions 序列化器对推理模型把 system prompt 写成 developer 角色（`useDeveloperRole = model.reasoning && compat.supportsDeveloperRole`，桥 URL 不在非标准名单 → true）——所以 dsh 会话全挂而官方 CLI/手写回放（手写一直是 `system`）全过，deepseek-v3 不受影响（非推理模型不发 developer）。**修复在桥**：chat 出站前把 `developer` 重写为 `system`（verify-bridge 第 9 节锁回归）。0.7.3 猜的"x-stainless 头组/序列化顺序"已被 OpenAI SDK 6.26.0 全保真回放证伪；教训：等价对比必须用 dump/抓包的真实字节，手写重建会抹掉差异字段。
+
+### TraeWork CN 通道事实（2026-08-23 实测，裁判 docs/reverse/trae-cloud-api.md）
+
+- 聊天网关在 `trae-api-cn.mchost.guru`：`POST /api/agent/v3/llm_utils_chat`（工具型一次性聊天，dsh provider 的目标）与 `create_agent_task`（官方 agent 环）；未认证一律 401 `{code:1001}`。api.trae.cn / api.trae.com.cn 上**没有** /api/agent/v3（404）
+- OAuth 在 `api.trae.cn`：`POST /trae/api/v3/oauth/ExchangeToken`（AuthCode 模式换 token / RefreshToken 模式+DeviceProof 刷新，同一端点）；假 ClientID → 400 code 10101 "Invalid client."，真 ClientID+假 AuthCode → 10101 "无效参数"；错误信封火山系 ResponseMetadata.Error；旧路径 `/cloudide/api/v3/trae/oauth/ExchangeToken` 仍存活但请求体已演进
+- 客户端 id：SOLO Lite 分支 `en1oxy7wnw8j9n`、TRAE 分支 `ono9krqynydwx5`；认证双头 `Authorization: Cloud-IDE-JWT <token>` + `x-cloudide-token`（+`X-User-Region: CN`）
+- **llm_utils_chat 请求信封与 SSE 事件语法未经带凭据联调**（置信度中/低，二进制 serde 字段提取）——校准路径：`node scripts/probe-trae-live.mjs --login` 后 `--chat "文本"`，偏差只改 `buildChatRequest`/`parseTraeEvent`（providers/trae/gateway.js 单点）
+- 官方本地 harness（:40005 axum，chat/start_chat/subscribe_events）**懒启动**且启动参数未知；其数据库加密；令牌不在 state.vscdb/凭据管理器任何可读位置——harness 驱动路线存档未采用（trae-cloud-api.md §3）
 
 ## 踩坑记录（每条都付过学费）
 
@@ -57,6 +66,10 @@
 19. **"逐字节等价"若靠手写重建 = 自欺欺人**（0.7.4 破解 content_filter 事件的代价）：pi-ai 会把推理模型的 system prompt 序列化成 `role:"developer"`，而此前所有"等价回放"都手写 `system`——差异字段被重建过程抹掉，导致把网关审核误判成"时变风控/按客户端形态"。正解是开 `CODEBUDDY_BRIDGE_DUMP` 抓真实请求体，再以 dump 为基准逐字段 bisect（一次翻转即定位 developer 角色）。网关对 developer/system 指令语义等价，桥直接重写即可。
 20. **共享层的运行状态必须是实例状态，不是模块状态**（0.7.5 拆 core/ 时保住的老语义）：verify-rotation 靠 `import('index.js?case=A')`/`?case=B` 拿两个独立插件实例来隔离轮询游标/冷却表——若这些状态沉进 `core/rotation.js` 的模块全局，两个实例经相对路径 import 命中的仍是**同一个** core 模块（query 不传染给子导入），隔离即破。纪律：core/ 一律导出工厂/类（`new KeyRotator()`、`createUsageMeter()`、`createBridge()`），实例在 index.js 模块作用域各创建一次；providers/codebuddy/ 同理（`createCodeBuddyProvider` 闭包持有 refresh 单飞锁/pending 态/quota 缓存）。写跨层测试断言轮询顺序前先想清楚游标在第几个请求上（verify-core-generic R4 用全新 rotator 钉死游标）。
 21. **settings.yaml 用户层一个坏 provider 块 = 全层连坐**（G6 实测 2026-08-19）：手写 `api: bogus` 的 provider 进 settings.yaml 后重启，**整个 llm-pi-ai 用户层被丢弃**（dsh-settings publish/解析 catch 后保持上一份好值/回退 base）——patch 层的 codebuddy 幸存，用户手写的 qianwenai/kimiclaw/kimi-coding 全灭。所以插件写 provider 块必须"本地校验（id 正则/api 枚举/URL）+ 实测 GET /models 后才落盘"。同机制其余事实：provider 块可纯 settings.yaml 覆盖层新增（`z.dict(profile)` 深合并、chokidar 热加载原地换路由、**免重启**）；凭据只有 `apiKeyEnv` 一个字段（无字面量 apiKey），每请求活解析、来源序 = 启动环境快照 > `~/.dsh/.credentials.yaml`（chokidar 活层，**文件必须 0600** 否则凭据缝抛错）> .env（冻结）；rc.7 的 Models 页自带 CustomProviderCard 就是这套（settings.mutate + credentials.set RPC，key ref 惯例 `<ROUTE>_API_KEY`）——插件因踩坑 #2 走自写文件，同一落点同一形状。
+22. **GitHub 逆向项目是"历史参照"不是"协议真相"**（v0.8.x 接 Trae 时验证）：linqiu919/trae2api 给了完整旧协议（/api/ide/v1/chat + x-ide-token + 无 DeviceProof 的刷新），但 2026-08 客户端已换成 /api/agent/v3 任务制 + mchost 网关 + ECDSA 设备签名——**盲抄旧仓库必然失败**。正确姿势：GitHub 定方向（端点族/信封形态/历史语义）→ 本机二进制 strings 提取当前字段 → 无凭据在线探测校准（401/400 错误信封就是免费指纹，不需要任何真实账号）→ 带凭据联调只留一步（probe-trae-live.mjs）。
+23. **别找存量 token，没有**（v0.8.x 实测排除法）：Trae 登录令牌不在 state.vscdb（无 `secret://` 键，只有无关的 mcpOAuth）、不在 Windows 凭据管理器（cmdkey 无条目）、harness 数据库 AES 加密（node:sqlite 直接 "file is not a database"）——令牌只在 Electron 内存/加密存储。唯一正路是**自持设备密钥走完整设备流**：自己生成 P-256 密钥对、DeviceInfo.DevicePublicKey 上报注册，refresh 的 DeviceProof 自己签（traework-cn.md 判断 #5"仅拿 refresh token 不足以复刻"只否定偷 IDE token 的路线，不适用自注册）。
+24. **官方本地 harness 是懒启动的黑盒**：IDE 常驻（13 个进程）≠ harness 在线（:40005 无监听，AI 面板交互才拉起）；启动器 x64/run_helper.exe 裸拉无参即退（参数/握手未知）。想"驱动官方 harness 免协议逆向"的路线卡在两处未知数；**直连云端**路线只卡"一次用户登录"——自主可推进性决定架构取舍。另外 harness 的 Rust axum 路由（/api/v1/chat/start_chat 等）与云端路由（/api/agent/v3/*）在 strings 里混在一起，提取时必须按命名空间分辨，别把本地 RPC 当云端端点。
+25. **第二上游接入的"镜像独占清单"模式**：patch 的 providers.trae **不带静态模型**，清单只由 settings.yaml 镜像独占（启用+目录已同步才铺，禁用即删路径）——与 codebuddy 的"静态基+镜像覆盖"不同（那边有 patch 静态 18 模型保底）。原因：Trae 目录来自本机缓存天然动态、无网关兜底清单可静态化；禁用时选择器必须整体清空，镜像删除即达（chokidar 热加载）。同一个 llm-pi-ai 行内两个 provider 并列（codebuddy+trae）是 patch 的正常写法，别拆成两个同 id 行——单 patch 文件内同 id 两行的合并语义未证实。
 
 ## 常用命令
 
@@ -70,6 +83,9 @@ node scripts/verify-bridge.mjs                  # 离线桥回归（mock 网关�
 node scripts/verify-rotation.mjs                # 离线多 Key 轮询回归（mock 网关按 Key 行为表）
 node scripts/verify-core-generic.mjs            # core/ 通用性证伪（静态纯净扫描 + 第二上游全链路）
 node scripts/verify-providers.mjs               # 多服务商骨架离线回归（/models 404 兜底 + 认证方言）
+node scripts/verify-trae-provider.mjs           # Trae 通道离线回归（mock OAuth 全流程/目录映射/翻译网关）
+node scripts/probe-trae-live.mjs --login        # Trae 真实登录（浏览器授权 + DeviceProof 刷新自证；一次性）
+node scripts/probe-trae-live.mjs --chat "文本"  # Trae 真实对话联调（原始证据落 docs/probes/ 校准信封）
 node scripts/measure-latency.mjs --mock|--real  # 识图/搜索端到端延迟分布（JSONL 落盘）
 node scripts/probe-media.mjs                    # 生图/视频/3D 端点探测（证据落盘 docs/probes/）
 npm run verify                                  # 同在线探测
@@ -85,7 +101,16 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 ## 版本现状
 
-0.1.0 初始 → 0.2 文档同步 → 0.3 对齐 /v3/config + verify 脚本 → 0.4 思考强度可调 → 0.5 ctx.web 后端 + 流式桥 + 识图 → 0.5.1 设置卡 → 0.5.2 OAuth + 多 Key → 0.5.3 功能分区 + 一键开关 → 0.5.4 模型逐个启停同步选择器 → 0.5.5 会话管理 A+B → 0.5.6 桥三 bug 修复 + 设置卡重构 → 0.6 主聊天走桥（OAuth 覆盖模型对话）→ 0.6.1 桥取证日志 + 缓存/额度诊断存档 → 0.7 设置卡流畅度 + 搜索修复与错误硬化 + 生图接入 + 多 Key 轮询 → 0.7.1 设置卡迁移 dsh 原生 UI 资源（primitives+tokens+注入样式）+ 回归目录重建 → 0.7.2 桥 EADDRINUSE 崩溃修复 + "额度与用量"设置卡分区（桥恒开 usage 计量 + 轮次聚类 + 账户额度信号；数字剩余额度无 API 已实证存档）→ 0.7.3 适配 dsh rc.7（settings.plugin.item 槽位 keyed 化：宿主半注册 settings 命名空间 + 浏览器半注册加 key，双版兼容写法见踩坑 #18；其余 rc.7 变化逐包 diff 实证无关）→ 0.7.4 主聊天 content_filter 修复（根因=pi-ai 把推理模型 system prompt 写成 developer 角色触发网关审核，桥出站重写 developer→system；dump+bisect 取证法见踩坑 #19）→ 0.7.5 架构重构（index.js 拆 core/ provider 无关凭据边缘层 + providers/codebuddy/ 薄适配器，规则文档裁判逐字段去留；证伪测试 verify-core-generic 证明第二 OpenAI 兼容上游接入 core/ 零改动；踩坑 #20 实例状态纪律）（详见 CHANGELOG.md）。
+0.1.0 初始 → 0.2 文档同步 → 0.3 对齐 /v3/config + verify 脚本 → 0.4 思考强度可调 → 0.5 ctx.web 后端 + 流式桥 + 识图 → 0.5.1 设置卡 → 0.5.2 OAuth + 多 Key → 0.5.3 功能分区 + 一键开关 → 0.5.4 模型逐个启停同步选择器 → 0.5.5 会话管理 A+B → 0.5.6 桥三 bug 修复 + 设置卡重构 → 0.6 主聊天走桥（OAuth 覆盖模型对话）→ 0.6.1 桥取证日志 + 缓存/额度诊断存档 → 0.7 设置卡流畅度 + 搜索修复与错误硬化 + 生图接入 + 多 Key 轮询 → 0.7.1 设置卡迁移 dsh 原生 UI 资源（primitives+tokens+注入样式）+ 回归目录重建 → 0.7.2 桥 EADDRINUSE 崩溃修复 + "额度与用量"设置卡分区（桥恒开 usage 计量 + 轮次聚类 + 账户额度信号；数字剩余额度无 API 已实证存档）→ 0.7.3 适配 dsh rc.7（settings.plugin.item 槽位 keyed 化：宿主半注册 settings 命名空间 + 浏览器半注册加 key，双版兼容写法见踩坑 #18；其余 rc.7 变化逐包 diff 实证无关）→ 0.7.4 主聊天 content_filter 修复（根因=pi-ai 把推理模型 system prompt 写成 developer 角色触发网关审核，桥出站重写 developer→system；dump+bisect 取证法见踩坑 #19）→ 0.7.5 架构重构（index.js 拆 core/ provider 无关凭据边缘层 + providers/codebuddy/ 薄适配器，规则文档裁判逐字段去留；证伪测试 verify-core-generic 证明第二 OpenAI 兼容上游接入 core/ 零改动；踩坑 #20 实例状态纪律）→ 0.8.0 额度可见 + 模型动态化 + 多服务商凭据中心 → 0.8.1–0.8.3 **TraeWork CN 订阅额度通道**（0.8.1 目录提取器+自持设备密钥 OAuth+目录镜像；0.8.2 OpenAI↔Trae 翻译网关 :3902+patch 路由+组合根接线；0.8.3 联调脚本+证据归档+43 断言离线回归；聊天信封/SSE 语法待 probe-trae-live 一次性联调校准，踩坑 #22–#25）（详见 CHANGELOG.md）。
+
+## v0.8.x：TraeWork CN 订阅额度通道（0.8.1→0.8.3 直达，2026-08-23）
+
+目标：从 dsh 消耗 Trae 订阅额度。架构与 CodeBuddy 通道同构（OAuth 边缘 + 本地网关 + 目录镜像），差异三点：凭据只有 OAuth 一支（自持 ECDSA P-256 设备密钥，refresh 的 DeviceProof 自签）；网关是**协议翻译器**不是透传代理（providers/trae/gateway.js，OpenAI↔Trae SSE 互转）；模型清单**镜像独占**（patch 的 providers.trae 不带静态模型，启用+同步才铺、禁用即删，踩坑 #25）。
+
+- **0.8.1 凭据与目录**：`providers/trae/oauth.js` 设备流（PKCE+回环回调+ExchangeToken 双模式）；`catalog.js` 复用 scripts/trae-model-catalog.mjs 纯函数读本机 state.vscdb；设置卡 TraeWork CN 分区（启用/登录/同步/端口/域名）。
+- **0.8.2 聊天桥**：翻译网关 :3902（`traeBridgePort`）+ patch 哨兵路由 + apply 生命周期（迟绑定 `traeSettingsFn`、启用自动同步目录、Trae 用量进同一 usage-meter）。
+- **0.8.3 联调与稳固化**：`scripts/probe-trae-live.mjs`（--login/--chat/--sig）；`docs/reverse/trae-cloud-api.md` 证据归档（无凭据探测锚点：mchost 401/1001、ExchangeToken 10101 两层、GetUserInfo 20310）；verify-trae-provider 43 断言（mock 用我们注册的公钥**验 DeviceProof 签名**，自持密钥链路端到端证通）。
+- **已知边界（诚实标注）**：llm_utils_chat 请求信封与 SSE 事件语法未经真实联调（置信度中/低）——用户跑一次 `--login` 后 `--chat` 即可校准，改动单点在 buildChatRequest/parseTraeEvent；dsh 侧主聊天选 trae 模型前需先启用通道+登录+同步目录（设置卡有全流程）。
 
 ## v0.5.5：会话管理 A + B（已完成 2026-08-17）
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.3 (2026-08-23)
+
+- **v0.8.1→0.8.3 直达：TraeWork CN 订阅额度通道**（目标"从 dsh 消耗 Trae 订阅额度"；本轮三个里程碑按 CHANGELOG 三条目推进，一次交付）
+  - **联调与取证基建**：`scripts/probe-trae-live.mjs`——`--login`（真实设备流 + 登录后立即 DeviceProof 刷新自证，令牌只打掩码）／`--chat`（经网关请求构造器直打真实 `llm_utils_chat`，原始响应落 `docs/probes/trae-chat-live-*.json` 供信封/事件语法校准）／`--sig der|raw`（DeviceProof 签名编码切换，应对线上校验形态）；`TRAE_BRIDGE_LOG` 网关取证日志
+  - **证据归档 `docs/reverse/trae-cloud-api.md`**：无凭据在线探测（mchost 聊天网关 401/1001、ExchangeToken 双路径 10101 两层、GetUserInfo 20310）+ harness.dll 协议面提取（agent/v3 路由族、llm_utils_chat 信封字段、双认证头组、BYOK 直连证据）+ 本地 harness 备选架构存档（懒启动/加密 DB/run_helper，未采用的原因）+ trae2api 历史协议交叉证据；逐条标注置信度，联调路径单点化（buildChatRequest / parseTraeEvent）
+  - 回归：verify:trae-provider 43 断言、verify:trae 49 断言、verify:bridge / verify:core / verify:providers / verify-rotation 全绿
+
+## 0.8.2 (2026-08-23)
+
+- **Trae 聊天桥（OpenAI↔Trae 翻译网关）**：`providers/trae/gateway.js`——127.0.0.1:3902（`traeBridgePort`）本地网关，`POST /v1/chat/completions` 接 OpenAI 方言，出站转 `/api/agent/v3/llm_utils_chat`（信封=buildChatRequest），SSE 互转（parseTraeEvent 容错字段发现：增量/用量/结束/错误四态）→ OpenAI chunk 流或聚合 chat.completion；`GET /v1/models` 回已同步目录（dsh 内置"获取可用模型"在本通道可用）；复用 core 的 SessionLimiter（会话并发闸）与 usage-meter（Trae 用量进同一张用量视图）；上游 401/1001、凭据不可用 503、坏 payload 400 全结构化映射；listen 失败降级不炸宿主（踩坑 #17 纪律）
+- **patch 路由**：`cordis.patch.yml` 的 llm-pi-ai.providers 新增 `trae`（openai-completions → `http://127.0.0.1:3902/v1`，哨兵 `Authorization: Bearer dsh-trae-bridge`——机制同 codebuddy 路由，踩坑 #11）；**不带静态模型清单**——清单由镜像独占（见 0.8.1），杜绝陈旧遮蔽
+- **组合根接线**：apply() 内 `traeSettingsFn` 迟绑定 + `syncTraeBridge` 生命周期（启用起网关+自动目录同步，禁用停网关+撤镜像，热加载免重启）；`trae-model-sync`/`trae-model-list`/`traeModelSetEnabled` 设置路由
+
+## 0.8.1 (2026-08-23)
+
+- **Trae OAuth 凭据边缘（自持设备密钥）**：`providers/trae/oauth.js`——完整设备流（PKCE S256 + 自生成 P-256 密钥对 + DeviceInfo.DevicePublicKey 上报 → `POST api.trae.cn/trae/api/v3/oauth/ExchangeToken` AuthCode 模式）；本地回环 `/authorize` 回调服务（随机端口，10 分钟超时）；refresh = RefreshToken 模式 + DeviceProof（`POST\n/trae/api/v3/oauth/ExchangeToken\n<ClientID>\n<RefreshToken>\n<Timestamp>\n<Nonce>` 逐行签名，ECDSA P-256/SHA-256，DER 默认可切 raw）——**刷新完全自控，不依赖官方 IDE 安全存储**（traework-cn.md 判断 #5 只否定"偷 IDE token"路线）；单飞刷新、令牌/私钥只存 `~/.dsh/trae-plugin-auth.json` 永不回传浏览器
+- **本地模型目录接入**：`providers/trae/catalog.js` 复用提取器纯函数（state.vscdb → 归一化目录 → dsh profiles：排除 BYOK/禁用条目，ctx 回落 max 数组，multimodal→input）；镜像进 `settings.yaml` 的 `llm-pi-ai.providers.trae.models`（启用+已同步才铺，禁用即删路径——选择器里 Trae 模型整体热增删）
+- **设置卡 TraeWork CN 分区**：启用开关（含网关运行状态）、OAuth 登录/登出/账号视图、目录同步按钮（候选指纹+计数）、端口与三个域名配置；`providers/trae/errors.js` 错误信封规范化（mchost `{code}` / 火山 ResponseMetadata / 裸非 JSON 三态）
+- **离线回归 `scripts/verify-trae-provider.mjs`（43 断言）**：mock api.trae.cn 全设备流（PKCE 可验证、**mock 用我们注册的公钥验 DeviceProof 签名**——自持密钥链路端到端证通）、目录 fixture 映射、mock 云端 SSE 的翻译网关全路径
+
 ## 0.8.0 (2026-08-20)
 
 - **v0.8 Goal 落地：额度可见 + 模型动态化 + 多服务商凭据中心**（目标与验收见 `docs/goals/v0.8-额度可见-模型动态化-多服务商.md`，逐 G 项进展见 `docs/rules/STATE.md`）：
