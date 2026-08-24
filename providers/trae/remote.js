@@ -131,16 +131,32 @@ export function buildRemoteCreateBody(model, messages) {
   }
 }
 
-/** 创建 remote 会话。返回 {sessionId, messageId}；失败抛带 HTTP/业务码的 Error。 */
+/** 创建 remote 会话。返回 {sessionId, messageId}；失败抛带 HTTP/业务码的 Error。
+ *  边缘韧性（2026-08-24 故障取证，docs/diagnosis-trae-3003.md）：TLB/nginx 存在
+ *  节点间路由表漂移——同一时刻带凭据请求可能命中缺 /api/remote/v1 路由的节点，
+ *  返回**裸文本 404 "Not Found"（或 WAF 空体 403）**，而业务级错误恒为 JSON。
+ *  对这两种"裸非 JSON 拒绝"做一次短退避重试（创建失败不产生会话，幂等安全）。 */
+const EDGE_RETRY_DELAY_MS = 900
+const isEdgeSkewReject = (status, text) =>
+  (status === 404 || status === 403) && !text.trimStart().startsWith('{')
+
 export async function createRemoteSession(baseURL, token, model, messages) {
-  const resp = await fetch(`${baseURL}/api/remote/v1/chat_sessions`, {
-    method: 'POST',
-    headers: remoteWebHeaders(token, { stream: false }),
-    body: JSON.stringify(buildRemoteCreateBody(model, messages)),
-  })
-  const text = await resp.text()
+  const attemptOnce = async () => {
+    const resp = await fetch(`${baseURL}/api/remote/v1/chat_sessions`, {
+      method: 'POST',
+      headers: remoteWebHeaders(token, { stream: false }),
+      body: JSON.stringify(buildRemoteCreateBody(model, messages)),
+    })
+    return { resp, text: await resp.text() }
+  }
+  let { resp, text } = await attemptOnce()
+  if (isEdgeSkewReject(resp.status, text)) {
+    await new Promise((r) => setTimeout(r, EDGE_RETRY_DELAY_MS))
+    ;({ resp, text } = await attemptOnce())
+  }
   if (resp.status >= 400) {
-    const err = new Error(`trae remote create_session [${resp.status}]: ${text.slice(0, 300)}`)
+    const skew = isEdgeSkewReject(resp.status, text)
+    const err = new Error(`trae remote create_session [${resp.status}]: ${text.slice(0, 300)}${skew ? '（边缘节点路由漂移/WAF 拦截，通常数分钟内自愈；可稍后重试或改用 inline 通道）' : ''}`)
     err.status = resp.status
     throw err
   }

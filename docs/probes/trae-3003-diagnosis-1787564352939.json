@@ -1,0 +1,163 @@
+{
+  "at": "2026-08-24T09:38:51.008Z",
+  "account_uid_masked": "211***",
+  "steps": [],
+  "pool_ide_endpoint0": {
+    "status": 200,
+    "packs": [
+      {
+        "endpoint": 0,
+        "limit": 2000,
+        "used": 0.6292,
+        "expire": 1788437783
+      },
+      {
+        "endpoint": 1,
+        "limit": 2000,
+        "used": 1803.582,
+        "expire": 1788437783
+      },
+      {
+        "endpoint": 0,
+        "expire": 1788191999
+      },
+      {
+        "endpoint": 0,
+        "limit": 500,
+        "used": 500,
+        "expire": 1788191999
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1788438049
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1788492579
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1788537789
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1788632325
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1788771241
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789043450
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789099507
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789176578
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789265695
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789366781
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789471212
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789537262
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789702184
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1789798230
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1790067453
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1790154827
+      },
+      {
+        "endpoint": 1,
+        "limit": 200,
+        "expire": 1790214786
+      }
+    ]
+  },
+  "pool_work_endpoint1": {
+    "status": 200,
+    "packs": [
+      {
+        "endpoint": 0,
+        "limit": 2000,
+        "used": 0.6292,
+        "expire": 1788437783
+      },
+      {
+        "endpoint": 0,
+        "expire": 1788191999
+      },
+      {
+        "endpoint": 0,
+        "limit": 500,
+        "used": 500,
+        "expire": 1788191999
+      }
+    ]
+  },
+  "step_A_nonDefault": {
+    "label": "A-nondefault-glm53",
+    "model": "glm-5.3",
+    "status": 200,
+    "sseError": {
+      "code": 3003,
+      "message": "all models failed",
+      "extra": null
+    },
+    "providerModel": null,
+    "ms": 244
+  },
+  "step_B_default": {
+    "label": "B-default-kimi26",
+    "model": "kimi-k2.6",
+    "status": 200,
+    "sseError": {
+      "code": 3003,
+      "message": "all models failed",
+      "extra": null
+    },
+    "providerModel": null,
+    "ms": 408
+  },
+  "verdict": "ALL-3003: 默认模型也 3003 → 怀疑账号/套餐/限流维度（4011? 权益?），需进一步排查"
+}

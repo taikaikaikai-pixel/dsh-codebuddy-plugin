@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.8.5 (2026-08-24)
+
+- **"trae 3003 all models failed / PI_AI_ERROR" 故障定位 + 错误面加固**（用户实测报告驱动；证据链 docs/diagnosis-trae-3003.md，对照实验证据 docs/probes/trae-3003-diagnosis-*.json）：
+  - **根因=Trae 服务端 inline_chat 面模型解析层故障，非插件缺陷**：同凭据同信封对照实验——inline_chat 对一切 model 名（含默认 kimi-k2.6、含不带 model 字段）一律 SSE error 3003 且无 timing_cost（服务端未走到选模一步）；chat_v3 同信封完整对话成功；额度双池充足；4011 限流文案可辨。当日服务端三阶段时变：静默改派任意模型 → 仅非默认模型硬 3003（§5.1）→ 全模型 3003
+  - **次要发现**：remote create_session 间歇性**裸文本 404**（TLB 节点路由漂移，与头组/体无关，分钟级自愈）；高频探测触发边缘 WAF 空体 403（含无凭据请求）；991502 solo_agent_parallel_limit 并发门（僵尸会话占位只能等 TTL）；remote 模型清单默认位变更（solo_agent_remote 默认=Doubao-Seed-Code 等）印证服务端当日在大改模型注册表
+  - **errors.js**：码表新增 3003/991502 语义；`formatTraeErrorMessage` 对已知码追加可操作处置提示（3003 → 指引切 remote 通道/等服务端恢复）
+  - **gateway.js**：三处错误文案统一走 formatTraeErrorMessage——用户再遇 3003 时错误信息可直接自助
+  - **remote.js**：createRemoteSession 对裸文本 404/403（边缘漂移指纹，业务拒绝恒为 JSON）自动短退避重试一次（创建失败不产生会话，幂等安全）；持续失败报文带自愈指引
+  - 回归：verify-trae-provider 新增 4 断言（mock 云端 3003 → 提示透传 / 首次裸 404 重试成功 / 持续 404 文案带指引 / formatTraeErrorMessage 单元），77 断言全绿；verify:bridge / verify:core / verify:providers / verify:trae / verify-rotation 全绿
+  - 规范化诊断脚本 `scripts/probe-trae-3003-diagnosis.mjs`（额度池只读查询 + A/B/C/R 对照实验，间隔 ≥20s 纪律）
+
 ## 0.8.4 (2026-08-24)
 
 - **修复"登录态有问题"：聊天协议全面校准到真实线上形态**（用户实测报告驱动；无凭据探测 + Trae2api-cn（github.com/autumnsentiment/Trae2api-cn，生产级参照）+ 带凭据联调三源校准）：

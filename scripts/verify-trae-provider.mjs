@@ -32,8 +32,8 @@ import { DatabaseSync } from 'node:sqlite'
 import { createTraeOAuth } from '../providers/trae/oauth.js'
 import { catalogToProfiles } from '../providers/trae/catalog.js'
 import { buildChatRequest, createTraeStreamParser, createTraeGateway, cumulativeDelta, TRAE_APP_ID, TRAE_IDE_VERSION, TRAE_IDE_VERSION_CODE } from '../providers/trae/gateway.js'
-import { flattenQuery, buildRemoteCreateBody, createRemoteEventParser } from '../providers/trae/remote.js'
-import { normalizeTraeError } from '../providers/trae/errors.js'
+import { flattenQuery, buildRemoteCreateBody, createRemoteEventParser, createRemoteSession } from '../providers/trae/remote.js'
+import { normalizeTraeError, formatTraeErrorMessage } from '../providers/trae/errors.js'
 import { createTraeProvider } from '../providers/trae/index.js'
 
 let failures = 0
@@ -158,7 +158,7 @@ function mockTraeAuth() {
 // mock Trae chat cloud (SSE)
 // ---------------------------------------------------------------------------
 
-function mockTraeRemote({ authedToken = 'tok-live' } = {}) {
+function mockTraeRemote({ authedToken = 'tok-live', failFirstCreates = 0 } = {}) {
   const state = { creates: [], events: 0, stops: 0 }
   const write = (res, ev, data) => res.write(`event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`)
   const server = createServer((req, res) => {
@@ -172,6 +172,14 @@ function mockTraeRemote({ authedToken = 'tok-live' } = {}) {
         return
       }
       if (req.method === 'POST' && url === '/api/remote/v1/chat_sessions') {
+        // failFirstCreates：前 N 次 create 回**裸文本 404**（TLB 节点路由漂移的
+        // 真实线缆形态，2026-08-24 故障取证 docs/diagnosis-trae-3003.md）
+        if (state.creates.length < failFirstCreates) {
+          state.creates.push({ headers: req.headers, body: null })
+          res.writeHead(404, { 'content-type': 'text/plain' })
+          res.end('Not Found')
+          return
+        }
         state.creates.push({ headers: req.headers, body: raw ? JSON.parse(raw) : null })
         res.writeHead(200, { 'content-type': 'application/json' })
         res.end(JSON.stringify({ code: 0, data: { chat_session_id: 'sess-1', message_id: 'msg-1' }, message: 'success' }))
@@ -212,7 +220,7 @@ function mockTraeRemote({ authedToken = 'tok-live' } = {}) {
 // mock Trae chat cloud (SSE)
 // ---------------------------------------------------------------------------
 
-function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false } = {}) {
+function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false, sseError = null } = {}) {
   const state = { requests: [] }
   const server = createServer((req, res) => {
     let raw = ''
@@ -232,6 +240,15 @@ function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = fals
         return
       }
       res.writeHead(200, { 'content-type': 'text/event-stream' })
+      if (sseError) {
+        // 真实线缆形态（2026-08-24 inline 面 3003 故障取证）：HTTP 200 SSE 里直接
+        // error 事件 + done，无 metadata/timing_cost——服务端连模型都没选出来
+        res.write(`event: error\ndata: ${JSON.stringify(sseError)}\n\n`)
+        res.write('event: done\n')
+        res.write('data: {"finish_reason":"stop"}\n\n')
+        res.end()
+        return
+      }
       if (withTools) {
         // 工具调用真实线缆形态（2026-08-24 docs/probes/trae-chat-live-tools-*）：
         // function_call 键 + arguments 增量片段 + 续片空 id + done 仍 finish_reason:"stop"
@@ -801,6 +818,80 @@ try {
   check('normalizeTraeError：火山信封/裸码/非 JSON 三态', nerr.code === '10101' && normalizeTraeError(401, { code: 1001 }).code === 1001 && normalizeTraeError(500, null).message === 'HTTP 500')
   check('normalizeTraeError：空 message 按码表回填（remote 1005 套餐门）',
     normalizeTraeError(200, { code: 1005, message: '', data: { plan: 1 } }).message.includes('entitlement'))
+
+  // =========================================================================
+  // 2026-08-24 "trae 3003 all models failed / PI_AI_ERROR" 故障定位的回归锁
+  // （证据链与结论见 docs/diagnosis-trae-3003.md）
+  console.log('== 错误语义与边缘韧性（3003 故障取证回归锁）==')
+  check('formatTraeErrorMessage：已知码追加处置提示，未知码原样',
+    formatTraeErrorMessage(3003, 'all models failed').includes('聊天传输')
+    && formatTraeErrorMessage(9999, 'x') === 'trae 9999 x'
+    && formatTraeErrorMessage(null, 'HTTP 403') === 'trae HTTP 403')
+
+  const errMock = await mockTraeChat({ sseError: { code: 3003, message: 'all models failed', extra: null } })
+  const rt6 = { running: false, port: null, lastError: null }
+  const gateway6 = createTraeGateway({
+    settings: () => ({ ...settings, traeChatBaseURL: errMock.base, maxConcurrentPerSession: 4 }),
+    withCredentials: async (attempt) => {
+      try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
+    },
+    readAuthDevice: () => null,
+    readAuthMeta: () => ({ uid: 'u-001' }),
+    meter: { record: () => {} },
+    runtime: rt6,
+    getCatalogIds: () => ids,
+  })
+  const stop6 = gateway6.listen(0)
+  await sleep(80)
+  const eRes = await fetch(`http://127.0.0.1:${rt6.port}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'kimi-k2.6', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const eText = await eRes.text()
+  // 流式语义：SSE 头在消费上游前已发（恒 200），错误以流内 error 块 + [DONE] 终结
+  const eLine = eText.split('\n').find((l) => l.startsWith('data:') && l.includes('3003'))
+  check('inline SSE 3003：code 透传 + 处置提示进错误消息（用户可自助）',
+    eRes.status === 200 && eText.includes('data: [DONE]')
+    && !!eLine && JSON.parse(eLine.slice(5)).error?.code === 3003
+    && String(JSON.parse(eLine.slice(5)).error?.message).includes('remote'))
+  stop6()
+  errMock.server.closeAllConnections?.()
+  errMock.server.close()
+
+  const skewMock = await mockTraeRemote({ failFirstCreates: 1 })
+  const rt7 = { running: false, port: null, lastError: null }
+  const gateway7 = createTraeGateway({
+    settings: () => ({ ...settings, traeChatBaseURL: skewMock.base, traeChatTransport: 'remote', maxConcurrentPerSession: 4 }),
+    withCredentials: async (attempt) => {
+      try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
+    },
+    readAuthDevice: () => null,
+    readAuthMeta: () => ({ uid: 'u-001' }),
+    meter: { record: () => {} },
+    runtime: rt7,
+    getCatalogIds: () => ids,
+  })
+  const stop7 = gateway7.listen(0)
+  await sleep(80)
+  const skRes = await fetch(`http://127.0.0.1:${rt7.port}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'glm-5.3', messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const skBody = await skRes.json()
+  check('remote create 首次裸 404（节点漂移）：自动重试一次后成功',
+    skRes.status === 200 && skBody.choices?.[0]?.message?.content === '你好，世界' && skewMock.state.creates.length === 2)
+  stop7()
+  skewMock.server.closeAllConnections?.()
+  skewMock.server.close()
+
+  const deadMock = await mockTraeRemote({ failFirstCreates: 99 })
+  let deadErr = null
+  try { await createRemoteSession(deadMock.base, 'tok-live', 'glm-5.3', [{ role: 'user', content: 'x' }]) } catch (e) { deadErr = e }
+  check('remote create 持续裸 404：两次尝试后失败且文案带自愈指引',
+    deadMock.state.creates.length === 2 && deadErr?.status === 404 && String(deadErr?.message).includes('边缘节点'))
+  deadMock.server.closeAllConnections?.()
+  deadMock.server.close()
+
 } finally {
   rmSync(workDir, { recursive: true, force: true })
 }

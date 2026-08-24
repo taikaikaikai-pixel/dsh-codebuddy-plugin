@@ -1,0 +1,49 @@
+{
+  "at": "2026-08-24T09:40:31.452Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "只回复两个字：成功"
+            }
+          ]
+        }
+      ],
+      "model": "kimi-k2.6",
+      "function": "inline_chat",
+      "request_id": "6e2237d9-bf77-4530-974a-8f044cc509f1",
+      "session_id": "probe-live",
+      "stream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Mon, 24 Aug 2026 09:40:31 GMT",
+      "server": "volc-dcdn",
+      "server-timing": "inner; dur=201, cdn-cache;desc=MISS, origin;dur=227, edge;dur=0",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "transfer-encoding": "chunked",
+      "via": "n6-100-090.jsyancheng-mp02-ct.Creative",
+      "x-dsa-origin-status": "200",
+      "x-dsa-trace-id": "17875644319855d23d743ca4e8899c6d8950c04edb",
+      "x-request-ip": "36.59.114.96",
+      "x-tt-logid": "20260824174031FD5241BA9471006727E3",
+      "x-tt-timestamp": "1787564431.417",
+      "x-tt-trace-host": "010823173c3165fe67b9a05caf4068eb7834bc75caba07dbaa7355459d0f127347210626400676982e7a95a59039681af1788f52035184090a773ebce44c39d3168f1415ab500403f834ebc08353e1f4642dfdbd450cb0883abad49496f9241891",
+      "x-tt-trace-id": "00-260824174031FD5241BA9471006727E3-27C4146E8D9A9A4B-00",
+      "x-tt-trace-tag": "id=5"
+    },
+    "bodyHead": "id:1\nevent:error\ndata:{\"code\":3003,\"message\":\"all models failed\",\"extra\":null}\n\nid:2\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 127
+  }
+}

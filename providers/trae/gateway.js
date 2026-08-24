@@ -39,7 +39,7 @@ import { randomUUID } from 'node:crypto'
 import { appendFileSync } from 'node:fs'
 
 import { SessionLimiter } from '../../core/bridge.js'
-import { normalizeTraeError, TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './errors.js'
+import { normalizeTraeError, formatTraeErrorMessage, TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './errors.js'
 import {
   createRemoteSession, openRemoteEvents, stopRemoteSession, createRemoteEventParser,
 } from './remote.js'
@@ -439,7 +439,7 @@ export function createTraeGateway(deps) {
           const ev = parser.handle(lastEventName, chunk)
           if (ev.error) {
             const parsed = normalizeTraeError(200, ev.error)
-            const msg = `trae ${parsed.code ?? ''} ${parsed.message}`.trim()
+            const msg = formatTraeErrorMessage(parsed.code, parsed.message)
             if (!res.headersSent) {
               res.writeHead(502, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: { message: msg, code: parsed.code } }))
@@ -539,7 +539,7 @@ export function createTraeGateway(deps) {
         const parsed = normalizeTraeError(upstream.status, await upstream.json().catch(() => null))
         const status = upstream.status === 401 || upstream.status === 429 ? upstream.status : 502
         res.writeHead(status, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: { message: `trae ${parsed.code ?? ''} ${parsed.message}`.trim(), code: parsed.code } }))
+        res.end(JSON.stringify({ error: { message: formatTraeErrorMessage(parsed.code, parsed.message), code: parsed.code } }))
         gwLog({ dir: 'err', status: upstream.status, code: parsed.code, model, ms: Date.now() - t0 })
         return
       }
@@ -581,7 +581,7 @@ export function createTraeGateway(deps) {
           try { chunk = JSON.parse(data) } catch { continue }
           const ev = parser.handle(lastEventName, chunk)
           if (ev.error) {
-            const msg = `trae ${ev.error.code ?? ''} ${ev.error.message}`.trim()
+            const msg = formatTraeErrorMessage(ev.error.code, ev.error.message)
             if (!res.headersSent) {
               res.writeHead(502, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: { message: msg, code: ev.error.code } }))

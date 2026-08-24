@@ -142,6 +142,11 @@ providers/trae/gateway.js（buildChatRequest / createTraeStreamParser）。
     error `3003 "all models failed"`；附加 custom_model 对象无效（同样 3003）。
     早间该面曾对非默认模型静默改派 kimi-k2.6（200 成功），当日下午起变为
     硬错误 3003——**服务端行为有时变性**，两态都要兼容。
+    **08-24 当日再恶化（~09:39 UTC 起）**：3003 扩大到一切 model 名（含默认
+    kimi-k2.6、含不带 model 字段），失败流无 timing_cost——服务端未走到选模
+    成功一步；同信封同凭据 chat_v3 正常对话，额度池充足 → 判定 inline 面模型
+    解析层服务端故障。完整证据链与对照实验见 **docs/diagnosis-trae-3003.md**
+    （证据 docs/probes/trae-3003-diagnosis-*.json）。
   - `function=chat_v3` / `solo_agent_lite`：任意 model 名（包括
     `"not-a-model"`）都 200，但 timing_cost 证实恒为
     `seed-code-lite-dev-0602-v1-part1`；`solo_work_lite` 恒 `glm-5.2`。
@@ -166,6 +171,13 @@ providers/trae/gateway.js（buildChatRequest / createTraeStreamParser）。
   - 套餐门：error 事件 `1005`（message 空、data.plan 携带档位）——Free 账号
     请求 kimi-k3 命中（model_config 显示路由成功但 LLM 调用被拒）；glm-5.3 /
     kimi-k2.6 / DeepSeek 系可服务。
+  - 并发门：业务 429 `991502 reason:solo_agent_parallel_limit`——只创建会话不
+    消费事件流的僵尸会话同样占位；stop 端点对未运行会话回 409 "chat session
+    is not running"，只能等沙箱 TTL 自灭（08-24 实测，diagnosis-trae-3003.md §3）。
+  - **边缘层指纹（08-24 故障取证）**：TLB/nginx 节点路由漂移时 create_session
+    返回**裸文本** `404 Not Found`（text/plain；WAF 拦截则为空体 403），而
+    业务级拒绝恒为 JSON 信封、无凭据探测同路径稳定 401 JSON `{code:1001}`。
+    remote.js 已对裸 404/403 自动重试一次。详见 docs/diagnosis-trae-3003.md §3。
 - **额度双池实测**（2026-08-24，docs/probes/trae-credits-*.json）：
   `POST api.trae.cn/trae/api/v2/pay/ide_user_ent_usage`（body
   `{"require_usage":true,"req_source":0|1|2}`，Cloud-IDE-JWT + x-device-*
