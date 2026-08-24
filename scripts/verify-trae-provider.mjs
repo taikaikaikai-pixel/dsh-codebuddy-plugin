@@ -223,7 +223,7 @@ function mockTraeRemote({ authedToken = 'tok-live', failFirstCreates = 0, hangCr
 // mock Trae chat cloud (SSE)
 // ---------------------------------------------------------------------------
 
-function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false, sseError = null, hang = false } = {}) {
+function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false, sseError = null, hang = false, fnError = null } = {}) {
   const state = { requests: [] }
   const server = createServer((req, res) => {
     let raw = ''
@@ -244,6 +244,17 @@ function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = fals
       }
       // hang：一个字节都不发（比 sseError 更底层的死态——首字节护栏的靶子）
       if (hang) return
+      // fnError：仅对指定 function 注入 3003（事故回退测试：inline 坏 / chat_v3 好）
+      if (fnError) {
+        const fn = (() => { try { return JSON.parse(raw)?.function } catch { return null } })()
+        if (fn === fnError) {
+          res.writeHead(200, { 'content-type': 'text/event-stream' })
+          res.write(`event: error\ndata: ${JSON.stringify({ code: 3003, message: 'all models failed', extra: null })}\n\n`)
+          res.write('event: done\ndata: {"finish_reason":"stop"}\n\n')
+          res.end()
+          return
+        }
+      }
       res.writeHead(200, { 'content-type': 'text/event-stream' })
       if (sseError) {
         // 真实线缆形态（2026-08-24 inline 面 3003 故障取证）：HTTP 200 SSE 里直接
@@ -934,6 +945,39 @@ try {
     Date.now() - rh0 < 5000 && !!hErr && /超时/.test(String(hErr?.message)) && String(hErr.message).includes('inline'))
   hangRemote.server.closeAllConnections?.()
   hangRemote.server.close()
+
+  // 事故回退：inline_chat 3003 → 自动降级 chat_v3 出真实文本（诚实披露改派）
+  const fbMock = await mockTraeChat({ fnError: 'inline_chat' })
+  const rt9 = { running: false, port: null, lastError: null }
+  const meterFb = []
+  const gateway9 = createTraeGateway({
+    settings: () => ({ ...settings, traeChatBaseURL: fbMock.base, maxConcurrentPerSession: 4 }),
+    withCredentials: async (attempt) => {
+      try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
+    },
+    readAuthDevice: () => null,
+    readAuthMeta: () => ({ uid: 'u-001' }),
+    meter: { record: (r) => meterFb.push(r) },
+    runtime: rt9,
+    getCatalogIds: () => ids,
+  })
+  const stop9 = gateway9.listen(0)
+  await sleep(80)
+  const fRes = await fetch(`http://127.0.0.1:${rt9.port}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'glm-5.3', stream: false, messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const fBody = await fRes.json()
+  check('inline 3003 事故回退：自动降级 chat_v3 拿到真实回答',
+    fRes.status === 200 && fBody.choices?.[0]?.message?.content === '你好，世界')
+  check('事故回退诚实披露：note 标注真实服务模型 + 计量记真实模型 + 两次上游调用',
+    String(fBody.choices?.[0]?.message?.note ?? '').includes('served by kimi-k2.6')
+    && String(fBody.choices?.[0]?.message?.note ?? '').includes('requested glm-5.3')
+    && meterFb.some((m) => m.model === 'kimi-k2.6')
+    && fbMock.state.requests.filter((r) => r.body?.function).length === 2)
+  stop9()
+  fbMock.server.closeAllConnections?.()
+  fbMock.server.close()
 
 } finally {
   rmSync(workDir, { recursive: true, force: true })

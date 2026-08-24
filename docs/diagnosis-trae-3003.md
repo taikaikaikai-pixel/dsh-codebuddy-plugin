@@ -151,3 +151,32 @@ Trae 业务码 3003。
   结构化错误。运维注：重启脚本会 pkill 全部 dsh web——若助手会话自身宿主于
   dsh，重启即中断该会话（本轮两次工具调用中断的直接原因），但 setsid 先行
   脱离，脚本效果不受影响；代理变量的彻底剥离留待宿主侧下次常规重启。
+
+## 9. GitHub 调研与可用的工程解法（round 6–7）
+
+**调研范围**（api.github.com 直连可用；raw 域被拒走 API contents 端点）：
+- `autumnsentiment/Trae2api-cn`（★10，最后更新 2026-08-20）：生产参照。默认
+  `UPSTREAM_MODE=raw` 只直连 `llm_utils_chat`——其协议/信封与本插件完全一致；
+  remote 模式同我们 chat_sessions 协议。其回退链含 `/api/ide/v1/chat` 与
+  `/api/agent/v3/create_agent_task`（后者参考 laojichao/trae-local-api）。
+- `ProjectEio/trae2api`（★12，Go，2026-07）：以 **create_agent_task 为唯一聊
+  天端点**，模型用内部 config_name（如 gemini_2.5_flash_premium），带模板渲
+  染/mcp 工具表/history_id_list 的完整 IDE agent 协议。
+- **结论：无现成"绕过 3003"的社区解**——事故晚于所有社区更新（8-20 后）。
+
+**本轮实测收敛出的可用通道**：
+- `create_agent_task` 信封绑定字段已逐字段探明（conversation_id/user_id/
+  device_id/agent_type/model_name/config_name/ide_version/user_input）→
+  HTTP 200 SSE，但报 `4001 config item is empty`——solo_agent_lite 的模型
+  配置注册表同样为空（含 ProjectEio 目录里的老名字），与 inline_chat 同根。
+- **chat_v3 是当前唯一活着的面**：同信封实测正常出文本（改派 seed-code-lite，
+  timing_cost 可证）。inline_chat 连已知存在的 seed-code-lite 名也 3003 ——
+  该面的解析层整体故障，而非注册表缺项。
+
+**落地修复（0.8.5 追加）：inline 3003 事故回退**
+- 网关在 inline_chat 遇 SSE error 3003 且请求无 tools 时，自动以 chat_v3 重
+  试一次；回答照常返回，改派由既有机制诚实披露（SSE 注释行 / message.note
+  / 计量记真实模型），绝不假装请求模型被服务。
+- 带 tools 的请求不静默降级（工具语义不可靠），维持原错误透传。
+- 回归 +2 断言（81 项全绿）：mock 仅对 inline_chat 注入 3003 → 客户端拿到真
+  实文本、note 标注 served-by/requested、两次上游调用、计量记真实模型。

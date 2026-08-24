@@ -512,8 +512,16 @@ export function createTraeGateway(deps) {
     }
 
     const release = await limiter.acquire(sessionId, s.maxConcurrentPerSession ?? 4)
-    try {
+    // inline 面事故回退（2026-08-24 实测：服务端故障期 inline_chat 对一切模型名
+    // 返回 3003，而同信封 chat_v3 正常出文本）——首次尝试用 inline_chat；遇 3003
+    // 且请求无 tools 时自动降级 chat_v3 重试一次。改派由既有机制诚实披露
+    // （SSE 注释行 / message.note / 计量记真实模型），绝不假装请求模型被服务。
+    const hasTools = (Array.isArray(payload.tools) && payload.tools.length > 0) || payload.tool_choice != null
+    let fallbackUsed = false
+
+    async function attemptInline(fnValue) {
       const { body, requestId } = buildChatRequest(payload, sessionId)
+      body.function = fnValue
       // 首字节护栏（2026-08-24 故障取证：本地代理/边缘对 POST 偶发"收下请求不
       // 回应"，无超时会令用户请求无限挂死）。fetch 在响应头到达即 resolve，
       // 计时器随即清除——SSE 长流不受影响；仅约束"连上却不出头"的死态。
@@ -542,7 +550,7 @@ export function createTraeGateway(deps) {
         const isCred = err?.credentialUnavailable === true
         res.writeHead(isCred ? 503 : 502, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: { message: isCred ? TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE : `trae upstream unreachable: ${err?.message ?? err?.name ?? 'unknown'}` } }))
-        return
+        return 'done'
       }
       const upstream = upstream0
       if (!upstream.ok) {
@@ -551,7 +559,7 @@ export function createTraeGateway(deps) {
         res.writeHead(status, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: { message: formatTraeErrorMessage(parsed.code, parsed.message), code: parsed.code } }))
         gwLog({ dir: 'err', status: upstream.status, code: parsed.code, model, ms: Date.now() - t0 })
-        return
+        return 'done'
       }
 
       const id = `trae-gateway-${randomUUID().slice(0, 8)}`
@@ -560,7 +568,8 @@ export function createTraeGateway(deps) {
       let finishReason = null
       let rerouteNotified = false
       const parser = createTraeStreamParser()
-      if (wantStream) {
+      // 3003 降级重试发生在同一 HTTP 响应上——首 attempt 已发头时不再重复 writeHead
+      if (wantStream && !res.headersSent) {
         res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })
         res.write(`data: ${JSON.stringify(oaiChunk(id, model, { role: 'assistant' }))}\n\n`)
       }
@@ -591,6 +600,8 @@ export function createTraeGateway(deps) {
           try { chunk = JSON.parse(data) } catch { continue }
           const ev = parser.handle(lastEventName, chunk)
           if (ev.error) {
+            // 3003 且尚未降级且无 tools → 换 chat_v3 重试（见上方回退说明）
+            if (ev.error.code === 3003 && !fallbackUsed && !hasTools) return 'fallback'
             const msg = formatTraeErrorMessage(ev.error.code, ev.error.message)
             if (!res.headersSent) {
               res.writeHead(502, { 'Content-Type': 'application/json' })
@@ -600,8 +611,8 @@ export function createTraeGateway(deps) {
               res.write('data: [DONE]\n\n')
               res.end()
             }
-            gwLog({ dir: 'err', model, ms: Date.now() - t0, code: ev.error.code })
-            return
+            gwLog({ dir: 'err', model, ms: Date.now() - t0, code: ev.error.code, fn: fnValue })
+            return 'done'
           }
           if (ev.queue != null && !queueEmitted) {
             queueEmitted = true
@@ -654,7 +665,22 @@ export function createTraeGateway(deps) {
         }))
       }
       if (usage) deps.meter.record({ ts: t0, kind: 'chat', model: actualModel || null, usage })
-      gwLog({ dir: 'out', model, actualModel, rerouted: actualModel !== model, ms: Date.now() - t0, bytes: content.length, usage, finishReason })
+      gwLog({ dir: 'out', model, actualModel, rerouted: actualModel !== model, ms: Date.now() - t0, bytes: content.length, usage, finishReason, fn: fnValue })
+      return 'done'
+    }
+
+    try {
+      let fnValue = 'inline_chat'
+      for (;;) {
+        const outcome = await attemptInline(fnValue)
+        if (outcome === 'fallback') {
+          fallbackUsed = true
+          fnValue = 'chat_v3'
+          gwLog({ dir: 'fallback', from: 'inline_chat', to: 'chat_v3', model, ms: Date.now() - t0 })
+          continue
+        }
+        break
+      }
     } catch (err) {
       if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'application/json' })
       try { res.end(JSON.stringify({ error: { message: `trae gateway error: ${err?.message ?? err}` } })) } catch { res.end() }
