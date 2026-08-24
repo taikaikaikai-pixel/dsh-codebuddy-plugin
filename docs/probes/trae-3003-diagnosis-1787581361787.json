@@ -1,0 +1,162 @@
+{
+  "at": "2026-08-24T14:20:58.840Z",
+  "note": "诊断脚本见 scripts/probe-trae-3003-diagnosis.mjs；结论见 docs/diagnosis-trae-3003.md",
+  "accountUidMasked": "211***",
+  "steps": {
+    "pool_src0": [
+      {
+        "endpoint": 0,
+        "limit": 2000,
+        "used": 0.6412
+      },
+      {
+        "endpoint": 1,
+        "limit": 2000,
+        "used": 1809.6276
+      },
+      {
+        "endpoint": 0
+      },
+      {
+        "endpoint": 0,
+        "limit": 500,
+        "used": 500
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      },
+      {
+        "endpoint": 1,
+        "limit": 200
+      }
+    ],
+    "pool_src1": [
+      {
+        "endpoint": 0,
+        "limit": 2000,
+        "used": 0.6412
+      },
+      {
+        "endpoint": 0
+      },
+      {
+        "endpoint": 0,
+        "limit": 500,
+        "used": 500
+      }
+    ],
+    "A_inline_nonDefault": {
+      "label": "A",
+      "fn": "inline_chat",
+      "model": "glm-5.3",
+      "status": 200,
+      "errors": [
+        {
+          "ev": "error",
+          "code": 3003,
+          "message": "all models failed"
+        }
+      ],
+      "providerModels": [],
+      "hasText": false,
+      "ms": 267,
+      "rawBytes": 127
+    },
+    "B_inline_default": {
+      "label": "B",
+      "fn": "inline_chat",
+      "model": "kimi-k2.6",
+      "status": 200,
+      "errors": [
+        {
+          "ev": "error",
+          "code": 3003,
+          "message": "all models failed"
+        }
+      ],
+      "providerModels": [],
+      "hasText": false,
+      "ms": 616,
+      "rawBytes": 127
+    },
+    "C_chatv3": {
+      "label": "C",
+      "fn": "chat_v3",
+      "model": "glm-5.3",
+      "status": 200,
+      "errors": [],
+      "providerModels": [
+        "seed-code-lite-dev-0602-v1-part1"
+      ],
+      "hasText": true,
+      "ms": 16348,
+      "rawBytes": 6363
+    },
+    "R_remote_create": {
+      "ok": false,
+      "error": "trae remote create_session [404]: Not Found（边缘节点路由漂移/WAF 拦截，通常数分钟内自愈；可稍后重试或改用 inline 通道）"
+    }
+  },
+  "verdict": "INLINE-FACE-BROKEN: inline_chat 对默认与非默认模型一律 3003，同信封 chat_v3 正常 → 服务端 inline 面模型解析故障（非凭据/配额/信封）；解法=切 remote 传输"
+}

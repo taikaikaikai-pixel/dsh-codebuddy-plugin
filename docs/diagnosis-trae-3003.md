@@ -152,7 +152,32 @@ Trae 业务码 3003。
   dsh，重启即中断该会话（本轮两次工具调用中断的直接原因），但 setsid 先行
   脱离，脚本效果不受影响；代理变量的彻底剥离留待宿主侧下次常规重启。
 
-## 9. GitHub 调研与可用的工程解法（round 6–7）
+## 9. 第八轮追踪（2026-08-24 ~14:12–14:16 UTC）：事故持续 ~6h；v0.8.5 回退端到端验证 + tools 边界确认为用户可见根因
+
+- **事故仍在持续**：规范化诊断脚本重跑（证据 `docs/probes/trae-3003-diagnosis-1787581361787.json`
+  ）——inline_chat 对 glm-5.3 与账户默认 kimi-k2.6 一律 SSE error 3003（267/616ms，
+  无 timing_cost），同信封 chat_v3 正常出文本（改派 seed-code-lite-dev-0602-v1-part1）
+  ；双额度池健康（IDE 主包 2000 只用 0.64、work 池 1809.6/2000）。自 ~08:06 起
+  未自愈。
+- **v0.8.5 自动回退经运行实例端到端验证生效**：对运行网关
+  `POST 127.0.0.1:3902/v1/chat/completions` 发无 tools 流式请求（模型名
+  DeepSeek-V4-Flash-Official），HTTP 200 真实回答 + `: trae-reroute requested=… actual=seed-code-lite-dev-…`
+  注释行——inline 首试 3003 后自动落 chat_v3，改派诚实披露按设计工作。
+- **用户仍见裸错误的机制定位**：回退条件含 `!hasTools`（gateway.js:604）——dsh
+  主聊天请求恒带 agent 工具表 → 永不回退 → 网关 502 `{code:3003}` → pi-ai 包装
+  PI_AI_ERROR。实测复现：带 tools 请求返回
+  `"trae 3003 all models failed （Trae 服务端 inline 通道当前对该模型名返回此错——…请把「聊天传输」切为 remote…）"`。
+  即：**用户报告的报错形态 = 服务端 inline 面故障 × 带工具请求不静默降级的设计边界**；
+  0.8.5 起该错误已携带完整自助指引（旧进程时代看到的是无指引裸文案）。
+- **remote create 边缘漂移同窗口间歇存在**（诊断脚本 [R] 步 404 Not Found 裸文本
+  ）——此刻切 remote 也可能先撞漂移（自动重试一次已内置），两面同时受影响时唯一
+  正确动作仍是退避重试。
+- **次要风险复核**：运行实例（21:43 CST 启动）环境仍继承桌面代理变量
+  （`http(s)_proxy=127.0.0.1:7890`，no_proxy 不含 trae 域）——restart 脚本的剥离
+  修复未及本进程；首字节护栏（45s，已确认在运行代码内）兜住挂死风险，但代理死态
+  会表现为 45s 超时而非快速失败。宿主侧下次常规重启可彻底清除。
+
+## 10. GitHub 调研与可用的工程解法（round 6–7）
 
 **调研范围**（api.github.com 直连可用；raw 域被拒走 API contents 端点）：
 - `autumnsentiment/Trae2api-cn`（★10，最后更新 2026-08-20）：生产参照。默认
