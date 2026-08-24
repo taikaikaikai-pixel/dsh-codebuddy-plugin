@@ -69,6 +69,11 @@ export function traeOutboundHeaders(device, uid, requestId) {
     'x-os-version': 'Windows 10',
     'x-system-type': 'Windows',
     'x-request-id': requestId,
+    'request-traffic-type': 'prod', // 官方头组（2026-08-24 网络日志）；实测对响应无影响，对齐官方链路
+    'package-type': 'stable_cn',
+    'x-lgw-req-sdk-type': '3',
+    // 注意：不发 x-request-pin / x-requested-at——服务端见 pin 头即强制 base64 校验，
+    // 外部复刻者无官方密钥无法生成合法 pin，发了必 400 "base64 decode failed"（round 9 实测）。
     'User-Agent': '',
   }
   if (device?.deviceId) h['x-device-id'] = device.deviceId
@@ -543,6 +548,7 @@ export function createTraeGateway(deps) {
           method: 'POST',
           headers,
           body: JSON.stringify(body),
+          redirect: 'follow', // 官方 TTNet 对 llm_utils_chat 307→api5-normal（2026-08-24 日志取证）；跟随重定向对齐官方链路
           signal: inbound.signal,
         }).finally(() => clearTimeout(firstByteTimer))
       })

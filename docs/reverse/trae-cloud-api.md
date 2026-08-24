@@ -153,6 +153,24 @@ providers/trae/gateway.js（buildChatRequest / createTraeStreamParser）。
   - 真值源 = timing_cost 事件的 `provider_model_name`。网关对策：解析
     timing_cost，改派时以 SSE 注释行 `: trae-reroute requested=… actual=…`
     告知（OpenAI 解析器忽略、不污染调用方会话历史），计量/日志记真实模型。
+- **官方客户端同窗口的网络日志（round 9 取证，2026-08-24）**：
+  官方 IDE 的 llm_utils_chat 请求**不直连 trae-api-cn 而是 307 内部重定向到
+  `api5-normal.mchost.guru`**（当日全天 586 次 307 全部落到该域；TTNet 域名
+  调度 x-net-sdk-domain-dispatch）。但实测两域名同信封同 3003 —— **域名非解药**。
+  官方请求头组含插件未发的指纹头（version-code 用当日构建号 `20260811`、
+  `x-app-version:"default"`、`x-bridge-transport:"aha"`、`x-request-pin`、
+  `x-requested-at`、`request-traffic-type:"prod"`、`user-agent:"TraeClient/TTNet"`、
+  `x-lgw-req-sdk-type:"3"`）；逐头二分加回均无行为差异 → 头组差异非 3003 根因。
+  官方聊天主通道走 remote（当日 `chat_sessions` 提及 576 次 vs `llm_utils_chat`
+  20 次），官方自己在事故期**也不依赖 inline 面** —— 与插件建议"切 remote"一致。
+  ⚠️ 官方日志的 307 记录显示 `status:"SUCCESS"`/`code:200` 是**链路层成功**（响应体
+  被 TTNet 吞掉、未落盘），不可作为"官方绕过 3003"的证明；客户端实际体验是否撞
+  3003 无法从该日志判定（chat_sessions 才走官方主 UI）。
+- **临时波动警示**：同信封同 token 同内容，chat_v3 曾短暂返回 1005 套餐门
+  （`extra:{"plan":1}`，kimi/glm/DeepSeek 三模型全中），数分钟内自愈回 200 ——
+  1005 不只出现在 remote 面 kimi-k3，raw 面也曾全模型闪过；**单次 1005 不能
+  当作账号级套餐判定**，需重试/交叉验证（round 9 实测，见 diagnosis-trae-3003.md §10）。
+
 - **唯一真实的模型选择机制 = remote 会话协议**（已落地为网关 remote 传输，
   providers/trae/remote.js）：`POST {base}/api/remote/v1/chat_sessions`
   （initial_message.`model_name` + `model_selection_strategy:"manual"` +

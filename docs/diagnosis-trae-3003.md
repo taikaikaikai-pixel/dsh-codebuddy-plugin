@@ -177,9 +177,51 @@ Trae 业务码 3003。
   修复未及本进程；首字节护栏（45s，已确认在运行代码内）兜住挂死风险，但代理死态
   会表现为 45s 超时而非快速失败。宿主侧下次常规重启可彻底清除。
 
-## 10. GitHub 调研与可用的工程解法（round 6–7）
+## 10. 第九轮：逆向漏项重审（2026-08-24 ~14:40–15:10 UTC）——结论：逆向无漏，但补了两条实证 + 一条兼容增强
 
-**调研范围**（api.github.com 直连可用；raw 域被拒走 API contents 端点）：
+**用户怀疑**：`trae 3003 all models failed` 会不会是**逆向漏了什么**（字段/端点/版本号）。
+重审方法：官方客户端当日网络日志取证 + 二进制头组差异比对 + 两域名/版本号头/逐头二分实测。
+
+**结论先行**：**没有漏**。① 官方客户端当日也用同一端点（llm_utils_chat）、同一
+307 重定向目标（api5-normal.mchost.guru）、同一认证形态；② 官方主聊天走 remote
+通道（当日 `chat_sessions` 提及 576 次 vs `llm_utils_chat` 20 次），官方自己在
+事故期也不依赖 inline 面；③ 实测两域名同信封同为 3003、逐头二分加回官方头组
+均无行为差异 → 域名/版本号头/头组**均非** 3003 根因。**逆向没有漏掉"能绕开
+3003"的东西**——服务端 inline 面确实故障，与上轮判定一致。
+
+**新增实证**：
+- **官方 307 重定向**：官方 llm_utils_chat 请求经 TTNet 内部 307 从
+  `trae-api-cn` 落到 `api5-normal.mchost.guru`（当日 586 次 307 全落该域）。
+  但 api5-normal 直连实测同样 3003 → 不是"官方连的节点好、插件连的节点坏"。
+- **官方头组清单**（从官方网络日志逐头提取，token 已脱敏）：version-code 用
+  当日构建号 `20260811`（插件钉死 `20260401`）、`x-app-version:"default"`、
+  `x-ide-version:"0.1.52"`、`x-bridge-transport:"aha"`、`x-request-pin` +
+  `x-requested-at`（**成对**，缺 `x-request-pin` 会 400 "x-request-pin or
+  x-requested-at is empty"）、`request-traffic-type:"prod"`、
+  `user-agent:"TraeClient/TTNet"`、`x-lgw-req-sdk-type:"3"`、`x-lscbd-*`、
+  `x-net-sdk-domain-dispatch:"1"`、`package-type:"stable_cn"` 等。逐头加回
+  二分：**均不改变 3003 行为**；唯一有响应差异的是 `x-request-pin`/
+  `x-requested-at` 成对（缺了就 400，与 3003 无关）。
+- **官方日志的 SUCCESS 不可作为"官方未撞 3003"的证据**：网络日志只记录链路层
+  （307→200），响应体被 TTNet 吞掉不落盘；官方 UI 走 remote 通道，inline 面
+  官方自己也不跑。
+
+**关键纠偏（临时波动警示）**：同信封同 token 同内容，chat_v3 曾短暂返回
+**1005 套餐门**（`extra:{"plan":1}`，kimi/glm/DeepSeek 三模型全中）——若据此
+判定"账号套餐到期"就错了。数分钟内自愈回 200（内容二分证伪：同 `回复成功`
+现在 200 成功）。**单次 1005 不可作账号级套餐判定**，需重试交叉验证。这也说明
+故障期服务端在该域名下有多重不稳定（3003 持续 / 1005 闪断 / 超时）。
+
+**落地增强（v0.8.6 候选）**：网关 inline 出站**跟随官方 307 重定向**
+（fetch redirect:'follow'，官方 TTNet 即此语义），并补齐 `request-traffic-type`/
+`package-type`/`x-lgw-req-sdk-type` 三个无害指纹头（实测对响应无影响）。
+**不**伪造 `x-request-pin`/`x-requested-at` 对——服务端见 pin 头即强制 base64
+校验，外部复刻者无官方密钥无法生成合法 pin，发了必 400 `base64 decode failed`
+（round 9 逐格式实测：官方日志原值 89532a712e043c54 直接复用也 400）。
+3003 根因仍在服务端 inline 面，无客户端可绕；**切 remote 传输仍是唯一真模型
+选择 + 恢复路径**。
+
+## 11. GitHub 调研与可用的工程解法（round 6–7）
 - `autumnsentiment/Trae2api-cn`（★10，最后更新 2026-08-20）：生产参照。默认
   `UPSTREAM_MODE=raw` 只直连 `llm_utils_chat`——其协议/信封与本插件完全一致；
   remote 模式同我们 chat_sessions 协议。其回退链含 `/api/ide/v1/chat` 与

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.6 (2026-08-24)
+
+- **逆向漏项重审（round 9）**：用户质疑"trae 3003 是不是逆向漏了什么"驱动；官方客户端当日网络日志取证（`%APPDATA%/TRAE SOLO CN/logs/aha_log/networkservice-*.alaudalog` AALG 容器 zlib 解流）：
+  - **结论：逆向无漏**——官方 llm_utils_chat 与插件同端点/同认证；官方主聊天走 remote 通道（当日 chat_sessions 提及 576 次 vs llm_utils_chat 20 次），官方自己在事故期也不依赖 inline 面；两域名（trae-api-cn / 官方 307 重定向目标 api5-normal.mchost.guru）同信封实测均 3003 → 域名非解药
+  - **官方头组提取 + 逐头二分实测**：version-code 用当日构建号 20260811（插件 20260401）、TTNet 头组、x-request-pin/x-requested-at 等；除 pin 对外**均不改变 3003 行为**
+  - **⚠️ x-request-pin 是官方签名校验**：服务端见 pin 头即强制 base64 校验——外部复刻者无官方密钥无法生成合法 pin（官方日志原值直接复用也 400 base64 decode failed）；**插件绝不能伪造 pin**，否则必 400
+  - **1005 套餐门纠偏**：同信封同 token 同内容 chat_v3 曾短暂 1005（extra:{"plan":1}，三模型全中），数分钟内自愈回 200——**单次 1005 不可作账号级套餐判定**（内容二分证伪）；故障期服务端在该域名下有多重不稳定（3003 持续/1005 闪断/base64 波动/超时）
+  - **落地增强**：gateway inline 出站 `redirect:'follow'`（跟随官方 307 重定向对齐链路）+ 补 3 个无害指纹头（request-traffic-type/package-type/x-lgw-req-sdk-type）；不伪造 pin 头对
+  - 回归：verify-trae-provider 81 断言全绿；实弹验证新头组稳定 200（改派 seed-code-lite）。完整证据链 docs/diagnosis-trae-3003.md §10 + docs/reverse/trae-cloud-api.md §5.1
+
 ## 0.8.5 (2026-08-24)
 
 - **"trae 3003 all models failed / PI_AI_ERROR" 故障定位 + 错误面加固**（用户实测报告驱动；证据链 docs/diagnosis-trae-3003.md，对照实验证据 docs/probes/trae-3003-diagnosis-*.json）：
