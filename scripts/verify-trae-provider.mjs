@@ -32,6 +32,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { createTraeOAuth } from '../providers/trae/oauth.js'
 import { catalogToProfiles } from '../providers/trae/catalog.js'
 import { buildChatRequest, createTraeStreamParser, createTraeGateway, cumulativeDelta, TRAE_APP_ID, TRAE_IDE_VERSION, TRAE_IDE_VERSION_CODE } from '../providers/trae/gateway.js'
+import { flattenQuery, buildRemoteCreateBody, createRemoteEventParser } from '../providers/trae/remote.js'
 import { normalizeTraeError } from '../providers/trae/errors.js'
 import { createTraeProvider } from '../providers/trae/index.js'
 
@@ -157,7 +158,61 @@ function mockTraeAuth() {
 // mock Trae chat cloud (SSE)
 // ---------------------------------------------------------------------------
 
-function mockTraeChat({ authedToken = 'tok-live', status = 200 } = {}) {
+function mockTraeRemote({ authedToken = 'tok-live' } = {}) {
+  const state = { creates: [], events: 0, stops: 0 }
+  const write = (res, ev, data) => res.write(`event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`)
+  const server = createServer((req, res) => {
+    let raw = ''
+    req.on('data', (c) => { raw += c })
+    req.on('end', () => {
+      const url = req.url ?? ''
+      if (req.headers['authorization'] !== `Cloud-IDE-JWT ${authedToken}`) {
+        res.writeHead(401, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ code: 1001, message: 'auth failed (mock)' }))
+        return
+      }
+      if (req.method === 'POST' && url === '/api/remote/v1/chat_sessions') {
+        state.creates.push({ headers: req.headers, body: raw ? JSON.parse(raw) : null })
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ code: 0, data: { chat_session_id: 'sess-1', message_id: 'msg-1' }, message: 'success' }))
+        return
+      }
+      if (req.method === 'GET' && url.startsWith('/api/remote/v1/chat_sessions/sess-1/events')) {
+        state.events++
+        // 事件语法 = 2026-08-24 真实流校准（docs/probes/trae-remote-stream-glm53.txt）：
+        // thought/reasoning_content 累计快照、finish 工具 params.summary、model_config、token_usage、done
+        res.writeHead(200, { 'content-type': 'text/event-stream' })
+        write(res, 'status_changed', { chat_session_id: 'sess-1', new_status: 3, old_status: 2 })
+        write(res, 'metadata', { message_id: 'm2', turn_id: 't2', session_id: 'sess-1', agent_type: 'solo_agent_remote' })
+        write(res, 'model_config', { model_name: 'glm-5.3__dev', config_name: 'glm-5.3' })
+        write(res, 'plan_item', { id: 'p1', thought: '', reasoning_content: '思', tool_call_info: { id: 'c1', name: '', params: null } })
+        write(res, 'plan_item', { id: 'p1', thought: '你好', reasoning_content: '思考', tool_call_info: { id: 'c1', name: '', params: null } })
+        write(res, 'plan_item', { id: 'p1', thought: '你好，世界', reasoning_content: '思考', tool_call_info: { id: 'c1', name: '', params: null } })
+        write(res, 'token_usage', { prompt_tokens: 100, completion_tokens: 9, total_tokens: 109 })
+        write(res, 'plan_item', { id: 'p1', thought: '你好，世界', reasoning_content: '思考', tool_call_info: { id: 'c1', name: 'finish', params: { summary: '你好，世界' } } })
+        write(res, 'done', { status: 'completed', user_message_context: { model_info: { config_name: 'glm-5.3' } } })
+        res.end()
+        return
+      }
+      if (req.method === 'POST' && url === '/api/remote/v1/chat_sessions/sess-1/stop') {
+        state.stops++
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end('{}')
+        return
+      }
+      res.writeHead(404, { 'content-type': 'application/json' })
+      res.end('{}')
+    })
+  })
+  return new Promise((resolve) => server.listen(0, '127.0.0.1', () => {
+    resolve({ server, base: `http://127.0.0.1:${server.address().port}`, state })
+  }))
+}
+
+// mock Trae chat cloud (SSE)
+// ---------------------------------------------------------------------------
+
+function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false } = {}) {
   const state = { requests: [] }
   const server = createServer((req, res) => {
     let raw = ''
@@ -177,6 +232,24 @@ function mockTraeChat({ authedToken = 'tok-live', status = 200 } = {}) {
         return
       }
       res.writeHead(200, { 'content-type': 'text/event-stream' })
+      if (withTools) {
+        // 工具调用真实线缆形态（2026-08-24 docs/probes/trae-chat-live-tools-*）：
+        // function_call 键 + arguments 增量片段 + 续片空 id + done 仍 finish_reason:"stop"
+        const tcFirst = { index: 0, id: 'get_x_0', type: 'function', function_call: { name: 'get_x', arguments: '{"a":' } }
+        const tcNext = { index: 0, id: '', type: '', function_call: { name: '', arguments: '1}' } }
+        res.write('event: output\n')
+        res.write(`data: ${JSON.stringify({ response: '我来查一下', tool_calls: null })}\n\n`)
+        res.write('event: output\n')
+        res.write(`data: ${JSON.stringify({ response: '', tool_calls: [tcFirst] })}\n\n`)
+        res.write('event: output\n')
+        res.write(`data: ${JSON.stringify({ response: '', tool_calls: [tcNext] })}\n\n`)
+        res.write('event: token_usage\n')
+        res.write(`data: ${JSON.stringify({ prompt_tokens: 20, completion_tokens: 8, total_tokens: 28 })}\n\n`)
+        res.write('event: done\n')
+        res.write(`data: ${JSON.stringify({ finish_reason: 'stop' })}\n\n`)
+        res.end()
+        return
+      }
       // 事件语法 = 2026-08-24 带凭据联调校准形态（response/reasoning_content 为累计快照）
       res.write('event: metadata\n')
       res.write(`data: ${JSON.stringify({ model: '', session_id: 's', prompt_completion_id: 0 })}\n\n`)
@@ -494,10 +567,184 @@ try {
   })
   check('坏 payload → 400', badRes.status === 400)
 
+  // 工具调用：真实线缆形态（function_call 键 + arguments 增量片段 + done 映射 tool_calls）
+  const toolMock = await mockTraeChat({ authedToken: 'tok-live', withTools: true })
+  const rt4 = { running: false, port: null, lastError: null }
+  const gateway4 = createTraeGateway({
+    settings: () => ({ ...settings, traeChatBaseURL: toolMock.base, maxConcurrentPerSession: 4 }),
+    withCredentials: async (attempt) => {
+      try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
+    },
+    readAuthDevice: () => null,
+    meter: { record: () => {} },
+    runtime: rt4,
+    getCatalogIds: () => [],
+  })
+  const stop4 = gateway4.listen(0)
+  await sleep(80)
+  const tcRes = await fetch(`http://127.0.0.1:${rt4.port}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'glm-5.3', stream: true, messages: [{ role: 'user', content: '查一下' }],
+      tools: [{ type: 'function', function: { name: 'get_x', parameters: { type: 'object' } } }],
+    }),
+  })
+  const tcText = await tcRes.text()
+  const tcLines = tcText.split('\n').filter((l) => l.startsWith('data:')).map((l) => l.slice(5).trim())
+  let tcArgs = ''
+  let tcMeta = null
+  let tcFinish = null
+  for (const line of tcLines) {
+    if (line === '[DONE]') continue
+    const c = JSON.parse(line)
+    const d = c.choices?.[0]?.delta
+    if (d?.tool_calls?.[0]) {
+      if (d.tool_calls[0].id) tcMeta = d.tool_calls[0]
+      tcArgs += d.tool_calls[0].function?.arguments ?? ''
+    }
+    if (c.choices?.[0]?.finish_reason) tcFinish = c.choices[0].finish_reason
+  }
+  check('工具调用流式：增量片段拼回完整参数', tcArgs === '{"a":1}' && tcMeta?.id === 'get_x_0' && tcMeta.function?.name === 'get_x')
+  check('工具调用流式：finish_reason 映射为 tool_calls', tcFinish === 'tool_calls')
+  check('工具调用出站：parameters 已序列化为字符串', typeof toolMock.state.requests[0]?.body?.tools?.[0]?.function?.parameters === 'string')
+  const tcAggRes = await fetch(`http://127.0.0.1:${rt4.port}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'glm-5.3', messages: [{ role: 'user', content: '查一下' }] }),
+  })
+  const tcAgg = await tcAggRes.json()
+  check('工具调用非流式：message.tool_calls 聚合 + finish 映射',
+    tcAgg.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments === '{"a":1}'
+    && tcAgg.choices[0].finish_reason === 'tool_calls')
+  stop4()
+  toolMock.server.closeAllConnections?.()
+  toolMock.server.close()
+
   check('计量：非流式请求也记录（真实模型口径）', meterCalls.filter((m) => m.usage?.total_tokens === 13).length >= 2)
   stop()
   chatMock.server.closeAllConnections?.()
   chatMock.server.close()
+
+  // =========================================================================
+  console.log('== remote 传输（chat_sessions，mock remote 云端）==')
+  const remoteMock = await mockTraeRemote()
+  const rt5 = { running: false, port: null, lastError: null }
+  const meterRemote = []
+  const gateway5 = createTraeGateway({
+    settings: () => ({ ...settings, traeChatBaseURL: remoteMock.base, traeChatTransport: 'remote', maxConcurrentPerSession: 4 }),
+    withCredentials: async (attempt) => {
+      try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
+    },
+    readAuthDevice: () => null,
+    readAuthMeta: () => ({ uid: 'u-001' }),
+    meter: { record: (r) => meterRemote.push(r) },
+    runtime: rt5,
+    getCatalogIds: () => ids,
+  })
+  const stop5 = gateway5.listen(0)
+  await sleep(80)
+
+  // 流式
+  const rStream = await fetch(`http://127.0.0.1:${rt5.port}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: 'glm-5.3', stream: true,
+      messages: [{ role: 'system', content: 'sys' }, { role: 'user', content: 'hi' }, { role: 'assistant', content: 'prev' }, { role: 'user', content: 'again' }],
+    }),
+  })
+  const rStreamText = await rStream.text()
+  const rLines = rStreamText.split('\n').filter((l) => l.startsWith('data:')).map((l) => l.slice(5).trim())
+  let rAssembled = ''
+  let rReasoning = ''
+  let rUsage = null
+  let rFinish = null
+  for (const line of rLines) {
+    if (line === '[DONE]') continue
+    const c = JSON.parse(line)
+    if (c.choices?.[0]?.delta?.content) rAssembled += c.choices[0].delta.content
+    if (c.choices?.[0]?.delta?.reasoning_content) rReasoning += c.choices[0].delta.reasoning_content
+    if (c.usage) rUsage = c.usage
+    if (c.choices?.[0]?.finish_reason) rFinish = c.choices[0].finish_reason
+  }
+  check('remote 流式：SSE 200 + 文本差分拼接（无重复、summary 不追加——thought 已覆盖）',
+    rStream.status === 200 && rAssembled === '你好，世界')
+  check('remote 流式：reasoning_content 独立透传', rReasoning === '思考')
+  check('remote 流式：usage 进末块 + finish=stop', rUsage?.total_tokens === 109 && rFinish === 'stop')
+  const rCreate = remoteMock.state.creates[0]
+  check('remote 出站：chat_sessions 创建体（model_name 透传 + manual 策略 + query 扁平化角色标记）',
+    rCreate.body.initial_message.model_name === 'glm-5.3'
+    && rCreate.body.initial_message.model_selection_strategy === 'manual'
+    && rCreate.body.initial_message.agent_type === 'solo_agent_remote'
+    && rCreate.body.initial_message.content.length === 0
+    && rCreate.body.initial_message.query.includes('[System]\\nsys')
+    && rCreate.body.initial_message.query.includes('[Assistant]\\nprev')
+    && rCreate.body.mode === 'code' && rCreate.body.origin === 'web')
+  check('remote 出站：web 头组（Cloud-IDE-JWT + web client 指纹 + Origin）',
+    rCreate.headers['authorization'] === 'Cloud-IDE-JWT tok-live'
+    && rCreate.headers['x-trae-client-type'] === 'web'
+    && rCreate.headers['origin'] === 'https://solo.trae.cn')
+  check('remote 计量：记 model_config 的真实模型', meterRemote.some((m) => m.model === 'glm-5.3' && m.usage?.total_tokens === 109))
+
+  // 非流式聚合
+  const rAgg = await fetch(`http://127.0.0.1:${rt5.port}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'glm-5.3', messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const rAggBody = await rAgg.json()
+  check('remote 非流式：聚合 chat.completion（content 来自 thought 差分）',
+    rAgg.status === 200 && rAggBody.choices?.[0]?.message?.content === '你好，世界' && rAggBody.choices[0].finish_reason === 'stop')
+
+  // tools 明确拒绝
+  const rTools = await fetch(`http://127.0.0.1:${rt5.port}/v1/chat/completions`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'glm-5.3', messages: [{ role: 'user', content: 'hi' }], tools: [{ type: 'function', function: { name: 'f' } }] }),
+  })
+  const rToolsBody = await rTools.json()
+  check('remote 带 tools → 400 remote-no-tools（不静默降级）', rTools.status === 400 && rToolsBody.error?.code === 'remote-no-tools')
+
+  await sleep(50) // stop_session 是 finally 里的 best-effort
+  check('remote 善后：stop_session 已调用', remoteMock.state.stops >= 2)
+  stop5()
+  remoteMock.server.closeAllConnections?.()
+  remoteMock.server.close()
+
+  // remote 单元：flattenQuery / buildRemoteCreateBody / 解析器边界
+  const fq = flattenQuery([
+    { role: 'system', content: 'S' },
+    { role: 'user', content: 'U1' },
+    { role: 'assistant', content: 'A1', tool_calls: [{ id: 'c1', function: { name: 'run', arguments: '{"x":1}' } }] },
+    { role: 'tool', tool_call_id: 'c1', name: 'run', content: 'R1' },
+    { role: 'assistant', content: [{ type: 'text', text: 'A2' }] },
+  ])
+  check('flattenQuery：角色标记 + 工具历史文本化',
+    fq.includes('[System]\\nS') && fq.includes('[Assistant]\\nA1') && fq.includes('[Client Tool Call: c1 run]')
+    && fq.includes('[Client Tool Result: c1 run]\\nR1') && fq.includes('[Assistant]\\nA2'))
+  const rbody = buildRemoteCreateBody('kimi-k3', [{ role: 'user', content: 'x' }])
+  check('buildRemoteCreateBody：信封形态', rbody.initial_message.model_name === 'kimi-k3'
+    && rbody.initial_message.model_selection_strategy === 'manual' && rbody.env === 'remote'
+    && typeof rbody.initial_message.common_params === 'string')
+  const rp = createRemoteEventParser()
+  rp.handle('plan_item', { id: 'p1', thought: '', reasoning_content: 'r', tool_call_info: { name: '', params: null } })
+  rp.handle('plan_item', { id: 'p1', thought: '', reasoning_content: 'r', tool_call_info: { name: 'finish', params: { summary: '最终答复' } } })
+  const rpDone = rp.handle('done', { status: 'completed', user_message_context: { model_info: { config_name: 'kimi-k3' } } })
+  check('remote 解析器：thought 全空时 finish summary 兜底为正文', rpDone.text === '最终答复' && rpDone.finish === 'stop'
+    && rp.actualModel() === 'kimi-k3' && rp.finalText() === '最终答复')
+  const rp2 = createRemoteEventParser()
+  rp2.handle('plan_item', { id: 'p1', thought: '部分', reasoning_content: '', tool_call_info: null })
+  rp2.handle('plan_item', { id: 'p1', thought: '部分文本', reasoning_content: '', tool_call_info: { name: 'finish', params: { summary: '部分文本' } } })
+  const rp2Done = rp2.handle('done', { status: 'completed' })
+  check('remote 解析器：thought 已覆盖 summary 时不重复追加', rp2Done.text === undefined && rp2Done.finish === 'stop' && rp2.finalText() === '部分文本')
+  const rp3 = createRemoteEventParser()
+  const rp3a = rp3.handle('queuing', { position: 1 })
+  const rp3b = rp3.handle('notification', { content: 'x' })
+  check('remote 解析器：排队提示只报一次', rp3a.queue === true && Object.keys(rp3b).length === 0)
+  const rp4 = createRemoteEventParser()
+  const rp4e = rp4.handle('error', { code: 4011, message: 'rate limited' })
+  check('remote 解析器：error 事件终结', rp4e.error?.code === 4011 && rp4.isDone())
 
   // =========================================================================
   console.log('== 单元：信封与事件解析 ==')
@@ -512,6 +759,14 @@ try {
   check('buildChatRequest：默认模型 + tool 角色原生透传',
     buildChatRequest({ messages: [] }, 's').body.model === 'glm-5.3'
     && buildChatRequest({ messages: [{ role: 'tool', tool_call_id: 'c1', content: 'out' }] }, 's').body.messages[0].tool_call_id === 'c1')
+  const envTools = buildChatRequest({
+    messages: [{ role: 'user', content: 'x' }],
+    tools: [{ type: 'function', function: { name: 'f', description: 'd', parameters: { type: 'object', properties: {} } } }],
+  }, 's')
+  check('buildChatRequest：tools.function.parameters 序列化为字符串（Go string 型）',
+    typeof envTools.body.tools[0].function.parameters === 'string'
+    && JSON.parse(envTools.body.tools[0].function.parameters).type === 'object'
+    && envTools.body.tools[0].function.name === 'f')
 
   // createTraeStreamParser：累计快照差分 / 思考 / 用量 / 排队 / 工具 / 终结
   const p = createTraeStreamParser()
@@ -524,15 +779,28 @@ try {
   const pq2 = p.handle('request_wait_in_queue', { position: 2 })
   check('流解析：排队位置变化才报', pq1.queue === 2 && Object.keys(pq2).length === 0)
   const pt = p.handle('output', { response: '你好，世界', tool_call_info: { id: 't1', name: 'fn', params: { a: 1 } } })
-  check('流解析：tool_call_info 归一为 OpenAI 工具调用', pt.toolCall?.id === 't1' && pt.toolCall.name === 'fn' && pt.toolCall.arguments === '{"a":1}')
-  const pd = p.handle('done', { finish_reason: 'stop' })
-  check('流解析：done 终结语义', pd.finish === 'stop' && p.isDone() === true && p.finish() === 'stop')
+  check('流解析：tool_call_info 归一为 OpenAI 工具调用', pt.toolCall?.id === 't1' && pt.toolCall.name === 'fn' && pt.toolCall.argsDelta === '{"a":1}')
+  const p2 = createTraeStreamParser()
+  const frag1 = { index: 0, id: 'w_0', type: 'function', function_call: { name: 'get_current_weather', arguments: '{"city' } }
+  const frag2 = { index: 0, id: '', type: '', function_call: { name: '', arguments: '": "北京"}' } }
+  p2.handle('output', { tool_calls: [frag1] })
+  const pc2 = p2.handle('output', { tool_calls: [frag2] })
+  p2.handle('done', { finish_reason: 'stop' })
+  check('流解析：tool_calls 增量片段按 index 拼接（续片空 id 不重复下发）',
+    pc2.toolCall?.argsDelta === '": "北京"}' && pc2.toolCall.id === undefined
+    && p2.toolCalls()[0].id === 'w_0' && p2.toolCalls()[0].function.arguments === '{"city": "北京"}'
+    && p2.finish() === 'tool_calls')
+  const pd = createTraeStreamParser()
+  const pdOut = pd.handle('done', { finish_reason: 'stop' })
+  check('流解析：done 终结语义', pdOut.finish === 'stop' && pd.isDone() === true && pd.finish() === 'stop')
   const pe = createTraeStreamParser().handle('error', { code: 1001, message: 'auth' })
   check('流解析：error 事件归一', pe.error?.code === 1001)
   check('cumulativeDelta：前缀差分/回退/纯增量三态', cumulativeDelta('abc', 'abcdef') === 'def'
     && cumulativeDelta('abc', 'ab') === '' && cumulativeDelta('', 'x') === 'x')
   const nerr = normalizeTraeError(400, { ResponseMetadata: { Error: { Code: '10101', Message: 'Invalid client.' } } })
   check('normalizeTraeError：火山信封/裸码/非 JSON 三态', nerr.code === '10101' && normalizeTraeError(401, { code: 1001 }).code === 1001 && normalizeTraeError(500, null).message === 'HTTP 500')
+  check('normalizeTraeError：空 message 按码表回填（remote 1005 套餐门）',
+    normalizeTraeError(200, { code: 1005, message: '', data: { plan: 1 } }).message.includes('entitlement'))
 } finally {
   rmSync(workDir, { recursive: true, force: true })
 }

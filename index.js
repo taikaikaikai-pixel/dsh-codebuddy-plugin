@@ -116,6 +116,11 @@ export const Config = z.object({
   traeChatBaseURL: z.string().default('https://trae-api-cn.mchost.guru'),
   traeLoginHost: z.string().default('https://www.trae.cn'),
   traeBridgePort: z.number().step(1).min(1).max(65535).default(3902),
+  // 聊天传输：inline（默认，llm_utils_chat+inline_chat——模型恒为账户默认，
+  // 原生 tools，耗 IDE 额度池）| remote（chat_sessions——模型选择真实生效，
+  // 不支持 tools，每请求起云端沙箱 agent，耗 work 额度池）。2026-08-24 探测
+  // 定论见 providers/trae/remote.js 文件头。
+  traeChatTransport: z.union([z.const('inline'), z.const('remote')]).default('inline'),
 })
 
 /** Field metadata the settings card renders (labels live client-side). */
@@ -142,6 +147,7 @@ export const SETTINGS_FIELDS = [
   { key: 'traeChatBaseURL', kind: 'text' },
   { key: 'traeLoginHost', kind: 'text' },
   { key: 'traeBridgePort', kind: 'number' },
+  { key: 'traeChatTransport', kind: 'select' },
 ]
 
 /** Validate a baseURL candidate before it can reach a provider. */

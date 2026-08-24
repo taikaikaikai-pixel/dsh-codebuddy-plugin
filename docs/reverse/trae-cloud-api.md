@@ -63,6 +63,13 @@ TraeWork CN 的聊天面是**任务制私有 RPC**（`/api/agent/v3/*`，SSE）�
     / `done`（finish_reason）；错误走 `event:error` data{code,message}。
     2026-08-23 实测 response 为逐段增量；解析器按 Trae2api-cn 生产参照做
     累计快照前缀差分（两形态兼容），单点 createTraeStreamParser。
+  - 工具调用（2026-08-24 实测，trae-chat-live-tools-*.json）：请求侧
+    `tools[].function.parameters` 必须**序列化为字符串**（Go string 型，
+    对象直发 4001 "cannot unmarshal object …parameters of type string"）；
+    响应侧 `output.tool_calls[i]` 的键是 **`function_call`**（非 function），
+    `arguments` 为**增量片段**、续片 id/name 为空按 `index` 归属拼接；
+    带工具调用时 `done` 仍发 `finish_reason:"stop"`——网关映射为 OpenAI
+    语义的 `tool_calls`，否则客户端不触发工具循环。
 - 认证头两套并存（harness.dll）：`authorization` + `x-ide-token`（ide_token 语义）
   与 `x-cloudide-token`；设备头组：`x-app-id`、`x-ide-version-code`、
   `x-app-version-code`、`x-user-region`、`x-tt-env`、`x-use-ppe`、`x-env-lane`、
@@ -128,28 +135,52 @@ providers/trae/gateway.js（buildChatRequest / createTraeStreamParser）。
 
 ### 5.1 模型路由与限制（2026-08-24 带凭据实测，重要）
 
-- **请求模型可能被服务端改派**：llm_utils_chat 的 model 字段被 function/套餐默认
-  覆盖——function=inline_chat 一律路由 kimi-k2.6（请求 glm-5.3 / DeepSeek-V4-Pro /
-  glm-5.2 均被改派，唯一真值源 = timing_cost 事件的 `provider_model_name`）；
-  function=chat_v3 / solo_agent_lite → `seed-code-lite-dev-0602-v1-part1`。网关对策：
-  解析 timing_cost，改派时以 SSE 注释行 `: trae-reroute requested=… actual=…`
-  告知（OpenAI 解析器忽略、不污染调用方会话历史），计量/日志记真实模型——
-  绝不假装请求模型被服务。
-- **限流 4011 很紧**：短时连续探测即触发（"requests have exceeded the rate
-  limit"）；联调时请求间隔 ≥20s。
+- **raw 面（llm_utils_chat）的模型路由被 function 位钉死，model 字段不被路由**。
+  2026-08-24 终局探测矩阵（证据 docs/probes/trae-model-routing[234]-*.json）：
+  - `function=inline_chat`：只服务**账户默认模型**（本账号=kimi-k2.6）；任何
+    其他 model 名（kimi-k3 / glm-5.3 / DeepSeek-V4-Flash-Official）一律 SSE
+    error `3003 "all models failed"`；附加 custom_model 对象无效（同样 3003）。
+    早间该面曾对非默认模型静默改派 kimi-k2.6（200 成功），当日下午起变为
+    硬错误 3003——**服务端行为有时变性**，两态都要兼容。
+  - `function=chat_v3` / `solo_agent_lite`：任意 model 名（包括
+    `"not-a-model"`）都 200，但 timing_cost 证实恒为
+    `seed-code-lite-dev-0602-v1-part1`；`solo_work_lite` 恒 `glm-5.2`。
+  - 真值源 = timing_cost 事件的 `provider_model_name`。网关对策：解析
+    timing_cost，改派时以 SSE 注释行 `: trae-reroute requested=… actual=…`
+    告知（OpenAI 解析器忽略、不污染调用方会话历史），计量/日志记真实模型。
+- **唯一真实的模型选择机制 = remote 会话协议**（已落地为网关 remote 传输，
+  providers/trae/remote.js）：`POST {base}/api/remote/v1/chat_sessions`
+  （initial_message.`model_name` + `model_selection_strategy:"manual"` +
+  `agent_type:"solo_agent_remote"`，content 空数组、历史扁平化进 query）
+  → `GET /chat_sessions/{id}/events?reply_to_message_id=…` SSE → stop。
+  `model_config` 事件与 done 的 `user_message_context.model_info.config_name`
+  双重证实路由到请求模型（glm-5.3 / kimi-k2.6 实测），且模型自报一致。
+  - 事件语法：plan_item（thought=可见文本、reasoning_content=思考，**累计
+    快照**按 id 分槽前缀差分；tool_call_info.name==="finish" 的 params.summary
+    为最终答复）/ model_config / token_usage / done；heartbeat、
+    status_changed、platform_timing、timing_events、session_* 忽略；
+    queuing/notification = 排队（并发受套餐 solo_agent_parallel_limit 限）。
+  - 代价：每请求起云端沙箱 agent（约 25k 系统提示，跨会话前缀缓存命中
+    25.4k/25.4k），**消耗 work 额度池**；OpenAI tools 无法传递（远端 agent
+    自持工具），网关对带 tools 的请求返回 400 remote-no-tools。
+  - 套餐门：error 事件 `1005`（message 空、data.plan 携带档位）——Free 账号
+    请求 kimi-k3 命中（model_config 显示路由成功但 LLM 调用被拒）；glm-5.3 /
+    kimi-k2.6 / DeepSeek 系可服务。
+- **额度双池实测**（2026-08-24，docs/probes/trae-credits-*.json）：
+  `POST api.trae.cn/trae/api/v2/pay/ide_user_ent_usage`（body
+  `{"require_usage":true,"req_source":0|1|2}`，Cloud-IDE-JWT + x-device-*
+  头组）→ `user_entitlement_pack_list[]`，按
+  `entitlement_base_info.available_endpoint` 分池：**0=IDE 通用池（raw
+  inline_chat 消耗）、1=work 池（remote chat_sessions 消耗）**；限额在
+  `quota.credits_limit`，用量在 `usage.credits_amount`。实测对照：3 次 remote
+  会话后 work 池 +9.4 credits（1764.2→1773.6），IDE 池不动（0.58）。
+- **限流 4011 很紧**（raw 面）：短时连续探测即触发（"requests have exceeded
+  the rate limit"）；联调时请求间隔 ≥20s。remote 面无 4011，但有排队。
 - **/api/ide/v1/chat（老端点）存活但拒现代模型**：老 TraeRequest 信封被接受
   （user_input/intent_name/model_name…），但 model_name 校验 4023 "the model is
   unknown"（glm-5.3 / glm-5.2 均拒）——本账号该端点注册表不含现代 preset 名，
-  不作为模型选择通道。
-- **额度面可用**：`POST api.trae.cn/trae/api/v2/pay/ide_user_ent_usage`
-  `{"require_usage":true,"req_source":1}`（三认证头 + IDE 指纹）→
-  `user_entitlement_pack_list`（本账号 500 credits 包）；GetUserInfo 的昵称字段
-  是 **ScreenName**（Name/Nickname 均为空）。
-- **remote 协议（未来路线，不进 v0.8.4）**：`POST {base}/api/remote/v1/chat_sessions`
-  （initial_message.model_name + `model_selection_strategy:"manual"` +
-  agent_type:"solo_agent_remote"）→ `GET /chat_sessions/{id}/events` SSE → stop。
-  真正的手动模型选择在 remote 面，但那是 agent 形态会话（Trae 系统提示/工具
-  框架在服务端），作 dsh LLM provider 会双重 agent 化——留作后续课题。
+  不作为模型选择通道。`/api/ide/v1/get_model_list` 两域名均 404（2026-08-24）。
+- GetUserInfo 的昵称字段是 **ScreenName**（Name/Nickname 均为空）。
 
 ## 6. 免责声明
 

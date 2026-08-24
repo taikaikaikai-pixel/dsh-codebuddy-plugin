@@ -1,0 +1,38 @@
+{
+  "at": "2026-08-24T00:02:23.643Z",
+  "request": {
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "北京今天天气怎么样？用工具查。"
+            }
+          ]
+        }
+      ],
+      "model": "glm-5.3",
+      "function": "inline_chat",
+      "request_id": "24a59479-0276-40ca-8662-c45a5d42589e",
+      "session_id": "probe-tools",
+      "stream": true,
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "get_current_weather",
+            "description": "查询指定城市当前天气",
+            "parameters": "{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\",\"description\":\"城市名\"}},\"required\":[\"city\"]}"
+          }
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "bodyHead": "id:1\nevent:metadata\ndata:{\"model\":\"\",\"session_id\":\"probe-tools\",\"prompt_completion_id\":0,\"ab_versions\":null,\"app_version\":\"\",\"ide_version\":null,\"ide_version_type\":null,\"prompt_cache_pool_record\":null}\n\nid:2\nevent:timing_cost\ndata:{\"name\":\"llm_raw_chat_v2\",\"preprocess_timing\":81,\"postprocess_timing\":23,\"queue_timing\":0,\"platform_first_token_timing\":744,\"account_type\":\"\",\"is_retry\":false,\"middleware_processing_time\":32,\"server_processing_time\":881,\"first_sse_event_time\":857,\"preprocessing_detail\":{\"check_risk\":27,\"build_llm_prompt\":0,\"chat_completion_prepare\":0,\"other\":54},\"platform_detail\":{\"preprocess_timing\":23,\"first_token_timing\":688,\"network_latency\":32,\"provider_first_token\":0,\"provider_network_latency\":0,\"other\":1},\"post_processing_detail\":{\"post_security_check\":23,\"other\":0},\"provider_model_name\":\"kimi-k2.6\"}\n\nid:3\nevent:output\ndata:{\"response\":\"我来\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:4\nevent:output\ndata:{\"response\":\"帮您查询北京今天的天气情况。\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:5\nevent:output\ndata:{\"response\":\"\",\"reasoning_content\":null,\"tool_calls\":[{\"index\":0,\"id\":\"get_current_weather_0\",\"type\":\"function\",\"function_call\":{\"name\":\"get_current_weather\",\"arguments\":\"{\\\"city\",\"partial_arguments\":null,\"namespace\":null}}],\"multimodal_contents\":null,\"phase\":null}\n\nid:6\nevent:output\ndata:{\"response\":\"\",\"reasoning_content\":null,\"tool_calls\":[{\"index\":0,\"id\":\"\",\"type\":\"\",\"function_call\":{\"name\":\"\",\"arguments\":\"\\\": \\\"北京\\\"}\",\"partial_arguments\":null,\"namespace\":null}}],\"multimodal_contents\":null,\"phase\":null}\n\nid:7\nevent:token_usage\ndata:{\"name\":\"\",\"prompt_tokens\":64,\"completion_tokens\":28,\"total_tokens\":92,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"reasoning_tokens\":1,\"prompt_tokens_total\":0,\"completion_tokens_total\":0,\"total_tokens_total\":0,\"cache_creation_input_tokens_total\":0,\"cache_read_input_tokens_total\":0,\"reasoning_tokens_total\":0,\"cluster\":\"normal_context\"}\n\nid:8\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 2057
+  }
+}

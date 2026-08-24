@@ -1,0 +1,949 @@
+{
+  "status": 200,
+  "body": {
+    "code": 0,
+    "data": {
+      "list": [
+        {
+          "function": "solo_design_remote",
+          "models": [
+            {
+              "name": "Doubao-Seed-2.1-Pro",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-2.1-Pro",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.77}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 232768,
+                "max": 0
+              }
+            },
+            {
+              "name": "Doubao-Seed-2.1-Turbo",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-2.1-Turbo",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.39}},\"discount\":{\"enable\":true,\"subKey\":\"member_discount\",\"data\":{\"original_consumption_rate\":0.39,\"consumption_rate\":0.1,\"member_discount\":25,\"is_discount_matched\":false}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 232768,
+                "max": 0
+              }
+            },
+            {
+              "name": "glm-5.2",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "GLM-5.2",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.4}},\"discount\":{\"enable\":true,\"subKey\":\"exclusive_discount\",\"data\":{}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Pro",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.72}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "kimi-k2.7-code",
+              "multimodal": true,
+              "is_default": true,
+              "display_name": "Kimi-K2.7-Code",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.62}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "deepseek-v4-pro",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro",
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "deepseek",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "2319425282"
+            },
+            {
+              "name": "deepseek-v4-flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "volcengine-agent-plan",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "2322395394"
+            },
+            {
+              "name": "deepseek-v4-flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "deepseek",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "1717586562"
+            }
+          ]
+        },
+        {
+          "function": "solo_work_remote",
+          "models": [
+            {
+              "name": "Doubao-Seed-Evolving",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-Evolving",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[1,2,3,100]},\"enable\":true},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.77}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 232768,
+                "max": 0
+              }
+            },
+            {
+              "name": "Doubao-Seed-2.1-Pro",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-2.1-Pro",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.77}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 232768,
+                "max": 0
+              }
+            },
+            {
+              "name": "Doubao-Seed-2.1-Turbo",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-2.1-Turbo",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.39}},\"discount\":{\"enable\":true,\"subKey\":\"member_discount\",\"data\":{\"original_consumption_rate\":0.39,\"consumption_rate\":0.1,\"member_discount\":25,\"is_discount_matched\":false}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 232768,
+                "max": 0
+              }
+            },
+            {
+              "name": "glm-5.3",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "GLM-5.3",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.4}},\"discount\":{\"enable\":true,\"subKey\":\"exclusive_discount\",\"data\":{}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "glm-5.2",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "GLM-5.2",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.4}},\"discount\":{\"enable\":true,\"subKey\":\"exclusive_discount\",\"data\":{}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Flash-Official",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash 正式版",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.08}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.08}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Pro-Official",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro 正式版",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.72}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Pro",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.72}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "kimi-k3",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Kimi-K3",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[1,2,3,100]},\"enable\":true},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":1.65}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "kimi-k2.7-code",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Kimi-K2.7-Code",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.62}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "kimi-k2.6",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Kimi-K2.6",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.69}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "minimax-m3",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "MiniMax-M3",
+              "is_new": true,
+              "is_beta": true,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/minimax-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/minimax-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"beta\":{\"enable\":true},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.26}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "qwen3.8-max",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Qwen3.8-Max",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":1.5}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "qwen-3.7-plus",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Qwen3.7-Plus",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.25}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "deepseek-v4-pro",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro",
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "deepseek",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "2319425282"
+            },
+            {
+              "name": "deepseek-v4-flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "volcengine-agent-plan",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "2322395394"
+            },
+            {
+              "name": "deepseek-v4-flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "deepseek",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "1717586562"
+            }
+          ]
+        },
+        {
+          "function": "solo_agent_remote",
+          "models": [
+            {
+              "name": "Doubao-Seed-Evolving",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-Evolving",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[1,2,3,100]},\"enable\":true},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.77}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              }
+            },
+            {
+              "name": "Doubao-Seed-2.1-Pro",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-2.1-Pro",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.77}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "Doubao-Seed-2.1-Turbo",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Seed-2.1-Turbo",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.39}},\"discount\":{\"enable\":true,\"subKey\":\"member_discount\",\"data\":{\"original_consumption_rate\":0.39,\"consumption_rate\":0.1,\"member_discount\":25,\"is_discount_matched\":false}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "Doubao-Seed-Code",
+              "multimodal": true,
+              "is_default": true,
+              "display_name": "Seed-Code",
+              "is_new": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/doubao.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.12}},\"discount\":{\"enable\":true,\"subKey\":\"member_discount\",\"data\":{\"original_consumption_rate\":0.12,\"consumption_rate\":0.03,\"member_discount\":25,\"is_discount_matched\":false}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 184000,
+                "max": 0
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "glm-5.3",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "GLM-5.3",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.4}},\"discount\":{\"enable\":true,\"subKey\":\"exclusive_discount\",\"data\":{}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "glm-5.2",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "GLM-5.2",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/glm-v3-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.4}},\"discount\":{\"enable\":true,\"subKey\":\"exclusive_discount\",\"data\":{}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Flash-Official",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash 正式版",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.08}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.08}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Pro-Official",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro 正式版",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.72}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "DeepSeek-V4-Pro",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.72}},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "kimi-k3",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Kimi-K3",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[1,2,3,100]},\"enable\":true},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":1.65}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true},\"video_multimodal\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "extra_high"
+              }
+            },
+            {
+              "name": "kimi-k2.7-code",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Kimi-K2.7-Code",
+              "is_new": true,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.62}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true},\"video_multimodal\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "kimi-k2.6",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Kimi-K2.6",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/kimi-v2-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.69}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true},\"video_multimodal\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": false,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 0
+              }
+            },
+            {
+              "name": "minimax-m3",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "MiniMax-M3",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/minimax-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/minimax-light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.26}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              }
+            },
+            {
+              "name": "qwen3.8-max",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Qwen3.8-Max",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":1.5}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              },
+              "reasoning_effort_config": {
+                "support_thinking": true,
+                "options": [
+                  "light",
+                  "high",
+                  "extra_high"
+                ],
+                "default_level": "high"
+              }
+            },
+            {
+              "name": "qwen-3.7-plus",
+              "multimodal": true,
+              "is_default": false,
+              "display_name": "Qwen3.7-Plus",
+              "is_new": false,
+              "is_beta": false,
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/qwen_light.svg"
+              },
+              "features": "{\"access\":{\"data\":{\"identity_list\":[0,5,1,2,3,100]}},\"consumption_rate\":{\"enable\":true,\"data\":{\"rate\":0.25}},\"multimodal\":{\"enable\":true},\"reasoning\":{\"enable\":true}}",
+              "config_source": 1,
+              "is_preset": true,
+              "max_mode": true,
+              "context_window_tokens": {
+                "dev": 200000,
+                "max": 1000000
+              }
+            },
+            {
+              "name": "deepseek-v4-pro",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Pro",
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "deepseek",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "2319425282"
+            },
+            {
+              "name": "deepseek-v4-flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "icon": {
+                "dark": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek-dark.svg",
+                "light": "https://lf-cdn.trae.com.cn/obj/trae-com-cn/model/deepseek.svg"
+              },
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "volcengine-agent-plan",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "2322395394"
+            },
+            {
+              "name": "deepseek-v4-flash",
+              "multimodal": false,
+              "is_default": false,
+              "display_name": "DeepSeek-V4-Flash",
+              "features": "{\"reasoning\":{\"enable\":true}}",
+              "provider": "deepseek",
+              "config_source": 3,
+              "is_preset": false,
+              "custom_model_id": "1717586562"
+            }
+          ]
+        }
+      ]
+    },
+    "message": "success"
+  }
+}

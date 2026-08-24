@@ -1,0 +1,1885 @@
+{
+  "req_source_0": {
+    "status": 200,
+    "body": {
+      "is_credits_billing": true,
+      "is_dollar_usage_billing": false,
+      "is_pay_freshman": true,
+      "trial_status": {
+        "is_eligible_for_trial": false,
+        "is_in_trial": false
+      },
+      "user_entitlement_pack_list": [
+        {
+          "display_desc": "老用户福利",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788437783,
+            "ent_status": 0,
+            "entitlement_id": "327611065346",
+            "product_extra": {
+              "package_extra": {
+                "duration": 0,
+                "package_duration_type": 0,
+                "package_name": "福利积分",
+                "package_source_type": 10,
+                "quota": {
+                  "credits_limit": 2000,
+                  "no_bonus_quota": true
+                }
+              }
+            },
+            "product_id": 208,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 2000,
+              "no_bonus_quota": true
+            },
+            "start_time": 1785759383,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788437783,
+          "group_name": "用户福利",
+          "group_type": 4,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "327611065346",
+          "status": 0,
+          "usage": {
+            "credits_amount": 0.5836
+          },
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "老用户福利",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788437783,
+            "ent_status": 0,
+            "entitlement_id": "327611065602",
+            "product_extra": {
+              "package_extra": {
+                "duration": 0,
+                "package_duration_type": 0,
+                "package_name": "福利积分",
+                "package_source_type": 10,
+                "quota": {
+                  "credits_limit": 2000,
+                  "no_bonus_quota": true
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 2000,
+              "no_bonus_quota": true
+            },
+            "start_time": 1785759383,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788437783,
+          "group_name": "用户福利",
+          "group_type": 4,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "327611065602",
+          "status": 0,
+          "usage": {
+            "credits_amount": 1764.2052
+          },
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "免费",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 0,
+            "end_time": 1788191999,
+            "ent_status": 0,
+            "entitlement_id": "free_utc20268_2112613667059747",
+            "product_extra": {
+              "subscription_extra": {
+                "period_type": 0,
+                "quota": {
+                  "enable_solo_agent": true,
+                  "enable_solo_builder": true,
+                  "enable_solo_coder": true,
+                  "enable_solo_lite": true,
+                  "enable_solo_web": true,
+                  "no_bonus_quota": true,
+                  "solo_agent_parallel_limit": 2
+                }
+              }
+            },
+            "product_id": 0,
+            "product_type": 0,
+            "quota": {
+              "enable_solo_agent": true,
+              "enable_solo_builder": true,
+              "enable_solo_coder": true,
+              "enable_solo_lite": true,
+              "enable_solo_web": true,
+              "no_bonus_quota": true,
+              "solo_agent_parallel_limit": 2
+            },
+            "start_time": 1785513600,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788191999,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "每月登录赠送",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788191999,
+            "ent_status": 0,
+            "entitlement_id": "monthly_bonus_20268_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 1,
+                "package_duration_type": 1,
+                "package_source_type": 0,
+                "quota": {
+                  "credits_limit": 500,
+                  "enable_solo_agent": true,
+                  "enable_solo_builder": true,
+                  "enable_solo_coder": true,
+                  "enable_solo_lite": true,
+                  "enable_solo_web": true,
+                  "no_bonus_quota": true,
+                  "solo_agent_parallel_limit": 2
+                }
+              }
+            },
+            "product_id": 221,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 500,
+              "enable_solo_agent": true,
+              "enable_solo_builder": true,
+              "enable_solo_coder": true,
+              "enable_solo_lite": true,
+              "enable_solo_web": true,
+              "no_bonus_quota": true,
+              "solo_agent_parallel_limit": 2
+            },
+            "start_time": 1785513600,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788191999,
+          "group_name": "每月登录积分",
+          "group_type": 3,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {
+            "credits_amount": 500
+          },
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788438049,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260803_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785759649,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788438049,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788492579,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260804_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785814179,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788492579,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788537789,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260805_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785859389,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788537789,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788632325,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260806_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785953925,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788632325,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788771241,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260807_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786092841,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788771241,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789043450,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260810_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786365050,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789043450,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789099507,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260811_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786421107,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789099507,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789176578,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260812_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786498178,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789176578,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789265695,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260813_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786587295,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789265695,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789366781,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260814_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786688381,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789366781,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789471212,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260815_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786792812,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789471212,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789537262,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260816_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786858862,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789537262,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789702184,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260818_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787023784,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789702184,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789798230,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260819_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787119830,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789798230,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1790067453,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260822_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787389053,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1790067453,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1790154827,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260823_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787476427,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1790154827,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1790214786,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260824_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787536386,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1790214786,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        }
+      ]
+    }
+  },
+  "req_source_1": {
+    "status": 200,
+    "body": {
+      "is_credits_billing": true,
+      "is_dollar_usage_billing": false,
+      "is_pay_freshman": true,
+      "trial_status": {
+        "is_eligible_for_trial": false,
+        "is_in_trial": false
+      },
+      "user_entitlement_pack_list": [
+        {
+          "display_desc": "老用户福利",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788437783,
+            "ent_status": 0,
+            "entitlement_id": "327611065346",
+            "product_extra": {
+              "package_extra": {
+                "duration": 0,
+                "package_duration_type": 0,
+                "package_name": "福利积分",
+                "package_source_type": 10,
+                "quota": {
+                  "credits_limit": 2000,
+                  "no_bonus_quota": true
+                }
+              }
+            },
+            "product_id": 208,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 2000,
+              "no_bonus_quota": true
+            },
+            "start_time": 1785759383,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788437783,
+          "group_name": "用户福利",
+          "group_type": 4,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "327611065346",
+          "status": 0,
+          "usage": {
+            "credits_amount": 0.5836
+          },
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "免费",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 0,
+            "end_time": 1788191999,
+            "ent_status": 0,
+            "entitlement_id": "free_utc20268_2112613667059747",
+            "product_extra": {
+              "subscription_extra": {
+                "period_type": 0,
+                "quota": {
+                  "enable_solo_agent": true,
+                  "enable_solo_builder": true,
+                  "enable_solo_coder": true,
+                  "enable_solo_lite": true,
+                  "enable_solo_web": true,
+                  "no_bonus_quota": true,
+                  "solo_agent_parallel_limit": 2
+                }
+              }
+            },
+            "product_id": 0,
+            "product_type": 0,
+            "quota": {
+              "enable_solo_agent": true,
+              "enable_solo_builder": true,
+              "enable_solo_coder": true,
+              "enable_solo_lite": true,
+              "enable_solo_web": true,
+              "no_bonus_quota": true,
+              "solo_agent_parallel_limit": 2
+            },
+            "start_time": 1785513600,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788191999,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "每月登录赠送",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788191999,
+            "ent_status": 0,
+            "entitlement_id": "monthly_bonus_20268_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 1,
+                "package_duration_type": 1,
+                "package_source_type": 0,
+                "quota": {
+                  "credits_limit": 500,
+                  "enable_solo_agent": true,
+                  "enable_solo_builder": true,
+                  "enable_solo_coder": true,
+                  "enable_solo_lite": true,
+                  "enable_solo_web": true,
+                  "no_bonus_quota": true,
+                  "solo_agent_parallel_limit": 2
+                }
+              }
+            },
+            "product_id": 221,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 500,
+              "enable_solo_agent": true,
+              "enable_solo_builder": true,
+              "enable_solo_coder": true,
+              "enable_solo_lite": true,
+              "enable_solo_web": true,
+              "no_bonus_quota": true,
+              "solo_agent_parallel_limit": 2
+            },
+            "start_time": 1785513600,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788191999,
+          "group_name": "每月登录积分",
+          "group_type": 3,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {
+            "credits_amount": 500
+          },
+          "yearly_expire_time": 0
+        }
+      ]
+    }
+  },
+  "req_source_2": {
+    "status": 200,
+    "body": {
+      "is_credits_billing": true,
+      "is_dollar_usage_billing": false,
+      "is_pay_freshman": true,
+      "trial_status": {
+        "is_eligible_for_trial": false,
+        "is_in_trial": false
+      },
+      "user_entitlement_pack_list": [
+        {
+          "display_desc": "老用户福利",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788437783,
+            "ent_status": 0,
+            "entitlement_id": "327611065346",
+            "product_extra": {
+              "package_extra": {
+                "duration": 0,
+                "package_duration_type": 0,
+                "package_name": "福利积分",
+                "package_source_type": 10,
+                "quota": {
+                  "credits_limit": 2000,
+                  "no_bonus_quota": true
+                }
+              }
+            },
+            "product_id": 208,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 2000,
+              "no_bonus_quota": true
+            },
+            "start_time": 1785759383,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788437783,
+          "group_name": "用户福利",
+          "group_type": 4,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "327611065346",
+          "status": 0,
+          "usage": {
+            "credits_amount": 0.5836
+          },
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "老用户福利",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788437783,
+            "ent_status": 0,
+            "entitlement_id": "327611065602",
+            "product_extra": {
+              "package_extra": {
+                "duration": 0,
+                "package_duration_type": 0,
+                "package_name": "福利积分",
+                "package_source_type": 10,
+                "quota": {
+                  "credits_limit": 2000,
+                  "no_bonus_quota": true
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 2000,
+              "no_bonus_quota": true
+            },
+            "start_time": 1785759383,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788437783,
+          "group_name": "用户福利",
+          "group_type": 4,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "327611065602",
+          "status": 0,
+          "usage": {
+            "credits_amount": 1764.2052
+          },
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "免费",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 0,
+            "end_time": 1788191999,
+            "ent_status": 0,
+            "entitlement_id": "free_utc20268_2112613667059747",
+            "product_extra": {
+              "subscription_extra": {
+                "period_type": 0,
+                "quota": {
+                  "enable_solo_agent": true,
+                  "enable_solo_builder": true,
+                  "enable_solo_coder": true,
+                  "enable_solo_lite": true,
+                  "enable_solo_web": true,
+                  "no_bonus_quota": true,
+                  "solo_agent_parallel_limit": 2
+                }
+              }
+            },
+            "product_id": 0,
+            "product_type": 0,
+            "quota": {
+              "enable_solo_agent": true,
+              "enable_solo_builder": true,
+              "enable_solo_coder": true,
+              "enable_solo_lite": true,
+              "enable_solo_web": true,
+              "no_bonus_quota": true,
+              "solo_agent_parallel_limit": 2
+            },
+            "start_time": 1785513600,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788191999,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "每月登录赠送",
+          "entitlement_base_info": {
+            "available_endpoint": 0,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788191999,
+            "ent_status": 0,
+            "entitlement_id": "monthly_bonus_20268_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 1,
+                "package_duration_type": 1,
+                "package_source_type": 0,
+                "quota": {
+                  "credits_limit": 500,
+                  "enable_solo_agent": true,
+                  "enable_solo_builder": true,
+                  "enable_solo_coder": true,
+                  "enable_solo_lite": true,
+                  "enable_solo_web": true,
+                  "no_bonus_quota": true,
+                  "solo_agent_parallel_limit": 2
+                }
+              }
+            },
+            "product_id": 221,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 500,
+              "enable_solo_agent": true,
+              "enable_solo_builder": true,
+              "enable_solo_coder": true,
+              "enable_solo_lite": true,
+              "enable_solo_web": true,
+              "no_bonus_quota": true,
+              "solo_agent_parallel_limit": 2
+            },
+            "start_time": 1785513600,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788191999,
+          "group_name": "每月登录积分",
+          "group_type": 3,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {
+            "credits_amount": 500
+          },
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788438049,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260803_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785759649,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788438049,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788492579,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260804_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785814179,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788492579,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788537789,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260805_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785859389,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788537789,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788632325,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260806_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1785953925,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788632325,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1788771241,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260807_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786092841,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1788771241,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789043450,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260810_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786365050,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789043450,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789099507,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260811_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786421107,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789099507,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789176578,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260812_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786498178,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789176578,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789265695,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260813_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786587295,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789265695,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789366781,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260814_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786688381,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789366781,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789471212,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260815_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786792812,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789471212,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789537262,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260816_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1786858862,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789537262,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789702184,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260818_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787023784,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789702184,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1789798230,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260819_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787119830,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1789798230,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1790067453,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260822_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787389053,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1790067453,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1790154827,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260823_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787476427,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1790154827,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        },
+        {
+          "display_desc": "签到奖励",
+          "entitlement_base_info": {
+            "available_endpoint": 1,
+            "charge_amount": 0,
+            "currency": 1,
+            "end_time": 1790214786,
+            "ent_status": 0,
+            "entitlement_id": "checkin_20260824_2112613667059747",
+            "product_extra": {
+              "package_extra": {
+                "duration": 31,
+                "package_duration_type": 0,
+                "package_name": "签到奖励",
+                "package_source_type": 9,
+                "quota": {
+                  "credits_limit": 200
+                }
+              }
+            },
+            "product_id": 209,
+            "product_type": 2,
+            "quota": {
+              "credits_limit": 200
+            },
+            "start_time": 1787536386,
+            "user_id": "2112613667059747"
+          },
+          "expire_time": 1790214786,
+          "group_name": "每日签到",
+          "group_type": 1,
+          "is_hide": false,
+          "is_last_period": false,
+          "next_billing_time": 0,
+          "source_id": "",
+          "status": 1,
+          "usage": {},
+          "yearly_expire_time": 0
+        }
+      ]
+    }
+  }
+}

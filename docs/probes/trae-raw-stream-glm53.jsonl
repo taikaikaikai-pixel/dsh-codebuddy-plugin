@@ -1,0 +1,8 @@
+id:1
+event:error
+data:{"code":3003,"message":"all models failed","extra":null}
+
+id:2
+event:done
+data:{"finish_reason":"stop"}
+

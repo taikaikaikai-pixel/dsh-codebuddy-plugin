@@ -10,6 +10,12 @@
   - 账号昵称字段修正（ScreenName）；probe-trae-live.mjs 同步校准（--chat 用真实信封）
   - 回归：verify-trae-provider **51 断言**（mock 云端说真实语法：累计快照/事件名/改派/排队/工具）；**真实端到端实测通过**——dsh 网关路径流式（皮亚诺公理回答、usage 61 tok）与非流式（"成功了"+served-by note）双绿
   - 已知限制存档（trae-cloud-api.md §5.1）：限流 4011 紧（联调间隔 ≥20s）；/api/ide/v1/chat 老端点 4023 拒现代模型名；remote 协议（真手动模型选择）是 agent 形态、留作后续课题
+- **Trae remote 传输：模型切换真实生效**（2026-08-24 下午，用户诉求"可以切换模型"驱动；探测矩阵 docs/probes/trae-model-routing[234]-*.json 定论）：
+  - **raw 面模型路由被 function 位钉死（终局证伪）**：inline_chat 只服务账户默认模型，非默认 model 名一律 3003 "all models failed"（custom_model 无效；当日上午的静默改派为服务端时变行为，两态兼容）；chat_v3/solo_agent_lite 恒 seed-code-lite、solo_work_lite 恒 glm-5.2——任意 model 名都 200 但 timing_cost 证实改派
+  - **新传输 `providers/trae/remote.js`**：remote 会话协议（`POST /api/remote/v1/chat_sessions`：initial_message.model_name + `model_selection_strategy:"manual"` + agent_type solo_agent_remote + content 空数组/历史扁平化进 query → `GET …/events` SSE → stop 善后）；事件解析器 createRemoteEventParser（plan_item 按 id 分槽累计差分：thought=正文/reasoning_content=思考；finish 工具 params.summary 兜底去重补发；model_config/done.model_info 双源确认真实模型；token_usage→usage；queuing 提示一次）；glm-5.3 真线实测路由+自报双重确认
+  - **网关接线**：设置 `traeChatTransport`（inline 默认 / remote）逐请求分发；remote 模式耗 **work 额度池**且不支持 OpenAI tools（远端 agent 自持工具）——带 tools 请求明确 400 remote-no-tools 不静默降级；计量记 model_config 真实模型
+  - **额度双池实证**：`ide_user_ent_usage` 按 available_endpoint 分池（0=IDE/raw、1=work/remote）；3 次 remote 会话后 work 池 +9.4 credits、IDE 池不动；Free 账号 kimi-k3 触发 error 1005 套餐门（message 空 + data.plan，errors.js 空 message 按码表回填语义）
+  - 设置卡 TraeWork CN 分区新增"聊天传输"选择行；回归 verify-trae-provider **73 断言**（mock remote 云端：创建体/web 头组/事件流翻译/聚合/tools 拒绝/stop 善后 + 解析器边界单测）
 
 ## 0.8.3 (2026-08-23)
 
