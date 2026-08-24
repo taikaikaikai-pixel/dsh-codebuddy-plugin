@@ -158,7 +158,7 @@ function mockTraeAuth() {
 // mock Trae chat cloud (SSE)
 // ---------------------------------------------------------------------------
 
-function mockTraeRemote({ authedToken = 'tok-live', failFirstCreates = 0 } = {}) {
+function mockTraeRemote({ authedToken = 'tok-live', failFirstCreates = 0, hangCreate = false } = {}) {
   const state = { creates: [], events: 0, stops: 0 }
   const write = (res, ev, data) => res.write(`event: ${ev}\ndata: ${JSON.stringify(data)}\n\n`)
   const server = createServer((req, res) => {
@@ -172,6 +172,9 @@ function mockTraeRemote({ authedToken = 'tok-live', failFirstCreates = 0 } = {})
         return
       }
       if (req.method === 'POST' && url === '/api/remote/v1/chat_sessions') {
+        // hangCreate：接受连接但永不回应（边缘/本地代理死态的真实形态，
+        // 2026-08-24 故障取证 docs/diagnosis-trae-3003.md §8）
+        if (hangCreate) { state.creates.push({ headers: req.headers, body: null }); return }
         // failFirstCreates：前 N 次 create 回**裸文本 404**（TLB 节点路由漂移的
         // 真实线缆形态，2026-08-24 故障取证 docs/diagnosis-trae-3003.md）
         if (state.creates.length < failFirstCreates) {
@@ -220,7 +223,7 @@ function mockTraeRemote({ authedToken = 'tok-live', failFirstCreates = 0 } = {})
 // mock Trae chat cloud (SSE)
 // ---------------------------------------------------------------------------
 
-function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false, sseError = null } = {}) {
+function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false, sseError = null, hang = false } = {}) {
   const state = { requests: [] }
   const server = createServer((req, res) => {
     let raw = ''
@@ -239,6 +242,8 @@ function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = fals
         res.end(JSON.stringify({ code: 1001, message: 'auth failed (mock)' }))
         return
       }
+      // hang：一个字节都不发（比 sseError 更底层的死态——首字节护栏的靶子）
+      if (hang) return
       res.writeHead(200, { 'content-type': 'text/event-stream' })
       if (sseError) {
         // 真实线缆形态（2026-08-24 inline 面 3003 故障取证）：HTTP 200 SSE 里直接
@@ -891,6 +896,44 @@ try {
     deadMock.state.creates.length === 2 && deadErr?.status === 404 && String(deadErr?.message).includes('边缘节点'))
   deadMock.server.closeAllConnections?.()
   deadMock.server.close()
+
+  // 首字节/整体超时护栏（2026-08-24 本地代理死态实测，docs/diagnosis-trae-3003.md §8）
+  const hangMock = await mockTraeChat({ hang: true })
+  const rt8 = { running: false, port: null, lastError: null }
+  const gateway8 = createTraeGateway({
+    settings: () => ({ ...settings, traeChatBaseURL: hangMock.base, maxConcurrentPerSession: 4, upstreamFirstByteTimeoutMs: 400 }),
+    withCredentials: async (attempt) => {
+      try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
+    },
+    readAuthDevice: () => null,
+    readAuthMeta: () => ({ uid: 'u-001' }),
+    meter: { record: () => {} },
+    runtime: rt8,
+    getCatalogIds: () => ids,
+  })
+  const stop8 = gateway8.listen(0)
+  await sleep(80)
+  const h0 = Date.now()
+  const hRes = await fetch(`http://127.0.0.1:${rt8.port}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'glm-5.3', messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const hMs = Date.now() - h0
+  const hBody = await hRes.json()
+  check('inline 上游挂死：首字节护栏限时快速失败且文案带自助指引',
+    hRes.status === 502 && hMs < 5000 && String(hBody.error?.message).includes('首字节超时') && hBody.error.message.includes('remote'))
+  stop8()
+  hangMock.server.closeAllConnections?.()
+  hangMock.server.close()
+
+  const hangRemote = await mockTraeRemote({ hangCreate: true })
+  let hErr = null
+  const rh0 = Date.now()
+  try { await createRemoteSession(hangRemote.base, 'tok-live', 'glm-5.3', [{ role: 'user', content: 'x' }], { timeoutMs: 300 }) } catch (e) { hErr = e }
+  check('remote create 挂死：整体限时失败且文案带指引（不再无限挂起）',
+    Date.now() - rh0 < 5000 && !!hErr && /超时/.test(String(hErr?.message)) && String(hErr.message).includes('inline'))
+  hangRemote.server.closeAllConnections?.()
+  hangRemote.server.close()
 
 } finally {
   rmSync(workDir, { recursive: true, force: true })

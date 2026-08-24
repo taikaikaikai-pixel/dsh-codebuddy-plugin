@@ -514,6 +514,10 @@ export function createTraeGateway(deps) {
     const release = await limiter.acquire(sessionId, s.maxConcurrentPerSession ?? 4)
     try {
       const { body, requestId } = buildChatRequest(payload, sessionId)
+      // 首字节护栏（2026-08-24 故障取证：本地代理/边缘对 POST 偶发"收下请求不
+      // 回应"，无超时会令用户请求无限挂死）。fetch 在响应头到达即 resolve，
+      // 计时器随即清除——SSE 长流不受影响；仅约束"连上却不出头"的死态。
+      const firstByteMs = Number(s.upstreamFirstByteTimeoutMs) > 0 ? Number(s.upstreamFirstByteTimeoutMs) : 45_000
       const { cred, res: upstream0, err } = await deps.withCredentials((c) => {
         const token = String(c.authorization).replace(/^Cloud-IDE-JWT\s+/, '')
         const headers = {
@@ -522,16 +526,22 @@ export function createTraeGateway(deps) {
           'X-Cloudide-Token': token,
           'x-ide-token': token,
         }
+        const inbound = new AbortController()
+        const firstByteTimer = setTimeout(
+          () => inbound.abort(new Error(`trae 上游 ${firstByteMs}ms 内无响应（首字节超时）——边缘/WAF 拦截或本地代理异常；可稍后重试，需要真实模型选择可切 remote 传输`)),
+          firstByteMs,
+        )
         return fetch(`${s.traeChatBaseURL}${CHAT_PATH}`, {
           method: 'POST',
           headers,
           body: JSON.stringify(body),
-        })
+          signal: inbound.signal,
+        }).finally(() => clearTimeout(firstByteTimer))
       })
       if (!cred || err) {
         const isCred = err?.credentialUnavailable === true
         res.writeHead(isCred ? 503 : 502, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: { message: isCred ? TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE : `trae upstream unreachable: ${err?.message ?? 'unknown'}` } }))
+        res.end(JSON.stringify({ error: { message: isCred ? TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE : `trae upstream unreachable: ${err?.message ?? err?.name ?? 'unknown'}` } }))
         return
       }
       const upstream = upstream0

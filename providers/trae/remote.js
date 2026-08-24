@@ -140,19 +140,34 @@ const EDGE_RETRY_DELAY_MS = 900
 const isEdgeSkewReject = (status, text) =>
   (status === 404 || status === 403) && !text.trimStart().startsWith('{')
 
-export async function createRemoteSession(baseURL, token, model, messages) {
+/** create 会话是短请求（非流式 JSON），必须限时——边缘/本地代理死态时快速
+ *  失败而非无限挂起（2026-08-24 本地代理抽风实测）。测试可用 opts.timeoutMs 调短。 */
+const CREATE_TIMEOUT_MS = 20_000
+
+export async function createRemoteSession(baseURL, token, model, messages, { timeoutMs } = {}) {
+  const limit = Number(timeoutMs) > 0 ? Number(timeoutMs) : CREATE_TIMEOUT_MS
   const attemptOnce = async () => {
     const resp = await fetch(`${baseURL}/api/remote/v1/chat_sessions`, {
       method: 'POST',
       headers: remoteWebHeaders(token, { stream: false }),
       body: JSON.stringify(buildRemoteCreateBody(model, messages)),
+      signal: AbortSignal.timeout(limit),
     })
     return { resp, text: await resp.text() }
   }
-  let { resp, text } = await attemptOnce()
-  if (isEdgeSkewReject(resp.status, text)) {
-    await new Promise((r) => setTimeout(r, EDGE_RETRY_DELAY_MS))
+  let resp
+  let text
+  try {
     ;({ resp, text } = await attemptOnce())
+    if (isEdgeSkewReject(resp.status, text)) {
+      await new Promise((r) => setTimeout(r, EDGE_RETRY_DELAY_MS))
+      ;({ resp, text } = await attemptOnce())
+    }
+  } catch (e) {
+    if (e?.name === 'TimeoutError' || /timeout|timed?\s?out/i.test(String(e?.message ?? ''))) {
+      throw new Error(`trae remote create_session 超时（${limit}ms 无响应）——边缘/WAF 拦截或本地代理异常；可稍后重试或改用 inline 通道`)
+    }
+    throw e
   }
   if (resp.status >= 400) {
     const skew = isEdgeSkewReject(resp.status, text)

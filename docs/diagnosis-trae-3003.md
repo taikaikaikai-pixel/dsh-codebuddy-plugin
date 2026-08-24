@@ -126,3 +126,28 @@ Trae 业务码 3003。
 - **操作入口验证（round 5）**：重启后的实例 settings 视图含 `traeChatTransport`
   （当前 inline）/`traeEnabled`/`traeChatBaseURL`——指引中"设置卡切 remote"
   的控件真实可用，闭环成立。
+
+## 8. 第六轮：第三种失败模式（本地代理死态→无限挂起）与超时护栏
+
+- **实测现象**（12:50–12:53 UTC）：网关 POST 偶发**无限挂起**（GET 路由正常、
+  进程事件循环正常）。排查：直连 Trae 云端同一信封 385ms 即回（云端无恙）；
+  运行实例环境继承了桌面代理 `http_proxy=127.0.0.1:7890` 且 no_proxy 不含
+  trae 域——代理对 trae POST 存在"收下请求不回应"的间歇死态。
+- **插件缺陷定级**：inline 上游 fetch 与 remote create 此前**均无客户端超时**
+  ——任何"连上不出头"的死态都会转化为用户请求无限挂死。属真实健壮性缺陷，
+  与本次服务端事故相互独立、但被其放大暴露。
+- **修复（0.8.5 追加）**：
+  - gateway.js inline 上游 fetch 加**首字节护栏**：响应头 45s 未达即 abort 并
+    回结构化错误（文案带自助指引）；头到达后计时即清除，SSE 长流不受影响。
+    可经设置 `upstreamFirstByteTimeoutMs`（1000–300000ms）覆盖，默认 45s。
+  - remote.js `createRemoteSession` 整体限时 20s（测试可 `{timeoutMs}` 覆盖），
+    超时报错带指引；边缘漂移重试逻辑不变。
+  - `code/restart-dsh.sh` 启动 dsh 时清除四个代理变量——宿主上游不再依赖
+    桌面代理的健康度。
+- **回归**：verify-trae-provider 新增 2 断言（mock 零字节挂死 → inline 限时
+  502 带指引 / remote create 限时失败带指引），79 项断言全绿。
+- **round-7 部署验证**：新代码已在运行实例生效（settings 视图出现
+  `upstreamFirstByteTimeoutMs:45000`）；经运行网关实测 POST 365ms 即回
+  结构化错误。运维注：重启脚本会 pkill 全部 dsh web——若助手会话自身宿主于
+  dsh，重启即中断该会话（本轮两次工具调用中断的直接原因），但 setsid 先行
+  脱离，脚本效果不受影响；代理变量的彻底剥离留待宿主侧下次常规重启。
