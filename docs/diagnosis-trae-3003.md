@@ -117,8 +117,12 @@ Trae 业务码 3003。
     ——即用户报告的原始形态，pi-ai 包装为 PI_AI_ERROR。
   - 重启后（v0.8.5）：同一错误现在携带完整自助指引——
     `"trae 3003 all models failed （Trae 服务端 inline 通道当前对该模型名返回此错——非凭据/配额问题；…请在插件设置卡把「聊天传输」切为 remote，详见 docs/diagnosis-trae-3003.md）"`
-- **事故时长**：inline 面 3003 自 ~08:06 UTC 起持续 >4.7 小时未自愈；remote
+- **事故时长**：inline 面 3003 自 ~08:06 UTC 起持续未自愈（最后一次采样
+  12:51 UTC，约 4.8 小时，经运行网关实测）；remote
   create 的节点漂移窗口同样间歇存在（12:49 仍 404，重试+指引按设计触发）。
   两面同时受影响期间，插件侧已无更多可为——错误可读、重试自动、指引明确。
 - **运维提示**：插件 JS 层修复需重启 dsh 生效；`traeChatTransport` 等设置项
   为逐请求热读取，切换传输无需重启。
+- **操作入口验证（round 5）**：重启后的实例 settings 视图含 `traeChatTransport`
+  （当前 inline）/`traeEnabled`/`traeChatBaseURL`——指引中"设置卡切 remote"
+  的控件真实可用，闭环成立。
