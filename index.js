@@ -304,6 +304,16 @@ export function syncModelsToDshSettings() {
   }
   const next = YAML.parse(YAML.stringify(computeEffectiveModels()))
   const current = doc.getIn(path)
+  // Defensive (0.8.7): an empty effective list must never be mirrored —
+  // llm-pi-ai (dsh 0.1.1-rc.2+) rejects it at apply time. setModelEnabled
+  // guards the last model already; this fallback drops the override (the
+  // patch static list then serves) instead of poisoning the namespace.
+  if (next.length === 0) {
+    if (!doc.getIn(path)) return false
+    doc.deleteIn(path)
+    writeFileSync(DSH_SETTINGS_PATH, String(doc))
+    return true
+  }
   if (YAML.stringify(current ?? null) === YAML.stringify(next)) return false
   doc.setIn(path, next)
   writeFileSync(DSH_SETTINGS_PATH, String(doc))
@@ -327,6 +337,14 @@ function setModelEnabled({ id, enabled, profile }) {
       state.extra[id] = profile
     }
   } else {
+    // Guard (0.8.7): disabling the LAST effective model would mirror an
+    // empty models list into settings.yaml, which llm-pi-ai (dsh 0.1.1-rc.2+)
+    // rejects at apply time — taking down the whole llm-pi-ai fiber and
+    // with it the main chat. Keep at least one servable model.
+    const effective = computeEffectiveModels()
+    if (effective.length <= 1 && effective.some((m) => m.id === id)) {
+      throw new Error('不能禁用最后一个模型：dsh 0.1.1-rc.2 起 llm-pi-ai 拒绝空模型清单（整域不可用）')
+    }
     // Base ids need an explicit disabled mark; a catalog extra simply
     // drops out of the extras map — marking it disabled would keep the
     // state non-pristine (and the settings override) forever.
@@ -722,11 +740,18 @@ function readTraeModelState() {
 }
 
 /**
- * 镜像 providers.trae.models **恒铺**（2026-08-23 实测修正）：pi-ai 要求 patch
- * provider 必须带模型清单（否则整棵插件树加载失败），故 patch 里有 24 个静态
- * 基线——禁用时**删路径会回落静态清单**（选择器显示不可用模型）。正解：
- * 禁用/未同步 → 铺空数组（实测 pi-ai 接受且不毒化层，选择器隐藏通道）；
- * 启用+已同步 → 有效清单（剔除 disabled）。启用开关即热增删，免重启。
+ * 镜像 providers.trae **整块**（0.8.7 / dsh 0.1.1-rc.2 适配，取代"恒铺
+ * models 路径 + 空数组遮蔽"）：llm-pi-ai 收紧了目录校验——非目录路由的空
+ * models 清单在 apply 时直接 throw（连坐整棵 llm-pi-ai 纤维，主聊天全挂），
+ * 热加载路径也被 onChange 拒绝并保持旧值，"空数组遮蔽"彻底失效（踩坑 #25
+ * 修订）。新策略 = **路由存在性管理**：patch 不再带 trae 静态基线，镜像独占
+ * 该路由的完整定义——
+ *   启用+已同步 → 铺完整块（displayName/api/baseURL/headers/models），
+ *     baseURL 跟随 traeBridgePort（改端口重铺镜像即热生效，优于旧 patch 静态式）；
+ *   禁用/未同步/全部模型禁用 → 删除 providers.trae 整块（路由消失，选择器
+ *     隐藏通道，chokidar 热加载免重启）。无 patch 基线即无回落，删块即干净。
+ * 升级注意：<=0.8.5 写的 trae 块只带 models 路径（其余字段靠 patch 深合并），
+ * 重启前须先清掉旧块（见 cordis.patch.yml 的 UPGRADE NOTE）。
  */
 function syncTraeModelsToDshSettings() {
   let doc
@@ -738,13 +763,26 @@ function syncTraeModelsToDshSettings() {
   const s = Config({ ...readFileLayer() }) // entry 侧无 trae 字段，schema 默认补齐
   const view = traeProvider.catalogView()
   const disabled = readTraeModelState().disabled
-  const next = s.traeEnabled === true && view
-    ? YAML.parse(YAML.stringify(view.profiles.filter((p) => !disabled[p.id])))
-    : []
-  const path = ['llm-pi-ai', 'providers', 'trae', 'models']
+  const models = s.traeEnabled === true && view
+    ? view.profiles.filter((p) => !disabled[p.id])
+    : null
+  const path = ['llm-pi-ai', 'providers', 'trae']
+  if (!models || models.length === 0) {
+    if (!doc.getIn(path)) return false
+    doc.deleteIn(path)
+    writeFileSync(DSH_SETTINGS_PATH, String(doc))
+    return true
+  }
+  const block = {
+    displayName: 'TraeWork CN',
+    api: 'openai-completions',
+    baseURL: `http://127.0.0.1:${s.traeBridgePort}/v1`,
+    headers: { Authorization: 'Bearer dsh-trae-bridge' },
+    models: YAML.parse(YAML.stringify(models)),
+  }
   const current = doc.getIn(path)
-  if (YAML.stringify(current ?? null) === YAML.stringify(next)) return false
-  doc.setIn(path, next)
+  if (YAML.stringify(current ?? null) === YAML.stringify(block)) return false
+  doc.setIn(path, YAML.parse(YAML.stringify(block)))
   writeFileSync(DSH_SETTINGS_PATH, String(doc))
   return true
 }

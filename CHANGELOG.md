@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.7 (2026-08-28)
+
+- **适配 dsh 0.1.0-rc.8 / 0.1.1-rc.1 / 0.1.1-rc.2**（用户"dsh 更新了"驱动；逐包 npm pack diff rc.7→0.1.1-rc.2 全插件接触面）：
+  - **上游事实盘点**：`@earendil-works/pi-ai` 保持 0.82.1（wire 协议层零变化——哨兵 Authorization、developer→system 重写、requestHeaders 剥除、缓存行为全部不动）；dsh-settings / dsh-launch-environment / dsh-base 的 cordis.patch.yml lib 零变化；浏览器半（dsh-client-ui-slots/settings/runtime、api-proxy settings RPC）逐字节级 diff 判定零破坏，rc.7 keyed 槽位兼容写法继续有效；`dsh-client-ui-primitives` 恢复真实 CSS（正向）
+  - **破坏点 = `dsh-llm-pi-ai` 适配层重写（+813 行 catalog 物化）**：非目录路由的**空 models 清单在 apply 时直接 throw**（"resolves no models"），热加载路径被 onChange 拒绝并保持旧路由注册——踩坑 #25 的"空数组遮蔽"策略彻底失效；profile schema 收紧（空 baseURL/displayName 报错、`provider`/`maxRetries` 旧字段 reject、reasoningEfforts 空 dict 报错；现有 patch 形态兼容）、provider id 须小写中划线（codebuddy/trae 合法）、compat 门控表显式化（thinkingFormat/supportsReasoningEffort 仍可配，会话亲和字段仍 withhold）
+  - **Trae 通道改"路由存在性管理"**：patch 删除 24 模型静态基线，镜像 `syncTraeModelsToDshSettings` 从"恒铺 models 路径 + 空数组遮蔽"改为**整块铺/删**——启用+已同步铺完整块（displayName/api/baseURL/headers/models；baseURL 跟随 traeBridgePort，改端口重铺即热生效），禁用/未同步/全禁用删 `providers.trae` 整块（路由消失、选择器隐藏、免重启；无 patch 基线即无回落）
+  - **codebuddy 全禁用防护**：`setModelEnabled` 拒绝禁用最后一个有效模型（空清单会令 llm-pi-ai 整域拒绝解析、主聊天全挂）；`syncModelsToDshSettings` 防御性兜底（effective 为空时删镜像路径回落 patch 静态清单而非铺空数组）
+  - **迁移（升级必读）**：dsh 升到 0.1.1-rc.2 后首次启动前须清理 settings.yaml 里 ≤0.8.5 形态的 `llm-pi-ai.providers.trae` 块（只带 models 路径、缺 baseURL，llm-pi-ai 会先于插件炸掉）；同类手写残块（如仅 apiKeyEnv 的 kimi-coding）同样致命——本机迁移已处理并备份 `settings.yaml.bak-086-migration`
+  - 回归：verify-bridge / verify-core-generic / verify-rotation / verify-providers / verify-trae-provider（81 断言）全绿；浏览器 step20（20，基线补 TraeWork CN 分区）/ step22（22）/ step31-trae（12，断言更新为"禁用=块删除"语义）全过；端到端实测——dsh 0.1.1-rc.2 冷启动无 llm-pi-ai 报错、trae 整块自动重铺、禁用↔启用热切换（块删/重铺）、全禁用防护触发、capture-traffic 真实三会话（跨会话缓存命中 24192 tok）
+
 ## 0.8.6 (2026-08-24)
 
 - **逆向漏项重审（round 9）**：用户质疑"trae 3003 是不是逆向漏了什么"驱动；官方客户端当日网络日志取证（`%APPDATA%/TRAE SOLO CN/logs/aha_log/networkservice-*.alaudalog` AALG 容器 zlib 解流）：
