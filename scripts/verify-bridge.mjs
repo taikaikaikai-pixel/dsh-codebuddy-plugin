@@ -142,7 +142,7 @@ async function main() {
 
   /** Drive a captured settings-route handler with a mock req/res pair. */
   const callRoute = (routesMap, body) => new Promise((resolve, reject) => {
-    const handler = routesMap['/dsh-codebuddy-plugin/settings']
+    const handler = routesMap['/dsh-tap/settings']
     if (!handler) return reject(new Error('settings route not registered'))
     const req = new EventEmitter()
     req.method = body ? 'POST' : 'GET'

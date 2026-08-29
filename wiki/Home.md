@@ -1,4 +1,4 @@
-# dsh-codebuddy-plugin — Code Wiki 首页
+# dsh-tap — Code Wiki 首页
 
 > 当前版本：**0.8.7**（见 [package.json](../package.json) / [CHANGELOG.md](../CHANGELOG.md)）
 
@@ -35,7 +35,7 @@
 ## 仓库目录树
 
 ```text
-dsh-codebuddy-plugin/
+dsh-tap/
 ├── index.js                  # 组合根：Config/schema、模型管理、凭据编排、设置路由、apply 生命周期
 ├── cordis.patch.yml          # 静态配置：llm-pi-ai 路由（指向本地桥）+ 模型基线 + 默认模型 + web 钉选
 ├── local-scan.js             # G7 本机登录态只读扫描 + 确认后导入

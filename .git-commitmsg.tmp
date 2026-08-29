@@ -1,0 +1,21 @@
+feat!: rename dsh-codebuddy-plugin -> dsh-tap (v0.9.0)
+
+Function-named instead of vendor-named: a tap that pipes subscription quota
+(CodeBuddy / TraeWork CN) into dsh. Vendor names rot; tap stays true.
+
+Runtime identity relinked in lockstep: package name, plugin registration
+name, settings route /dsh-tap/settings (webServer route + client ROUTE +
+settings.register namespace + slot id/key/data-plugin attrs + verify-bridge
+assertion), cordis.patch.yml insert id/name; log prefixes updated. Living
+docs followed (README/AGENTS/LICENSE/pitfalls/wiki/trae-surface); historical
+records in CHANGELOG/diagnosis docs intentionally keep the old name.
+
+Deliberately untouched: ~/.dsh/codebuddy-plugin.json storage filenames
+(user-data compat, no migration needed) and the Bearer dsh-codebuddy-bridge
+sentinel (internal pipe value, both sides consistent).
+
+BREAKING: reinstall required - dsh plugin rm dsh-codebuddy-plugin, add the
+new package, restart the dsh process (pitfall #8).
+
+offline regression: verify-bridge / verify-trae-provider (81) /
+verify-core-generic / verify-providers / verify-rotation all green

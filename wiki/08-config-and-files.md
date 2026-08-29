@@ -87,7 +87,7 @@ flowchart LR
 |------|------|------|------|
 | 3901（bridgePort） | core 桥 | `/v2/*` 透传；`/chat/completions` 特化 | CodeBuddy 主聊天 + agenttool 透传；仅 127.0.0.1 |
 | 3902（traeBridgePort） | Trae 翻译网关 | `POST /v1/chat/completions`；`GET /v1/models` | OpenAI↔Trae 协议翻译；仅 127.0.0.1 |
-| 3080 | dsh web | `/dsh-codebuddy-plugin/settings` | 设置卡自有路由（ctx.webServer） |
+| 3080 | dsh web | `/dsh-tap/settings` | 设置卡自有路由（ctx.webServer） |
 
 改 3901 端口必须同时改 `cordis.patch.yml` 的 baseURL（或反之），否则主聊天断（设置卡有明示）。
 

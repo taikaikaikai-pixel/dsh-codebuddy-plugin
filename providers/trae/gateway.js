@@ -389,7 +389,7 @@ async function forEachSseEvent(body, parser, cb) {
  */
 export function createTraeGateway(deps) {
   const limiter = new SessionLimiter()
-  const logPrefix = '[dsh-codebuddy-plugin/trae]'
+  const logPrefix = '[dsh-tap/trae]'
 
   function gwLog(record) {
     const path = deps.forensics?.logPath?.()

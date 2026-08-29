@@ -1,4 +1,4 @@
-# AGENTS.md — dsh-codebuddy-plugin 开发指南
+# AGENTS.md — dsh-tap 开发指南
 
 面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#27）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
 
@@ -18,7 +18,7 @@
 | 多服务商（G6/G7） | `providers/openai-compat.js` + `providers/ark`、`providers/bailian`、`providers/iflow`、`providers/qwen` | key 型 OpenAI 兼容上游注册表：共享骨架（GET /models 验目录 + provider 块组装；**/models 404 时 probeChatKey 探针验 key + fallbackModels 兜底清单**，裁判 docs/rules/extra-providers.md）+ 每上游 preset（baseURL/认证方言）。登记册在插件文件层 `managedProviders`，块写 settings.yaml、key 写 .credentials.yaml（踩坑 #21） | 免重启（热加载） |
 | 浏览器半 | `lib/client.js` | Settings → 插件配置 的 CodeBuddy 设置卡（`settings.plugin.item` slot；复用宿主 `dsh-client-ui-primitives` 组件 + `--dsw-alias-*` tokens + 注入式 cbc- 样式，见踩坑 #15） | 刷新页面（注意浏览器缓存，测试加 `--disable-http-cache`） |
 
-设置数据流：设置卡 → `POST /dsh-codebuddy-plugin/settings`（自有路由）→ `~/.dsh/codebuddy-plugin.json`（文件层）→ `Config({entry, file})` 活解析。OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json`，**永不回传浏览器**（key 也只回脱敏 `ck_a…5678`）。
+设置数据流：设置卡 → `POST /dsh-tap/settings`（自有路由）→ `~/.dsh/codebuddy-plugin.json`（文件层）→ `Config({entry, file})` 活解析。OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json`，**永不回传浏览器**（key 也只回脱敏 `ck_a…5678`）。
 
 各层细节叙述见 wiki/01-architecture.md ~ 09-run-and-test.md。表中"踩坑 #N"指 docs/pitfalls.md。
 

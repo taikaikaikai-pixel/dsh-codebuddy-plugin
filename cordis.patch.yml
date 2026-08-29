@@ -1,4 +1,4 @@
-# dsh-codebuddy-plugin — CodeBuddy provider bundle
+# dsh-tap — CodeBuddy provider bundle
 #
 # Overrides three rows from dsh-base:
 #
@@ -43,8 +43,8 @@
 # Insert this package into the profile's plugin entry list so cordis loads
 # index.js (the runtime layer registering the codebuddy web providers).
 - insert:
-    - id: dsh-codebuddy-plugin
-      name: 'dsh-codebuddy-plugin'
+    - id: dsh-tap
+      name: 'dsh-tap'
 
 - id: llm-pi-ai
   config:

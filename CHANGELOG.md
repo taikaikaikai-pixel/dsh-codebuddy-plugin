@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 (2026-08-29)
+
+- **更名 dsh-codebuddy-plugin → dsh-tap**（用户“功能驳杂/名字绑定厂商”驱动；新名按功能命名——把订阅额度“接出来”的水龙头，厂商名会腐烂、tap 永远是真的；npm 可注册）：
+  - **运行时标识四处联动**：package.json name、index.js \export const name（插件注册名）、设置路由 \/dsh-codebuddy-plugin/settings\ → \/dsh-tap/settings（index.js webServer 路由 + lib/client.js ROUTE + \settings.register\ 命名空间 + 槽位 id/key/data-plugin 属性 + verify-bridge 路由断言）、cordis.patch.yml \insert\ 入口 id/name；日志前缀 \[dsh-tap]、\[dsh-tap/trae]\ 同步
+  - **活文档全量跟随**：README/AGENTS/LICENSE/pitfalls/wiki/trae-surface；CHANGELOG 与诊断文档里的历史记载刻意保留原名（记录当时事实）
+  - **刻意不动**：\~/.dsh/codebuddy-plugin.json\ 等存储文件名（保用户数据兼容免迁移）、\Bearer dsh-codebuddy-bridge\ 哨兵（内部管道值，patch 与桥两侧一致即可，与插件名无关）
+  - **升级必读（破坏性）**：本机需 \dsh plugin rm dsh-codebuddy-plugin\ → \dd\ 新包名后**重启 dsh 进程**（踩坑 #8）；GitHub 仓库改名走 Settings→Rename（旧 URL 自动重定向）
+  - 回归：verify-bridge / verify-trae-provider（81）/ verify-core-generic / verify-providers / verify-rotation 全绿
+
 ## 0.8.7 (2026-08-28)
 
 - **适配 dsh 0.1.0-rc.8 / 0.1.1-rc.1 / 0.1.1-rc.2**（用户"dsh 更新了"驱动；逐包 npm pack diff rc.7→0.1.1-rc.2 全插件接触面）：

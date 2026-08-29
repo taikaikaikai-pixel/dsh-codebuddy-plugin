@@ -7,7 +7,7 @@
 
 | 导出 | 类型 | 说明 |
 |------|------|------|
-| `name` | `string` | `'dsh-codebuddy-plugin'` |
+| `name` | `string` | `'dsh-tap'` |
 | `inject` | `string[]` | `['web']`（webServer/tools/settings 经 `ctx.inject` 懒解析） |
 | `Config` | schema | 设置 schema（schemastery），见下表 |
 | `SETTINGS_FIELDS` | `array` | 字段元数据（设置卡渲染用；也是 POST 白名单的唯一依据） |
@@ -61,7 +61,7 @@ apply 内创建**本代**资源（每 apply 一次新实例，捕获本代 `reso
 
 1. **搜索/抓取后端** `syncProviders()`——`searchEnabled` 开启时注册 `ctx.web` 的两个 provider，禁用即注销。patch 在 `web` 行钉选 codebuddy；禁用期间该缝报 CONFIGURED_MISSING（语义即"功能关闭"）。
 2. **生图工具** `syncImageTool()`——`ctx.inject(['tools'])` 懒解析后注册 `image_generate`；注册失败降级 stderr 日志不崩。
-3. **settings 命名空间声明**（rc.7+）——`ctx.inject(['settings'])` 内 `sctx.settings.register('dsh-codebuddy-plugin', Config)`，仅为设置页派发卡片的声明；数据面仍走自有路由。
+3. **settings 命名空间声明**（rc.7+）——`ctx.inject(['settings'])` 内 `sctx.settings.register('dsh-tap', Config)`，仅为设置页派发卡片的声明；数据面仍走自有路由。
 4. **core 桥** `createBridge({ settings: resolveNow, provider, withCredentials, meter, forensics, runtime: bridgeRuntime })`——`syncBridge()` 按开关/端口起停。`bridgeRuntime` 是模块级共享（生产单实例 last-apply-wins 正确；verify-bridge §10 钉语义）。
 5. **Trae 通道**——`traeSettingsFn = resolveNow`（迟绑定，网关每次读"本代" settings）；`syncTraeBridge()` 起停 :3902 网关 + 尝试目录同步（静默失败）。
 6. **设置路由** `registerSettingsRoute(ctx, config, resolveNow, applyLive)`。
@@ -74,7 +74,7 @@ apply 内创建**本代**资源（每 apply 一次新实例，捕获本代 `reso
 ```mermaid
 flowchart TB
     START(["dsh 启动 · patch insert 触发加载 index.js"]) --> APPLY["apply(ctx, config)"]
-    APPLY --> ROUTE["注册设置路由 /dsh-codebuddy-plugin/settings"]
+    APPLY --> ROUTE["注册设置路由 /dsh-tap/settings"]
     APPLY --> TSN["traeSettingsFn = resolveNow<br/>（迟绑定本代 settings）"]
     APPLY --> LIVE["applyLive() 首次执行"]
     LIVE --> F1["syncProviders() → ctx.web 搜索/抓取"]
@@ -145,7 +145,7 @@ presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, iflowProvide
 
 ## 设置路由契约
 
-路由：`/dsh-codebuddy-plugin/settings`（经 `ctx.inject(['webServer'])` 注册）。
+路由：`/dsh-tap/settings`（经 `ctx.inject(['webServer'])` 注册）。
 
 - **GET** → `settingsView(resolveNow)`：`{ value（脱敏）, user（文件层原文，不含 secret 字段之外的内容）, fields, oauth, bridge, trae, models }`
 - **POST**（同源校验 `sameOrigin`，否则 403/405）：
@@ -167,7 +167,7 @@ presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, iflowProvide
 
 ```mermaid
 flowchart TB
-    POST(["POST /dsh-codebuddy-plugin/settings"]) --> SO{"同源 Origin 校验"}
+    POST(["POST /dsh-tap/settings"]) --> SO{"同源 Origin 校验"}
     SO -->|失败| F403["403 / 405"]
     SO -->|通过| BODY{"body 形态"}
     BODY -->|action 动作| ACT["动作分发（见上方 action 表）"]

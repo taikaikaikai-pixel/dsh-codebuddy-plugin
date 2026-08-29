@@ -1,4 +1,4 @@
-# dsh-codebuddy-plugin
+# dsh-tap
 
 CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**模型清单跟随网关目录动态同步**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），**`image_generate` 生图工具**（混元生图后端），以及 **key 型 OpenAI 兼容上游注册表**（火山引擎 Ark、阿里云百炼等，模型统一进选择器）；v0.8.3 起内置 **TraeWork CN 订阅额度通道**（自持设备密钥的 OAuth + 本地 OpenAI↔Trae 翻译网关 + 本机目录同步，详见下节）。
 
@@ -141,25 +141,25 @@ key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark
 
 网关地址 `baseURL`（默认 `https://copilot.tencent.com`，http/https 绝对地址），一般无需修改。
 
-实现说明：设置卡走插件自建的 `GET/POST /dsh-codebuddy-plugin/settings` 路由而非 dsh 官方 settings 命名空间——当前 dsh 组合存在两份 `settings` 服务实例（bundle 入口侧与 Web 客户端连接侧互不相通），命名空间注册对设置页不可见；这与 dsh-html-visualizer 自建设置路由是同一原因。
+实现说明：设置卡走插件自建的 `GET/POST /dsh-tap/settings` 路由而非 dsh 官方 settings 命名空间——当前 dsh 组合存在两份 `settings` 服务实例（bundle 入口侧与 Web 客户端连接侧互不相通），命名空间注册对设置页不可见；这与 dsh-html-visualizer 自建设置路由是同一原因。
 
 ## 安装
 
 ```sh
 # 进入任意工作目录，把本插件安装到 web profile
-dsh plugin --profile web add /path/to/dsh-codebuddy-plugin
+dsh plugin --profile web add /path/to/dsh-tap
 ```
 
 或直接从 GitHub 安装（纯 ESM、无构建步骤，git 源检出即用）：
 
 ```sh
-dsh plugin --profile web add github:taikaikaikai-pixel/dsh-codebuddy-plugin
+dsh plugin --profile web add github:taikaikaikai-pixel/dsh-tap
 ```
 
 或通过 npm 包名安装（发布后）：
 
 ```sh
-dsh plugin --profile web add dsh-codebuddy-plugin
+dsh plugin --profile web add dsh-tap
 ```
 
 安装后重启 Web UI（或重启 `dsh` 进程）生效。
@@ -201,7 +201,7 @@ npm run verify:bridge
 ## 卸载
 
 ```sh
-dsh plugin --profile web rm dsh-codebuddy-plugin
+dsh plugin --profile web rm dsh-tap
 ```
 
 ## 免责声明

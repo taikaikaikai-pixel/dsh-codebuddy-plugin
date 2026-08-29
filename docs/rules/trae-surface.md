@@ -1,7 +1,7 @@
 # TRAE API 面 / OAuth / 插件 侦察规则文档
 
 > 日期：2026-08-19
-> 方法：dsh-codebuddy-plugin 同款逆向方法论 —— 现象 → 假设 → 探测 → 规则 → 预测验证
+> 方法：dsh-tap 同款逆向方法论 —— 现象 → 假设 → 探测 → 规则 → 预测验证
 > 目标：把 TRAE（字节火山系）API 面、OAuth、插件体系摸成白箱，供未来做 provider/自动化接入
 > 主线来源：TRAE 官方日志 + 本地配置 + 实际 HTTP 探测
 
@@ -158,7 +158,7 @@ TRAE 的 MCP 是本地集成模式，三个 profile：
 
 | profile | 来源 | 发现 |
 |---|---|---|
-| solo_design_lite | dsh-codebuddy-plugin 项目 | integrated_code_mode（V8 沙箱 Exec） + GitHub server |
+| solo_design_lite | dsh-tap 项目 | integrated_code_mode（V8 沙箱 Exec） + GitHub server |
 | dev_agent | 规则动乱项目 | mcp_Blender（Blender 3D/混元 3D/Hyper3D 全套工具） |
 | browser_use | 习惯项目 | GitHub server |
 

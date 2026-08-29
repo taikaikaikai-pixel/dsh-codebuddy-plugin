@@ -1,5 +1,5 @@
 /**
- * dsh-codebuddy-plugin — composition root.
+ * dsh-tap — composition root.
  *
  * Three layers:
  *
@@ -66,7 +66,7 @@ import bailianProvider from './providers/bailian/index.js'
 import iflowProvider from './providers/iflow/index.js'
 import qwenProvider from './providers/qwen/index.js'
 
-export const name = 'dsh-codebuddy-plugin'
+export const name = 'dsh-tap'
 
 /** web providers via ctx.web; the settings route rides ctx.webServer when present. */
 export const inject = ['web']
@@ -906,7 +906,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
   ctx.inject(['webServer'], (wsctx) => {
     wsctx.webServer.register({
       kind: 'exact',
-      path: '/dsh-codebuddy-plugin/settings',
+      path: '/dsh-tap/settings',
       handler: (request, response) => {
         if (request.method === 'GET') {
           sendJSON(response, 200, settingsView(resolveNow))
@@ -1243,10 +1243,10 @@ export function apply(ctx, config = {}) {
     if (disposeImageTool) return
     try {
       disposeImageTool = toolsCtx.tools.register(provider.makeImageGenTool(resolveNow))
-      process.stderr.write('[dsh-codebuddy-plugin] image_generate tool registered\n')
+      process.stderr.write('[dsh-tap] image_generate tool registered\n')
     } catch (err) {
       disposeImageTool = null
-      process.stderr.write(`[dsh-codebuddy-plugin] image_generate register failed: ${err?.message ?? err}\n`)
+      process.stderr.write(`[dsh-tap] image_generate register failed: ${err?.message ?? err}\n`)
     }
   }
   ctx.inject(['tools'], (tctx) => { toolsCtx = tctx; syncImageTool() })
@@ -1262,9 +1262,9 @@ export function apply(ctx, config = {}) {
   // effect on this fiber — plugin dispose unregisters the namespace.
   ctx.inject(['settings'], (sctx) => {
     try {
-      sctx.settings.register('dsh-codebuddy-plugin', Config)
+      sctx.settings.register('dsh-tap', Config)
     } catch (err) {
-      process.stderr.write(`[dsh-codebuddy-plugin] settings namespace register failed: ${err?.message ?? err}\n`)
+      process.stderr.write(`[dsh-tap] settings namespace register failed: ${err?.message ?? err}\n`)
     }
   })
 
@@ -1348,7 +1348,7 @@ export function apply(ctx, config = {}) {
     traeProvider.syncCatalog().then((r) => {
       if (r.ok) {
         syncTraeModelsToDshSettings()
-        process.stderr.write(`[dsh-codebuddy-plugin] trae catalog synced (${r.count} models)\n`)
+        process.stderr.write(`[dsh-tap] trae catalog synced (${r.count} models)\n`)
       } else if (traeProvider.catalogView()) {
         syncTraeModelsToDshSettings()
       }
@@ -1367,8 +1367,8 @@ export function apply(ctx, config = {}) {
   // （syncModelsFromGateway 内部已兜住一切异常，这里只记一行日志）。
   syncModelsFromGateway(resolveNow).then((r) => {
     process.stderr.write(r.ok
-      ? `[dsh-codebuddy-plugin] model catalog synced from gateway (${r.count} models)\n`
-      : `[dsh-codebuddy-plugin] model catalog sync failed (${r.error}) — ${r.kept ? 'keeping last synced list' : 'static fallback'}\n`)
+      ? `[dsh-tap] model catalog synced from gateway (${r.count} models)\n`
+      : `[dsh-tap] model catalog sync failed (${r.error}) — ${r.kept ? 'keeping last synced list' : 'static fallback'}\n`)
   })
   ctx.on('dispose', () => {
     if (stopBridge) stopBridge()

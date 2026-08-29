@@ -6,7 +6,7 @@
 
 ```js
 window.__ModuleLoader__.load({
-  id: "dsh-codebuddy-plugin",
+  id: "dsh-tap",
   factory: (require) => {
     const react = require("react")
     // ... 组件定义与注册 ...
@@ -15,7 +15,7 @@ window.__ModuleLoader__.load({
 ```
 
 - 包声明：`dsh.client.inject = ['@deepseek-ai/dsh-client-runtime', '@deepseek-ai/dsh-client-ui-slots']`，platform web。
-- 注册卡：带 `key: "dsh-codebuddy-plugin"`（rc.7 keyed 槽位）——卡片渲染前提是宿主半 `settings.register('dsh-codebuddy-plugin', Config)` 命名空间声明已落地（见 [02](02-composition-root.md)）。
+- 注册卡：带 `key: "dsh-tap"`（rc.7 keyed 槽位）——卡片渲染前提是宿主半 `settings.register('dsh-tap', Config)` 命名空间声明已落地（见 [02](02-composition-root.md)）。
 
 ## 卡片结构（九个分区）
 
@@ -36,7 +36,7 @@ window.__ModuleLoader__.load({
 ## 请求契约（与组合根设置路由对齐）
 
 ```text
-GET  /dsh-codebuddy-plugin/settings
+GET  /dsh-tap/settings
      → { value（脱敏）, user, fields, oauth, bridge, trae, models }
 POST { patch: {...} }            → 保存（合并 + 校验 + 热生效）
 POST { action: 'oauth-start' | 'oauth-status' | 'oauth-logout'
@@ -51,7 +51,7 @@ POST { action: 'oauth-start' | 'oauth-status' | 'oauth-logout'
 
 - **平台 primitives**：`require('@deepseek-ai/dsh-client-ui-primitives')`（Button/Input/图标），try/catch 失败回落原生元素——卡片不白屏（`CbcButton` 等适配组件内部封装）。
 - **设计 tokens**：全部颜色走 `--dsw-alias-*` CSS 变量（深色主题经 `body[data-ds-dark-theme]` 自动跟随）。**注意两个不存在的名字**：`--dsw-alias-accent` / `--dsw-alias-label-error`——正确名是 `state-business-primary` / `state-error-primary`。
-- **注入样式**：单个 `<style data-plugin="dsh-codebuddy-plugin" data-plugin-css="…">` 块，类名 `cbc-` 前缀（与第一方同协议，模块加载器可按插件归因/热清理）。外壳数值抄第一方 PluginCard：radius 12、border-l2、bg-layer-3→展开 bg-layer-2、padding 14/16。
+- **注入样式**：单个 `<style data-plugin="dsh-tap" data-plugin-css="…">` 块，类名 `cbc-` 前缀（与第一方同协议，模块加载器可按插件归因/热清理）。外壳数值抄第一方 PluginCard：radius 12、border-l2、bg-layer-3→展开 bg-layer-2、padding 14/16。
 
 ## React 纪律（踩坑 #4/#5/#16）
 

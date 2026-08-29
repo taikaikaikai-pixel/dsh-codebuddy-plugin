@@ -59,7 +59,7 @@ export function createCodeBuddyProvider(deps) {
     // core/bridge.js 的适配钩子
     // ---------------------------------------------------------------
 
-    logPrefix: '[dsh-codebuddy-plugin]',
+    logPrefix: '[dsh-tap]',
 
     /** 桥出站静态头组（逐字段规则/迷信判定见 headers.js 文件头）。 */
     bridgeHeaders: () => ({ ...CLIENT_HEADERS }),

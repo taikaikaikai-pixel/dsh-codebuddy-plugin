@@ -32,7 +32,7 @@ flowchart TB
         CARD["lib/client.js 设置卡（九分区）"]
     end
 
-    subgraph PLUGIN["dsh-codebuddy-plugin"]
+    subgraph PLUGIN["dsh-tap"]
         direction TB
         L1["① 静态配置 cordis.patch.yml（重启生效）<br/>llm-pi-ai 路由指向本地桥 + 模型基线<br/>默认模型 · web 钉选 · insert 入口"]
         L2["② 组合根 index.js（重启生效）<br/>apply() 生命周期 + applyLive() 热同步<br/>Config schema · 模型镜像 · 凭据编排 · 设置路由"]
@@ -146,7 +146,7 @@ flowchart TB
 ```mermaid
 flowchart TB
     CARD["设置卡 lib/client.js（九分区）"]
-    CARD -->|"GET /dsh-codebuddy-plugin/settings"| VIEW["settingsView()（脱敏视图）"]
+    CARD -->|"GET /dsh-tap/settings"| VIEW["settingsView()（脱敏视图）"]
     CARD -->|"POST patch（保存）"| MERGE["SETTINGS_FIELDS 白名单过滤<br/>+ Config schema 校验"]
     CARD -->|"POST action（动作）"| ACT["oauth-* / model-list / model-sync /<br/>provider-* / credential-* / trae-* / usage"]
     MERGE --> FILE["写 ~/.dsh/codebuddy-plugin.json（文件层）"]
@@ -175,8 +175,8 @@ OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json` / `~/.dsh/trae-plugin-
 | `insert`（patch） | `- insert: [{id, name}]` 让 loader 执行 `apply()` | 声明 `dsh.bundle` 的包只应用 patch、不加载 JS（踩坑 #1） |
 | `ctx.web` | `registerSearchProvider` / `registerFetchProvider` | patch `web` 行钉选 codebuddy，避免多 provider 时 AMBIGUOUS |
 | `ctx.tools` | `tools.register(image_generate 工具)` | 经 `ctx.inject(['tools'])` 懒解析；schema 必须是最终 JSON Schema（踩坑 #13） |
-| `ctx.webServer` | 自有设置路由 `/dsh-codebuddy-plugin/settings` | 同源 POST 校验；GET 只读 |
-| `ctx.settings`（rc.7+） | `settings.register('dsh-codebuddy-plugin', Config)` | 仅作设置页派发声明（keyed 槽位）；读写仍走自有路由（踩坑 #18） |
+| `ctx.webServer` | 自有设置路由 `/dsh-tap/settings` | 同源 POST 校验；GET 只读 |
+| `ctx.settings`（rc.7+） | `settings.register('dsh-tap', Config)` | 仅作设置页派发声明（keyed 槽位）；读写仍走自有路由（踩坑 #18） |
 | `ctx.llm` | **未用** | 桥是传输层代理，模型清单走 patch |
 | `ctx.credentials` | **不能用** | 主聊天走哨兵 + 桥内解析，宿主凭据缝覆盖不了这条路径 |
 
