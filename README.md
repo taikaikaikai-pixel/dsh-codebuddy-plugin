@@ -70,11 +70,11 @@ describe-image:
   apiStyle: chat-completions
 ```
 
-桥只监听回环地址，端口可用环境变量 `DSH_CODEBUDDY_BRIDGE_PORT` 修改（默认 3901）。`chat/completions` 之外的路径（如 `/agenttool/*`）原样透传。
+桥只监听回环地址，端口在设置卡「流式桥」分区修改（`bridgePort`，默认 3901）。`chat/completions` 之外的路径（如 `/agenttool/*`）原样透传。
 
 ## 可选设置（Settings → 插件配置 → CodeBuddy）
 
-设置卡按插件功能分八区，顶部有功能概览行，修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
+设置卡按插件功能分九区，顶部有功能概览行，修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
 
 ### 模型
 
@@ -150,7 +150,7 @@ key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark
 dsh plugin --profile web add /path/to/dsh-codebuddy-plugin
 ```
 
-或直接从 GitHub 安装（git 源依赖 `prepare` 构建脚本，pnpm ≥10 首次安装会提示构建授权，按提示把 key 加入 profile 目录 `pnpm-workspace.yaml` 的 `allowBuilds` 后重跑即可）：
+或直接从 GitHub 安装（纯 ESM、无构建步骤，git 源检出即用）：
 
 ```sh
 dsh plugin --profile web add github:taikaikaikai-pixel/dsh-codebuddy-plugin

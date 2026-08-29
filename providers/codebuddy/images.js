@@ -39,7 +39,7 @@ export function createImageTool({ withKeyRotation, meter, dshHome }) {
         'Returns the local file path of the saved image and its source URL. ' +
         'Takes ~20s per image; one image per call.',
       // Schemas here are FINAL JSON Schema (the registry's defineTool shorthand
-      // converter is not importable from a plugin — see AGENTS.md 踩坑 #9).
+      // converter is not importable from a plugin — see docs/pitfalls.md #9).
       parameters: {
         type: 'object',
         additionalProperties: false,

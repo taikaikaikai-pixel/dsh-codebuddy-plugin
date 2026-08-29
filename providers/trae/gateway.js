@@ -38,11 +38,15 @@ import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { appendFileSync } from 'node:fs'
 
-import { SessionLimiter } from '../../core/bridge.js'
+import { SessionLimiter, extractSessionId } from '../../core/bridge.js'
 import { normalizeTraeError, formatTraeErrorMessage, TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './errors.js'
 import {
   createRemoteSession, openRemoteEvents, stopRemoteSession, createRemoteEventParser,
+  cumulativeDelta,
 } from './remote.js'
+
+// re-export：实现唯一归 remote.js；本模块导出面不变（verify 脚本从此导入）。
+export { cumulativeDelta }
 
 /** Trae 云端客户端指纹（product.json appId + Trae2api-cn 生产实测值，2026-08-24 校准）。 */
 export const TRAE_APP_ID = '6eefa01c-1036-4c7e-9ca5-d891f63bfcd8'
@@ -115,7 +119,7 @@ function nativeToolCalls(toolCalls) {
 }
 
 /** OpenAI messages → Trae native messages（content 块化；tool_calls/tool 角色原生）。 */
-export function toNativeMessages(messages) {
+function toNativeMessages(messages) {
   const out = []
   for (const m of (Array.isArray(messages) ? messages : [])) {
     if (!m || typeof m !== 'object') continue
@@ -186,18 +190,6 @@ export function buildChatRequest(payload, sessionId) {
     if (payload[f] !== undefined && payload[f] !== null) body[f] = payload[f]
   }
   return { body, requestId }
-}
-
-/** 累计快照 → 增量（前缀差分；回退公共前缀——镜像 Trae2api-cn ProtocolTextAccumulator）。 */
-export function cumulativeDelta(previous, current) {
-  if (typeof current !== 'string' || current === '') return ''
-  if (typeof previous !== 'string' || previous === '') return current
-  if (current.startsWith(previous)) return current.slice(previous.length)
-  if (previous.startsWith(current)) return ''
-  let i = 0
-  const limit = Math.min(previous.length, current.length)
-  while (i < limit && previous[i] === current[i]) i += 1
-  return current.slice(i)
 }
 
 /** usage 字段名宽容映射（snake/camel 都收）。 */
@@ -350,6 +342,40 @@ function oaiChunk(id, model, delta, finishReason = null, usage = null) {
 }
 
 /**
+ * SSE 逐行扫描骨架（remote/inline 两条事件流共用）：跨 chunk 组行，空行重置
+ * 事件名，`event:` 记名，`data:` JSON 解析后交 parser.handle 派发；`[DONE]`
+ * 与非 JSON data 行吞掉。cb(ev) 返回真值时中止扫描并透传该值（调用方据此
+ * 跳出，如 inline 的 'fallback'/'done'）。仅供本文件内部使用，不进 core/。
+ */
+async function forEachSseEvent(body, parser, cb) {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buf = ''
+  let lastEventName = null
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buf += decoder.decode(value, { stream: true })
+    let nl
+    while ((nl = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, nl).trim()
+      buf = buf.slice(nl + 1)
+      if (!line) { lastEventName = null; continue }
+      if (line.startsWith('event:')) { lastEventName = line.slice(6).trim(); continue }
+      if (line.startsWith('id:') || line.startsWith(':')) continue
+      if (!line.startsWith('data:')) continue
+      const data = line.slice(5).trim()
+      if (data === '[DONE]') { parser.handle('done', {}); continue }
+      let chunk = null
+      try { chunk = JSON.parse(data) } catch { continue }
+      const ret = await cb(parser.handle(lastEventName, chunk))
+      if (ret) return ret
+    }
+  }
+  return undefined
+}
+
+/**
  * @param {{
  *   settings: () => object,            // 需要 traeChatBaseURL / maxConcurrentPerSession
  *   withCredentials: (attempt: (cred) => Promise<Response>) => Promise<{cred,res,err}>,
@@ -373,21 +399,13 @@ export function createTraeGateway(deps) {
     } catch { /* best-effort */ }
   }
 
-  /** 提取会话 id（与 core 桥同源的候选序；复用为 Trae session_id）。 */
-  function extractSessionId(headers, payload) {
-    for (const c of [headers['x-conversation-id'], headers['x-session-id'], headers['session_id'], payload?.conversation_id, payload?.session_id]) {
-      if (typeof c === 'string' && c.trim()) return c.trim()
-    }
-    return null
-  }
-
   /**
    * remote 传输（chat_sessions 协议）：唯一真实的模型选择机制（2026-08-24
    * 探测定论，见 remote.js 文件头）。每请求起一个云端沙箱 agent、耗 work
    * 额度池、不支持 OpenAI tools（远端 agent 自持工具，dsh 工具环会断——
    * 带 tools 的请求明确拒绝，不静默降级）。
    */
-  async function handleRemoteChat(req, res, payload, model, wantStream, sessionId, t0) {
+  async function handleRemoteChat(res, payload, model, wantStream, sessionId, t0) {
     if ((Array.isArray(payload.tools) && payload.tools.length) || payload.tool_choice != null) {
       res.writeHead(400, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: { message: 'trae remote 通道不支持 tools（模型选择仅对纯文本会话生效；需要 dsh 工具环请用 inline 通道）', code: 'remote-no-tools' } }))
@@ -421,46 +439,26 @@ export function createTraeGateway(deps) {
         if (wantStream) res.write(`data: ${JSON.stringify(chunk)}\n\n`)
       }
 
-      const reader = eventsResp.body.getReader()
-      const decoder = new TextDecoder()
-      let buf = ''
-      let lastEventName = null
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buf += decoder.decode(value, { stream: true })
-        let nl
-        while ((nl = buf.indexOf('\n')) >= 0) {
-          const line = buf.slice(0, nl).trim()
-          buf = buf.slice(nl + 1)
-          if (!line) { lastEventName = null; continue }
-          if (line.startsWith('event:')) { lastEventName = line.slice(6).trim(); continue }
-          if (line.startsWith('id:') || line.startsWith(':')) continue
-          if (!line.startsWith('data:')) continue
-          const data = line.slice(5).trim()
-          if (data === '[DONE]') { parser.handle('done', {}); continue }
-          let chunk = null
-          try { chunk = JSON.parse(data) } catch { continue }
-          const ev = parser.handle(lastEventName, chunk)
-          if (ev.error) {
-            const parsed = normalizeTraeError(200, ev.error)
-            const msg = formatTraeErrorMessage(parsed.code, parsed.message)
-            if (!res.headersSent) {
-              res.writeHead(502, { 'Content-Type': 'application/json' })
-              res.end(JSON.stringify({ error: { message: msg, code: parsed.code } }))
-            } else {
-              send({ error: { message: msg, code: parsed.code } })
-              res.write('data: [DONE]\n\n')
-              res.end()
-            }
-            gwLog({ dir: 'err', transport: 'remote', model, ms: Date.now() - t0, code: parsed.code })
-            return
+      const interrupted = await forEachSseEvent(eventsResp.body, parser, (ev) => {
+        if (ev.error) {
+          const parsed = normalizeTraeError(200, ev.error)
+          const msg = formatTraeErrorMessage(parsed.code, parsed.message)
+          if (!res.headersSent) {
+            res.writeHead(502, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: { message: msg, code: parsed.code } }))
+          } else {
+            send({ error: { message: msg, code: parsed.code } })
+            res.write('data: [DONE]\n\n')
+            res.end()
           }
-          if (ev.queue) send(oaiChunk(id, model, { content: '（Trae remote 排队/沙箱准备中…）\n' }))
-          if (ev.reasoning) send(oaiChunk(id, model, { reasoning_content: ev.reasoning }))
-          if (ev.text) send(oaiChunk(id, model, { content: ev.text }))
+          gwLog({ dir: 'err', transport: 'remote', model, ms: Date.now() - t0, code: parsed.code })
+          return 'err'
         }
-      }
+        if (ev.queue) send(oaiChunk(id, model, { content: '（Trae remote 排队/沙箱准备中…）\n' }))
+        if (ev.reasoning) send(oaiChunk(id, model, { reasoning_content: ev.reasoning }))
+        if (ev.text) send(oaiChunk(id, model, { content: ev.text }))
+      })
+      if (interrupted) return
       const usage = parser.usage()
       const actualModel = parser.actualModel() ?? model
       if (wantStream) {
@@ -512,7 +510,7 @@ export function createTraeGateway(deps) {
     // 传输选择：remote（chat_sessions，真模型路由、耗 work 池、无 tools）|
     // inline（默认，llm_utils_chat+inline_chat，模型恒为账户默认、原生 tools）。
     if (s.traeChatTransport === 'remote') {
-      await handleRemoteChat(req, res, payload, model, wantStream, sessionId, t0)
+      await handleRemoteChat(res, payload, model, wantStream, sessionId, t0)
       return
     }
 
@@ -583,69 +581,49 @@ export function createTraeGateway(deps) {
         if (wantStream) res.write(`data: ${JSON.stringify(chunk)}\n\n`)
       }
 
-      const reader = upstream.body.getReader()
-      const decoder = new TextDecoder()
-      let buf = ''
-      let lastEventName = null
       let queueEmitted = false
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buf += decoder.decode(value, { stream: true })
-        let nl
-        while ((nl = buf.indexOf('\n')) >= 0) {
-          const line = buf.slice(0, nl).trim()
-          buf = buf.slice(nl + 1)
-          if (!line) { lastEventName = null; continue }
-          if (line.startsWith('event:')) { lastEventName = line.slice(6).trim(); continue }
-          if (line.startsWith('id:')) continue
-          if (!line.startsWith('data:')) continue
-          const data = line.slice(5).trim()
-          if (data === '[DONE]') { parser.handle('done', {}); continue }
-          let chunk = null
-          try { chunk = JSON.parse(data) } catch { continue }
-          const ev = parser.handle(lastEventName, chunk)
-          if (ev.error) {
-            // 3003 且尚未降级且无 tools → 换 chat_v3 重试（见上方回退说明）
-            if (ev.error.code === 3003 && !fallbackUsed && !hasTools) return 'fallback'
-            const msg = formatTraeErrorMessage(ev.error.code, ev.error.message)
-            if (!res.headersSent) {
-              res.writeHead(502, { 'Content-Type': 'application/json' })
-              res.end(JSON.stringify({ error: { message: msg, code: ev.error.code } }))
-            } else {
-              send({ error: { message: msg, code: ev.error.code } })
-              res.write('data: [DONE]\n\n')
-              res.end()
-            }
-            gwLog({ dir: 'err', model, ms: Date.now() - t0, code: ev.error.code, fn: fnValue })
-            return 'done'
+      const outcome = await forEachSseEvent(upstream.body, parser, (ev) => {
+        if (ev.error) {
+          // 3003 且尚未降级且无 tools → 换 chat_v3 重试（见上方回退说明）
+          if (ev.error.code === 3003 && !fallbackUsed && !hasTools) return 'fallback'
+          const msg = formatTraeErrorMessage(ev.error.code, ev.error.message)
+          if (!res.headersSent) {
+            res.writeHead(502, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ error: { message: msg, code: ev.error.code } }))
+          } else {
+            send({ error: { message: msg, code: ev.error.code } })
+            res.write('data: [DONE]\n\n')
+            res.end()
           }
-          if (ev.queue != null && !queueEmitted) {
-            queueEmitted = true
-            send(oaiChunk(id, model, { content: `（Trae 排队中，位置 ${ev.queue}）\n` }))
-          }
-          // 模型改派提示（一次）：请求模型 ≠ timing_cost 报告的实际模型时，
-          // 以 SSE 注释行告知（OpenAI 解析器忽略、原始流/日志可见——不污染
-          // 调用方会话历史），计量/日志用真实模型——绝不假装请求模型被服务。
-          const actual = parser.providerModel()
-          if (actual && !rerouteNotified && model && actual !== model) {
-            rerouteNotified = true
-            if (wantStream) res.write(`: trae-reroute requested=${model} actual=${actual}\n\n`)
-          }
-          if (ev.reasoning) send(oaiChunk(id, model, { reasoning_content: ev.reasoning }))
-          if (ev.text) {
-            content += ev.text
-            send(oaiChunk(id, model, { content: ev.text }))
-          }
-          if (ev.toolCall) {
-            // OpenAI 流式约定：首片带 id/type/name，续片只带 index+arguments 增量
-            const tc = { index: ev.toolCall.index, function: { arguments: ev.toolCall.argsDelta } }
-            if (ev.toolCall.id) { tc.id = ev.toolCall.id; tc.type = 'function' }
-            if (ev.toolCall.name) tc.function.name = ev.toolCall.name
-            send(oaiChunk(id, model, { tool_calls: [tc] }))
-          }
+          gwLog({ dir: 'err', model, ms: Date.now() - t0, code: ev.error.code, fn: fnValue })
+          return 'done'
         }
-      }
+        if (ev.queue != null && !queueEmitted) {
+          queueEmitted = true
+          send(oaiChunk(id, model, { content: `（Trae 排队中，位置 ${ev.queue}）\n` }))
+        }
+        // 模型改派提示（一次）：请求模型 ≠ timing_cost 报告的实际模型时，
+        // 以 SSE 注释行告知（OpenAI 解析器忽略、原始流/日志可见——不污染
+        // 调用方会话历史），计量/日志用真实模型——绝不假装请求模型被服务。
+        const actual = parser.providerModel()
+        if (actual && !rerouteNotified && model && actual !== model) {
+          rerouteNotified = true
+          if (wantStream) res.write(`: trae-reroute requested=${model} actual=${actual}\n\n`)
+        }
+        if (ev.reasoning) send(oaiChunk(id, model, { reasoning_content: ev.reasoning }))
+        if (ev.text) {
+          content += ev.text
+          send(oaiChunk(id, model, { content: ev.text }))
+        }
+        if (ev.toolCall) {
+          // OpenAI 流式约定：首片带 id/type/name，续片只带 index+arguments 增量
+          const tc = { index: ev.toolCall.index, function: { arguments: ev.toolCall.argsDelta } }
+          if (ev.toolCall.id) { tc.id = ev.toolCall.id; tc.type = 'function' }
+          if (ev.toolCall.name) tc.function.name = ev.toolCall.name
+          send(oaiChunk(id, model, { tool_calls: [tc] }))
+        }
+      })
+      if (outcome) return outcome
       finishReason = parser.finish() ?? 'stop'
       usage = parser.usage()
       const actualModel = parser.providerModel() ?? model

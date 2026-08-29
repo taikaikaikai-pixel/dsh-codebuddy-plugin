@@ -3,7 +3,7 @@
 > 状态：**理解性延伸——边界已钉死**（非绕过手段，仅用于理解校验器行为；任何变体都未用于完成被拒路径）
 > 前置：`docs/rules/content-moderation.md`（Kimi 课题 6，定位拒绝在**网关入口通道校验层 L1**，字面量 developer 单列拒绝）
 > 证据：`docs/probes/dev-role-boundary-2026-08-19.jsonl`（R1，8 臂）· `dev-role-boundary2`（R2，7 臂）· `dev-role-boundary3`（R3，6 臂）
-> 脚本：`scripts/hermes-probe-dev-role.mjs` / `-role2` / `-role3`（Hermes 独立命名，不覆盖 Kimi 的 probe-moderation.mjs）
+> 脚本：`scripts/hermes-probe-dev-role.mjs --round 1|2|3`（三轮已合并进单文件，--round 1/2/3 分别对应原 `-role` / `-role2` / `-role3`；Hermes 独立命名，不覆盖 Kimi 的 probe-moderation.mjs）
 
 ---
 

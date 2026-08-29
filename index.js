@@ -26,7 +26,7 @@
  * 官方缝使用说明（红线：能用 ctx.credentials / ctx.llm / ctx.web 的地方不自建）：
  * - ctx.web：已用（搜索/抓取后端经 registerSearchProvider/registerFetchProvider）。
  * - ctx.credentials：不能用——主聊天经 patch 指向本地桥，pi-ai 侧只认静态哨兵
- *   Authorization（机制见 AGENTS.md 踩坑 #11）；每请求的多 Key 轮询/冷却/failover
+ *   Authorization（机制见 docs/pitfalls.md #11）；每请求的多 Key 轮询/冷却/failover
  *   与 OAuth 刷新必须在桥内完成，宿主凭据缝无法覆盖这条路径，故凭据解析自建于此。
  * - ctx.llm：未用——桥是传输层代理不是模型提供方，模型清单走 cordis.patch.yml。
  *
@@ -57,9 +57,9 @@ import { createUsageMeter } from './core/usage-meter.js'
 import { createBridge } from './core/bridge.js'
 import { createCodeBuddyProvider } from './providers/codebuddy/index.js'
 import { CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/codebuddy/errors.js'
-import { createTraeProvider, TRAE_SENTINEL_AUTH } from './providers/trae/index.js'
+import { createTraeProvider } from './providers/trae/index.js'
 import { TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/trae/errors.js'
-import { PROVIDER_ID_RE, createOpenAICompatProvider, keyRefFor } from './providers/openai-compat.js'
+import { PROVIDER_ID_RE, createOpenAICompatProvider } from './providers/openai-compat.js'
 import { scanLocalCredentials, readImportCredential } from './local-scan.js'
 import arkProvider from './providers/ark/index.js'
 import bailianProvider from './providers/bailian/index.js'
@@ -72,9 +72,9 @@ export const name = 'dsh-codebuddy-plugin'
 export const inject = ['web']
 
 const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
-export const SETTINGS_PATH = join(DSH_HOME, 'codebuddy-plugin.json')
-export const AUTH_PATH = join(DSH_HOME, 'codebuddy-plugin-auth.json')
-export const TRAE_AUTH_PATH = join(DSH_HOME, 'trae-plugin-auth.json')
+const SETTINGS_PATH = join(DSH_HOME, 'codebuddy-plugin.json')
+const AUTH_PATH = join(DSH_HOME, 'codebuddy-plugin-auth.json')
+const TRAE_AUTH_PATH = join(DSH_HOME, 'trae-plugin-auth.json')
 const DSH_SETTINGS_PATH = join(DSH_HOME, 'settings.yaml')
 const DSH_CREDENTIALS_PATH = join(DSH_HOME, '.credentials.yaml')
 const PATCH_FILE = join(dirname(fileURLToPath(import.meta.url)), 'cordis.patch.yml')
@@ -152,6 +152,7 @@ export const SETTINGS_FIELDS = [
   { key: 'traeLoginHost', kind: 'text' },
   { key: 'traeBridgePort', kind: 'number' },
   { key: 'traeChatTransport', kind: 'select' },
+  { key: 'upstreamFirstByteTimeoutMs', kind: 'number' },
 ]
 
 /** Validate a baseURL candidate before it can reach a provider. */
@@ -248,7 +249,7 @@ function computeBaseModels() {
   return list
 }
 
-export function computeEffectiveModels() {
+function computeEffectiveModels() {
   const { disabled, extra, overrides } = readModelState()
   const ids = new Set()
   const list = []
@@ -283,7 +284,7 @@ export function computeEffectiveModels() {
  * patch updates. G4: a synced dynamic catalog intentionally keeps the override
  * non-pristine (the list follows the gateway, refreshed every boot).
  */
-export function syncModelsToDshSettings() {
+function syncModelsToDshSettings() {
   let doc
   try {
     doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
@@ -621,8 +622,6 @@ const provider = createCodeBuddyProvider({
 })
 
 export const makeSearchProvider = provider.makeSearchProvider
-export const makeFetchProvider = provider.makeFetchProvider
-export const makeImageGenTool = provider.makeImageGenTool
 
 /**
  * Resolve the credential every outbound call should use (no rotation —
@@ -846,7 +845,11 @@ function settingsView(resolveNow) {
       ...s,
       apiKeys: (s.apiKeys ?? []).map((k) => ({ name: k.name, masked: maskKey(k.key) })),
     },
-    user,
+    // The raw file layer carries plaintext apiKeys[].key — never ship it to
+    // the browser (the card only checks top-level field presence).
+    user: Array.isArray(user.apiKeys)
+      ? { ...user, apiKeys: user.apiKeys.map((k) => ({ ...k, key: maskKey(k.key) })) }
+      : user,
     fields: SETTINGS_FIELDS,
     oauth: provider.oauth.oauthStatus(),
     bridge: {

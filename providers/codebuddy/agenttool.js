@@ -118,5 +118,5 @@ export function createAgentTool({ withKeyRotation }) {
     }
   }
 
-  return { callAgentTool, makeSearchProvider, makeFetchProvider }
+  return { makeSearchProvider, makeFetchProvider }
 }

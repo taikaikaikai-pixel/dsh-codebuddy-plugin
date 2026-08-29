@@ -109,7 +109,7 @@ async function main() {
   await new Promise((r) => upstream.listen(upstreamPort, '127.0.0.1', r))
   const bridgePort = await freePort()
 
-  const { apply } = await import(join(ROOT, 'index.js'))
+  const { apply } = await import(new URL('../index.js', import.meta.url).href)
   // Route registrations are captured so the settings route can be driven
   // in-process (the usage view is asserted through it, like the card does).
   const routes = {}

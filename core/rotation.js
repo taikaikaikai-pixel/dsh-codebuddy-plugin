@@ -2,7 +2,7 @@
  * core/rotation.js — provider-agnostic multi-credential rotation engine.
  *
  * Policy: requests round-robin across the key list; a key that answers a
- * failover status (401/403/429/5xx by default) or drops the connection is
+ * failover status (401/403/429/5xx) or drops the connection is
  * cooled for cooldownMs, then rejoins on its own. Cooling keys are appended
  * as last resort when every fresh key is unavailable.
  *
@@ -17,14 +17,13 @@
  * empty-candidate case is injected by the caller (`emptyError`).
  */
 
-/** Default statuses that fail a request over to the next key. */
-export function defaultIsFailoverStatus(status) {
+/** Statuses that fail a request over to the next key. */
+function isFailoverStatus(status) {
   return status === 401 || status === 403 || status === 429 || status >= 500
 }
 
 export class KeyRotator {
-  constructor({ isFailoverStatus = defaultIsFailoverStatus } = {}) {
-    this.isFailoverStatus = isFailoverStatus
+  constructor() {
     /** keyName → cooldown-until epoch ms. */
     this.cooldowns = new Map()
     /** Round-robin cursor (advanced once per ordered() call). */
@@ -91,7 +90,7 @@ export class KeyRotator {
         if (isLast) return { cred, res: null, err }
         continue
       }
-      if (!isLast && this.isFailoverStatus(res.status)) {
+      if (!isLast && isFailoverStatus(res.status)) {
         if (cred.keyName) this.markCooling(cred.keyName, cooldownMs)
         await res.body?.cancel().catch(() => {})
         lastErr = null

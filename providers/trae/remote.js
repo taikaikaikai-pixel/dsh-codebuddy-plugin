@@ -219,8 +219,9 @@ export async function stopRemoteSession(baseURL, token, sessionId, messageId) {
   } catch { /* best-effort */ }
 }
 
-/** 累计快照 → 增量（与 gateway.js 同规则：前缀扩展，否则回退公共前缀）。 */
-function cumulativeDelta(previous, current) {
+/** 累计快照 → 增量（前缀扩展，否则回退公共前缀——镜像 Trae2api-cn
+ *  ProtocolTextAccumulator）。实现唯一归此文件；gateway.js import 并 re-export。 */
+export function cumulativeDelta(previous, current) {
   if (typeof current !== 'string' || current === '') return ''
   if (typeof previous !== 'string' || previous === '') return current
   if (current.startsWith(previous)) return current.slice(previous.length)

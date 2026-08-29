@@ -87,7 +87,7 @@ function groupTurns(recent) {
 
 /**
  * @param {{ path: string }} options persistence target
- * @returns {{ record: Function, view: Function, flush: Function, dispose: Function }}
+ * @returns {{ record: Function, view: Function, dispose: Function }}
  */
 export function createUsageMeter({ path }) {
   const store = normalizeUsageStore(readJson(path))
@@ -172,5 +172,5 @@ export function createUsageMeter({ path }) {
     flush()
   }
 
-  return { record, view, flush, dispose }
+  return { record, view, dispose }
 }

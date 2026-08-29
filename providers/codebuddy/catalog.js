@@ -186,5 +186,5 @@ export function createCatalog({ resolveCredential, envKey }) {
       })
   }
 
-  return { fetchModelCatalog, fetchQuotaSnapshot, quotaSnapshot }
+  return { fetchModelCatalog, quotaSnapshot }
 }

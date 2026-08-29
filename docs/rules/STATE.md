@@ -32,7 +32,7 @@
 - 规则文档裁判落位：CLIENT_HEADERS 逐字段判定见 `providers/codebuddy/headers.js` 文件头（仅 UA 的 codebuddy/含点段是规则，余皆迷信保留）；错误码表进 `providers/codebuddy/errors.js`；developer→system 重写归适配器 `transformChatPayload`；webfetch/search 死 usage 路径按 R-Q2 删除（images 的未证伪，保留）。
 - 证伪测试（完成标准 2）：`scripts/verify-core-generic.mjs` 全绿——core/ 静态零特化 token、零 providers/ 引用；内联 mock-openai 适配器经 core/ 驱动第二上游（聚合/透传/会话头/轮询 failover/无 credit 计量/developer 透传）。
 - 回归（完成标准 3）：`npm run verify` 18/18 在线、`verify:bridge` 44 断言、`verify-rotation`、`verify:core` 全绿（2026-08-19，WSL node v22）。
-- 关键纪律（AGENTS.md 踩坑 #20）：core/ 与 providers/ 的运行状态一律实例状态（工厂/类），在 index.js 模块作用域创建——verify-rotation 的 `?case=` 双导入隔离依赖这一点，状态沉进 core 模块全局即破。
+- 关键纪律（docs/pitfalls.md #20）：core/ 与 providers/ 的运行状态一律实例状态（工厂/类），在 index.js 模块作用域创建——verify-rotation 的 `?case=` 双导入隔离依赖这一点，状态沉进 core 模块全局即破。
 - 已知有意偏差：createBridge 的 SessionLimiter 改为 per-apply（原为模块全局；测试中性、生产单实例）；凭据不可用识别从消息字符串比较改为 `err.credentialUnavailable` 旗标（文案不变）。
 
 ## 关键运行环境事实（免得重查）

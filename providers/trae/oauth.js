@@ -392,5 +392,5 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
     return format
   }
 
-  return { resolveTraeCredential, refreshOAuth, startOAuth, oauthStatus, logout, setSignatureFormat }
+  return { resolveTraeCredential, startOAuth, oauthStatus, logout, setSignatureFormat }
 }

@@ -184,7 +184,7 @@ async function main() {
     process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'dsh-latency-'))
     process.env.CODEBUDDY_API_KEY = 'ck_latency_test_key'
   }
-  const { apply, Config, makeSearchProvider } = await import(join(ROOT, 'index.js'))
+  const { apply, Config, makeSearchProvider } = await import(new URL('../index.js', import.meta.url).href)
   const AUTH_MODE_OVERRIDE = opt('auth-mode', null) // real mode: e.g. --auth-mode api-key
 
   if (MODE === 'mock') {

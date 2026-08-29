@@ -14,12 +14,10 @@
  */
 
 import { createTraeOAuth } from './oauth.js'
-import { fetchLocalCatalog, catalogToProfiles } from './catalog.js'
+import { fetchLocalCatalog } from './catalog.js'
 import { createTraeGateway } from './gateway.js'
 
 export const TRAE_PROVIDER_ID = 'trae'
-/** patch 层的静态哨兵（主聊天路由携带；网关逐请求替换为真实凭据）。 */
-export const TRAE_SENTINEL_AUTH = 'Bearer dsh-trae-bridge'
 
 /**
  * @param {{
@@ -89,5 +87,3 @@ export function createTraeProvider(deps) {
 
   return provider
 }
-
-export { catalogToProfiles }

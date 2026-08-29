@@ -45,7 +45,7 @@ const SESSION_HEADER_SETS = {
 }
 
 /** Extract the session id from headers or a body hint, in precedence order. */
-function extractSessionId(headers, payload) {
+export function extractSessionId(headers, payload) {
   const candidates = [
     headers['x-conversation-id'],
     headers['x-session-id'],
@@ -518,5 +518,5 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
       })
   }
 
-  return { listen, proxyUpstream }
+  return { listen }
 }
