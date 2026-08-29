@@ -41,7 +41,7 @@
 - 网关：`https://copilot.tencent.com`；UA 门只认 `/codebuddy\/[^a-z\s]*\./i`（含点即可，版本数值不查）。
 - `/v2/chat/completions` 必须 `stream:true`（否则 11101），无 UA 门；`/agenttool/*` 当前无 UA 门。
 - 探测纪律：1.5s+ 间隔、单账号、只读优先；证据落 `docs/probes/<课题>-<日期>.jsonl`，预测须预注册（脚本内 expect 字段）。
-- 工作区注意：仓库在 `\\wsl.localhost\Ubuntu-22.04\root\dev\dsh-codebuddy-plugin\`（`code/` 子目录为空，工件都在仓库根）。
+- 工作区注意：仓库在 `\\wsl.localhost\Ubuntu-22.04\root\dev\dsh-tap\`（`code/` 子目录为空，工件都在仓库根）。
 
 ## 上次会话（2026-08-19）干了什么
 
