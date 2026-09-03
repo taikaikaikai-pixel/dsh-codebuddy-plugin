@@ -1,6 +1,6 @@
 # AGENTS.md — dsh-tap 开发指南
 
-面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#28）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
+面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#29）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
 
 ## 项目是什么
 
@@ -34,7 +34,7 @@ CodeBuddy 通道：
 
 - 提示缓存**按内容寻址、自动生效**，亲和头/`prompt_cache_key` 对命中零影响；**分模型策略**：v4-pro/v4-flash/kimi-k2.7/hy3 有缓存，glm-5.x 条目秒-分钟级失效（"命中率只有 40%"多源于此），deepseek-v3 恒 0 → docs/rules/prompt-cache.md + docs/diagnosis-cache-quota.md
 
-- **v4-flash 网关缓存本身稳定**（直连 24 发全 99.3%、TTL ≥600s）；存量"经桥命中率下降快/40k+ 不稳/命中波动"已重判为**桥** **`rawBody += c`** **逐分片解码损坏出站前缀**（跨分片中文→U+FFFD 且位置逐请求随机），修复方向见 docs/diagnosis-cache-decline.md（踩坑 #28）
+- **v4-flash 网关缓存本身稳定**（直连 24 发全 99.3%、TTL ≥600s）；存量"经桥命中率下降快/40k+ 不稳/命中波动"根因是**桥 `rawBody += c` 逐分片解码损坏出站前缀**（跨分片中文→U+FFFD 且位置逐请求随机），**0.9.2 已修复**（Buffer.concat 一次解码，verify-bridge [10] 回归锁定案）→ docs/diagnosis-cache-decline.md（踩坑 #28）
 
 - 数字剩余额度主源 = 控制台计费路径族 `/billing/meter/get-user-resource` 等，**仅接受 OAuth Bearer**（`ck_` key 401）；企业用量需 `X-Enterprise-Id` 头 → docs/rules/quota-signals.md §R-Q7
 
@@ -79,7 +79,8 @@ TraeWork CN 通道：
 25. 非目录路由空 models 清单 apply 即 throw——Trae 通道用"路由存在性管理"（patch 不带 trae 基线，镜像整块铺/删）
 26. 设置接口按响应整体审脱敏——`user` 字段曾漏脱敏、明文 Key 下发浏览器（已修）
 27. 组件函数体局部变量不跨渲染——checkbox 去抖表每渲染重建；终版 = `useRef` **同值去重**（时间窗会吞掉快过它的勾选往返）
-28. HTTP 请求体禁止 `string += buffer` 逐分片拼接——跨 TCP 分片的多字节字符变 3×U+FFFD 且位置逐请求随机，曾把"桥自己弄脏前缀"误判成"网关缓存不稳"8 个版本（mock 单块写测不出；正解 `Buffer.concat` 一次解码）
+28. HTTP 请求体禁止 `string += buffer` 逐分片拼接——跨 TCP 分片的多字节字符变 3×U+FFFD 且位置逐请求随机，曾把"桥自己弄脏前缀"误判成"网关缓存不稳"8 个版本（mock 单块写测不出；正解 `Buffer.concat` 一次解码；0.9.2 已修复，含同型的 trae 网关与设置路由）
+29. 原生 socket 测试客户端不挂 `data` 监听 = paused 流——服务端 FIN 后 `close` 永不派发，测试永久挂起且无报错；socket 客户端必须消费响应（哪怕空监听器），"套件挂死"先开取证日志区分被测物与测试自身
 
 ## 常用命令
 

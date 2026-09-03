@@ -489,12 +489,21 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
    */
   function listen(port) {
     const server = createServer((req, res) => {
-      let rawBody = ''
+      // Bytes must be collected and decoded ONCE (踩坑 #28): implicit
+      // per-chunk utf8 decoding (`rawBody += c`) corrupts any multibyte
+      // character straddling a TCP chunk boundary into 3×U+FFFD at a
+      // per-request random position — the outbound prefix drifts and the
+      // gateway's content-addressed prompt cache can only hit up to the
+      // corruption point.
+      const chunks = []
+      let received = 0
       req.on('data', (c) => {
-        rawBody += c
-        if (rawBody.length > 32 * 1024 * 1024) req.destroy()
+        chunks.push(c)
+        received += c.length
+        if (received > 32 * 1024 * 1024) req.destroy()
       })
       req.on('end', () => {
+        const rawBody = Buffer.concat(chunks).toString('utf8')
         proxyUpstream(req, res, rawBody).catch((err) => {
           if (!res.headersSent) res.writeHead(500)
           res.end(`stream bridge error: ${err.message}`)

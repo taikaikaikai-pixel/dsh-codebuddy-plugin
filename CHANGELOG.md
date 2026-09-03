@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.9.2 (2026-09-03)
+
+- **修复 v4-flash"经桥缓存命中率下降快"根因：桥逐分片隐式 utf8 解码损坏出站前缀**（踩坑 #28，完整证据链与机制分析 docs/diagnosis-cache-decline.md）：
+  - **根因**：`core/bridge.js` listen() 的 `rawBody += c` 对每个 TCP 分片独立隐式 utf8 解码——跨分片的多字节中文字符被替换成 3×U+FFFD，分片边界逐请求随机 → 出站前缀逐请求漂移 → 网关内容寻址缓存只能命中到损坏点（诊断 hit 值与 dump 分叉字节数定量对应）。网关缓存本身无罪（直连 24 发全 99.3%、TTL ≥600s）；附带后果是模型收到的中文上下文本身带乱码（正确性问题，不只是计费）
+  - **主修**：listen() 改 `chunks.push(c)` 收集 Buffer 分片 + `Buffer.concat(chunks).toString('utf8')` 一次解码；32MB 请求体上限从字符串长度改累计字节数判定
+  - **同型修复**：`providers/trae/gateway.js` listen() 与 `index.js` `/dsh-tap/settings` 设置路由的 `raw += c` 同改（Trae 通道译文上行中文、设置路由 provider displayName 中文同受此坑威胁）
+  - **回归锁**：verify-bridge 新增 **[10] 多分片中文体完好性**用例——mock 网关自身改 Buffer 收集（否则分片用例的损坏源是 mock 而不是被测桥），原生 socket 按 1/2/5/1300/7000/12000 切点写体、切点故意落在多字节序列中间，断言 mock 收到的字节与整块发送逐字节一致（无 U+FFFD、无漂移）；callRoute 改 emit Buffer 分片（真实 webServer 喂 Buffer）；socket 请求带 `Connection: close`。存量 mock 单块写 body 正是本坑漏网 8 个版本的原因
+  - **新坑 #29**（修 [10] 时翻出）：原生 socket 测试客户端不挂 `data` 监听 = paused 流——服务端 FIN 后 `close` 永不派发，[10] 首跑挂死即此（取证日志证明请求完整过桥、上游 200，被测物无罪）；socket 客户端必须消费响应（空监听器即可）
+  - **预期收益**（诊断 §6，未做线上 A/B 复测）：消除逐请求前缀漂移，插件路径命中率回到基线形态（轮内 ≈92–99%、短空闲轮首全命中、TTL ≥600s），与官方路径的差距坍缩到网关 per-model 策略本身；同时消除发给模型的 FFFD 乱码
+  - 回归：verify-bridge（11 用例含新 [10]）/ verify-trae-provider（81，覆盖 trae gateway 改动）/ verify-core-generic / verify-providers / verify-rotation / verify-models --list（18 模型）全绿
+
 ## 0.9.1 (2026-09-03)
 
 - **设置卡交互重设计（用户"重新思考交互逻辑，每个卡片和功能最直观展示"驱动；lib/client.js 全量重写，路由契约零变化）**：

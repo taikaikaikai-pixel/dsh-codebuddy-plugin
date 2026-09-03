@@ -675,12 +675,17 @@ export function createTraeGateway(deps) {
 
   function listen(port) {
     const server = createServer((req, res) => {
-      let rawBody = ''
+      // Buffer 收集 + 一次解码（踩坑 #28，同 core/bridge.js）：逐分片隐式
+      // utf8 解码会把跨分片多字节字符损坏成 3×U+FFFD，译文上行带乱码。
+      const chunks = []
+      let received = 0
       req.on('data', (c) => {
-        rawBody += c
-        if (rawBody.length > 32 * 1024 * 1024) req.destroy()
+        chunks.push(c)
+        received += c.length
+        if (received > 32 * 1024 * 1024) req.destroy()
       })
       req.on('end', () => {
+        const rawBody = Buffer.concat(chunks).toString('utf8')
         const path = req.url?.split('?')[0] ?? ''
         try {
           if (req.method === 'POST' && (path === '/v1/chat/completions' || path === '/chat/completions')) {

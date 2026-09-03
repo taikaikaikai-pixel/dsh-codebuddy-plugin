@@ -916,13 +916,15 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
           sendJSON(response, request.method === 'POST' ? 403 : 405, { ok: false })
           return
         }
-        let raw = ''
+        // Buffer 收集 + 一次解码（踩坑 #28，同 core/bridge.js）：
+        // provider displayName 等中文经逐分片隐式解码同样会损坏。
+        const chunks = []
         request.on('data', (c) => {
-          raw += c
+          chunks.push(c)
         })
         request.on('end', () => {
           try {
-            const body = JSON.parse(raw)
+            const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
             if (body?.action === 'oauth-start') {
               provider.oauth.startOAuth(resolveNow().baseURL)
                 .then((r) => sendJSON(response, 200, { ok: true, authUrl: r.authUrl }))

@@ -21,13 +21,18 @@
  *      codebuddy-plugin-usage.json and served via action:'usage'
  *   9. developer-role messages are rewritten to system on the way out
  *      (regression: gateway moderation content_filter on developer role)
- *   10. bridge listen EADDRINUSE degrades to a warning, never crashes
+ *  10. chunked multibyte integrity: a body split so chunk boundaries fall
+ *      inside multibyte chars arrives byte-identical upstream
+ *      (regression 踩坑 #28: per-chunk implicit utf8 decoding corrupted
+ *      chars into 3×U+FFFD and drifted the outbound prefix every request)
+ *  11. bridge listen EADDRINUSE degrades to a warning, never crashes
  *      (regression: an unhandled 'error' event took the whole process down)
  *
  * Usage: node scripts/verify-bridge.mjs   (no network, no credentials)
  */
 
 import { createServer } from 'node:http'
+import { connect } from 'node:net'
 import { EventEmitter } from 'node:events'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -45,9 +50,12 @@ process.env.CODEBUDDY_BRIDGE_LOG = join(process.env.DSH_HOME, 'bridge-log.jsonl'
 
 const arrivals = [] // {path, stream, headers, at} in upstream-arrival order
 const upstream = createServer((req, res) => {
-  let raw = ''
-  req.on('data', (c) => (raw += c))
+  // Buffer 收集 + 一次解码：mock 自身不能带踩坑 #28 的缺陷，否则分片
+  // 用例的损坏源是 mock 而不是被测桥，断言就测不到真东西。
+  const chunks = []
+  req.on('data', (c) => chunks.push(c))
   req.on('end', () => {
+    const raw = Buffer.concat(chunks).toString('utf8')
     let parsed = null
     try { parsed = JSON.parse(raw) } catch { /* non-JSON body */ }
     arrivals.push({
@@ -159,7 +167,11 @@ async function main() {
     }
     handler(req, res)
     if (body) {
-      req.emit('data', JSON.stringify(body))
+      // 真实 webServer 喂 Buffer 分片；设置路由已按踩坑 #28 改为
+      // Buffer.concat 后一次解码，emit 字符串会令其直接抛错。
+      const bytes = Buffer.from(JSON.stringify(body))
+      req.emit('data', bytes.subarray(0, 5))
+      req.emit('data', bytes.subarray(5))
       req.emit('end')
     }
   })
@@ -376,7 +388,7 @@ async function main() {
         && Array.isArray(persisted?.recent) && persisted.recent.length === 16)
   }
 
-  // -------------------------------------------- 9. developer-role rewrite
+  // --------------------------------------------- 9. developer-role rewrite
   // pi-ai serializes the system prompt as role "developer" for reasoning
   // models; since 2026-08-18 the gateway's moderation answers such payloads
   // with finish_reason=content_filter. The bridge rewrites developer→system.
@@ -402,8 +414,66 @@ async function main() {
       JSON.stringify(forwarded?.messages?.map((m) => m.role)))
   }
 
+  // -------------------------------------- 10. chunked multibyte integrity
+  // 踩坑 #28 回归锁：TCP 分片落在多字节中文字符中间时，逐分片隐式 utf8
+  // 解码（旧 `rawBody += c`）会把它替换成 3×U+FFFD，出站前缀逐请求漂移，
+  // 网关内容寻址缓存只能命中到损坏点（v4-flash"缓存命中率下降快"根因，
+  // 证据链 docs/diagnosis-cache-decline.md）。fetch 无法控制分片边界，所以
+  // 用原生 socket 把同一请求体按几种切法各写一遍，断言 mock 网关收到的
+  // 字节与整块发送逐字节一致。
+  console.log('\n[10] chunked multibyte body arrives intact')
+  {
+    const filler = '前缀稳定。'.repeat(400) // 3-byte chars × 400
+    const body = JSON.stringify({
+      model: 'm1',
+      stream: true,
+      messages: [
+        { role: 'system', content: filler },
+        { role: 'user', content: `读取）这）些）中）文）括）号）并回答：${filler}` },
+      ],
+    })
+    const writeChunked = (chunks) =>
+      new Promise((resolve, reject) => {
+        const sock = connect(bridgePort, '127.0.0.1', () => {
+          sock.write('POST /v2/chat/completions HTTP/1.1\r\n')
+          sock.write(`Host: 127.0.0.1:${bridgePort}\r\n`)
+          sock.write('Content-Type: application/json\r\n')
+          sock.write(`Content-Length: ${Buffer.byteLength(body)}\r\n`)
+          sock.write('Connection: close\r\n')
+          sock.write('\r\n')
+          for (const c of chunks) sock.write(c)
+        })
+        // Consume the response: without a 'data' listener the socket stays
+        // paused, the FIN is never read, and 'close' never fires (the test
+        // itself then hangs — not the bridge).
+        sock.on('data', () => {})
+        sock.on('error', reject)
+        sock.on('close', () => resolve())
+      })
+    const bytes = Buffer.from(body)
+    // 切点 1/2/5 故意落在多字节序列中间；最后一段留大块保证走多分片。
+    const splitAt = [1, 2, 5, 1300, 7000, 12000]
+    const chunks = []
+    let prev = 0
+    for (const at of splitAt) {
+      chunks.push(bytes.subarray(prev, at))
+      prev = at
+    }
+    chunks.push(bytes.subarray(prev))
+    const before = arrivals.length
+    await writeChunked(chunks)
+    // 桥转发 + mock 网关 250ms 延迟后才会记录该请求
+    for (let i = 0; i < 40 && arrivals.length < before + 1; i++) await sleep(100)
+    const a = arrivals[before]
+    check('chunked request reached upstream', Boolean(a))
+    check('body bytes identical to whole-write (no U+FFFD, no drift)',
+      a?.raw === body && !a?.raw.includes('\uFFFD'),
+      `len ${a?.raw?.length} vs ${body.length}, FFFD count ${(a?.raw?.match(/\uFFFD/g) ?? []).length}`)
+    check('multibyte chars all intact', (a?.raw.match(/）/g) ?? []).length === (body.match(/）/g) ?? []).length)
+  }
+
   // ---------------------------------------------------------- 10. EADDRINUSE
-  console.log('\n[10] bridge listen EADDRINUSE degrades, never crashes')
+  console.log('\n[11] bridge listen EADDRINUSE degrades, never crashes')
   {
     const squatter = createServer()
     await new Promise((r) => squatter.listen(0, '127.0.0.1', r))
