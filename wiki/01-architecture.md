@@ -12,9 +12,9 @@
 | 组合根 | `index.js` | Config/schema、模型管理（patch 解析 + settings.yaml 镜像）、凭据编排（core 轮转 + provider OAuth 分支）、设置路由、apply 生命周期 | 重启 dsh |
 | 凭据边缘层 | `core/` | **provider 无关**：json-store（文件层/env 解析）、rotation（KeyRotator 轮询/冷却/failover）、usage-meter（计量存储）、bridge（流式桥：会话归因/并发闸/SSE 聚合/取证；上游特化全走 provider 钩子） | 重启 dsh |
 | 上游适配器 | `providers/codebuddy/` | 全部 CodeBuddy 网关事实：headers、错误码表、OAuth 设备流、catalog（/v3/config + 额度方言）、agenttool（search/webfetch）、images（生图） | 重启 dsh |
-| 上游适配器（v0.8.x） | `providers/trae/` | 全部 TraeWork CN 事实：自持设备密钥 OAuth、state.vscdb 目录、OpenAI↔Trae 翻译网关 :3902、remote 会话传输、错误信封 | 网关端口/域名热生效；patch 路由改动重启 dsh |
+| 上游适配器（v0.8.x） | `providers/trae/` | 全部 TraeWork CN 事实：自持设备密钥 OAuth、state.vscdb 目录、OpenAI↔Trae 翻译网关 :3902、remote 会话传输、错误信封 | 网关端口/域名/路由块全部热生效（settings.yaml 镜像整块铺/删） |
 | 多服务商 | `providers/openai-compat.js` + presets | key 型 OpenAI 兼容上游注册表（共享骨架 + 每上游 preset） | 免重启（settings.yaml 热加载） |
-| 浏览器半 | `lib/client.js` | Settings → 插件配置 的设置卡（九个分区） | 刷新页面 |
+| 浏览器半 | `lib/client.js` | Settings → 插件配置 的设置卡（状态芯片 + 7 标签页，懒挂载隐藏不卸载） | 刷新页面 |
 
 ### 架构总览图
 
@@ -29,7 +29,7 @@ flowchart TB
     end
 
     subgraph BROWSER["浏览器"]
-        CARD["lib/client.js 设置卡（九分区）"]
+        CARD["lib/client.js 设置卡（状态芯片 + 7 标签页）"]
     end
 
     subgraph PLUGIN["dsh-tap"]
@@ -123,7 +123,7 @@ pi-ai 在无 `apiKeyEnv` 时本会拒绝发请求，但它只检查"有没有 ke
 
 1. **凭据只有 OAuth 一支**：自持 ECDSA P-256 设备密钥（`providers/trae/oauth.js`），refresh 的 DeviceProof 自签；
 2. **网关是协议翻译器不是透传代理**：`providers/trae/gateway.js`（:3902）把 OpenAI Chat Completions 翻译成 Trae 私有协议（`llm_utils_chat` inline 面 / `chat_sessions` remote 面），复用 core 的 `SessionLimiter` 与 usage-meter；
-3. **模型可见性 = patch 静态基线 + 镜像恒铺**：禁用/未同步时镜像铺**空数组**遮蔽基线（pi-ai 要求 patch provider 必须带模型清单，删路径会回落静态清单导致选择器显示不可用模型——踩坑 #25）。
+3. **模型可见性 = 路由存在性管理**（0.8.7 / dsh 0.1.1-rc.2 适配，踩坑 #25 终版）：patch **不带** trae 静态基线，镜像独占路由完整定义——启用+已同步铺完整 `providers.trae` 块（displayName/api/baseURL/headers/models，baseURL 跟随 `traeBridgePort`）；禁用/未同步/全禁用**删除整块**（路由消失、选择器隐藏、chokidar 热加载免重启）。旧"空数组遮蔽"策略已失效——llm-pi-ai 现在在 apply 时对空 models 清单直接 throw，连坐整棵 llm-pi-ai 纤维。
 
 ```mermaid
 flowchart TB
@@ -145,7 +145,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    CARD["设置卡 lib/client.js（九分区）"]
+    CARD["设置卡 lib/client.js（状态芯片 + 7 标签页）"]
     CARD -->|"GET /dsh-tap/settings"| VIEW["settingsView()（脱敏视图）"]
     CARD -->|"POST patch（保存）"| MERGE["SETTINGS_FIELDS 白名单过滤<br/>+ Config schema 校验"]
     CARD -->|"POST action（动作）"| ACT["oauth-* / model-list / model-sync /<br/>provider-* / credential-* / trae-* / usage"]
@@ -165,7 +165,7 @@ OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json` / `~/.dsh/trae-plugin-
 模型可见性靠写 `~/.dsh/settings.yaml` 的覆盖层实现（chokidar 热加载、免重启）：
 
 - **CodeBuddy**：`llm-pi-ai.providers.codebuddy.models` = `computeEffectiveModels()`。基清单 = 静态 18 个 ∪ 动态目录（`/v3/config` 启动同步），再减 disabled、加 extra、应用 overrides（contextWindow/maxTokens 覆盖）。纯净态（无 disabled/extra/overrides 且无动态目录）时**删除**覆盖层，避免陈旧清单遮蔽 patch 更新。
-- **Trae**：`llm-pi-ai.providers.trae.models` **恒铺**——启用+已同步铺有效清单（剔除 disabled）；禁用/未同步铺**空数组**。
+- **Trae**：**整块铺/删**（路由存在性管理）——启用+已同步铺完整 `providers.trae` 块（剔除 disabled 的模型清单，baseURL 跟随 traeBridgePort）；禁用/未同步/全禁用删整块。patch 不带基线，删块即干净、无回落。
 - **多服务商**（G6）：`llm-pi-ai.providers.<id>` 整块由插件写（先本地校验 + 实测 GET /models 才落盘——坏块会令整个用户层连坐，踩坑 #21），key 写 `~/.dsh/.credentials.yaml` 的 `<ID>_API_KEY`（0600）。
 
 ## dsh 宿主缝（插件如何挂进 dsh）

@@ -1,6 +1,6 @@
 # dsh-tap — Code Wiki 首页
 
-> 当前版本：**0.8.7**（见 [package.json](../package.json) / [CHANGELOG.md](../CHANGELOG.md)）
+> 当前版本：**0.9.0**（dsh-codebuddy-plugin → dsh-tap 更名版，见 [CHANGELOG.md](../CHANGELOG.md)；注意 [package.json](../package.json) 的 `version` 字段未随更名提交同步，仍为 0.8.7）
 
 ## 项目是什么
 
@@ -65,7 +65,7 @@ node scripts/verify-bridge.mjs          # 桥回归（30 项断言）
 node scripts/verify-core-generic.mjs    # core/ 通用性证伪（静态扫描 + 第二上游全链路）
 node scripts/verify-rotation.mjs        # 多 Key 轮询回归
 node scripts/verify-providers.mjs       # 多服务商骨架回归
-node scripts/verify-trae-provider.mjs   # Trae 通道回归（77 断言）
+node scripts/verify-trae-provider.mjs   # Trae 通道回归（81 断言）
 
 # 3. 登录（设置卡 → 插件配置 → CodeBuddy，或 CLI 探测脚本）
 node scripts/verify-models.mjs --list   # 离线自检模型解析

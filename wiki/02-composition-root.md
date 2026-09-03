@@ -1,20 +1,20 @@
 # 02 — 组合根 index.js
 
-> 文件：[index.js](../index.js)（~1340 行，插件入口与导出契约所在）。
+> 文件：[index.js](../index.js)（~1380 行，插件入口与导出契约所在）。
 > 上游无关的机制在 [03-core-layer.md](03-core-layer.md)；上游事实在 [04](04-provider-codebuddy.md)/[05](05-provider-trae.md)。
 
 ## 模块导出契约
 
 | 导出 | 类型 | 说明 |
 |------|------|------|
-| `name` | `string` | `'dsh-tap'` |
+| `name` | `string` | `'dsh-tap'`（dsh 注册名；0.9.0 更名自 `dsh-codebuddy-plugin`，升级需 `dsh plugin rm` 旧包后重新 add） |
 | `inject` | `string[]` | `['web']`（webServer/tools/settings 经 `ctx.inject` 懒解析） |
 | `Config` | schema | 设置 schema（schemastery），见下表 |
 | `SETTINGS_FIELDS` | `array` | 字段元数据（设置卡渲染用；也是 POST 白名单的唯一依据） |
-| `SETTINGS_PATH` / `AUTH_PATH` / `TRAE_AUTH_PATH` | `string` | `~/.dsh/codebuddy-plugin.json` / `-auth.json` / `trae-plugin-auth.json` |
+| `makeSearchProvider` | function | 透传自 codebuddy provider（宿主可直接消费） |
 | `apply(ctx, config)` | function | dsh 调用的生命周期入口 |
-| `makeSearchProvider` / `makeFetchProvider` / `makeImageGenTool` | function | 透传自 codebuddy provider（供宿主直接消费） |
-| `computeEffectiveModels` / `syncModelsToDshSettings` | function | 模型管理（测试/脚本也用） |
+
+> 仓库瘦身提交已清理历史死导出：`makeFetchProvider` / `makeImageGenTool` / `computeEffectiveModels` / `syncModelsToDshSettings` 及存储路径常量（`SETTINGS_PATH` / `AUTH_PATH` / `TRAE_AUTH_PATH` 等）现为**模块内部符号**，不再导出。
 
 ## Config schema（全部字段）
 
@@ -137,7 +137,7 @@ presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, iflowProvide
 |------|------|
 | `withTraeCredentials(settingsFn, attempt)` | Trae 凭据候选（OAuth 单候选无轮换）：`{cred, res, err}` 三态返回；空候选错误带 `credentialUnavailable` |
 | `traeSettingsFn` | 迟绑定模块变量——apply 每代重设为 `resolveNow`；`createTraeProvider({ settings: () => traeSettingsFn(), ... })` |
-| `syncTraeModelsToDshSettings()` | **恒铺** `llm-pi-ai.providers.trae.models`：启用+已同步 → 有效清单（剔除 disabled）；否则空数组（不删路径——删了会回落 patch 静态基线） |
+| `syncTraeModelsToDshSettings()` | **整块铺/删** `llm-pi-ai.providers.trae`（路由存在性管理，0.8.7 起）：启用+已同步 → 铺完整块（displayName/api/baseURL/headers/models，baseURL 跟随 traeBridgePort）；禁用/未同步/全禁用 → 删整块。patch 无 trae 基线，删块即无回落。升级注意：≤0.8.5 写的旧 trae 块只带 models 路径，重启前须先清掉 |
 | `setTraeModelEnabled({id, enabled})` | Trae 模型启停（要求先同步目录） |
 | `readTraeModelState()` | 文件层 `traeModelState.disabled` |
 

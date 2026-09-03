@@ -1,8 +1,8 @@
 # 规则 02：提示缓存失效边界
 
 > 状态：**规则成立**（TTL 维度对 glm 的结论为"概率性保留"，无 TTL 边界可言；未测单元格见 §4 诚实标注）
-> 证据：`docs/probes/cache-boundary-2026-08-19.jsonl`（本轮 49 条）+ 存量 `cache-models-2026-08-18.jsonl`、`cache-flash-scale-2026-08-18.jsonl`、`cache-flash-thresh-2026-08-18.jsonl`
-> 脚本：`scripts/probe-cache-ttl.mjs`（`--mode ttl|sweep|thresh|predict`）；存量 `scripts/probe-cache.mjs`
+> 证据：`docs/probes/cache-boundary-2026-08-19.jsonl`（本轮 49 条）+ 存量 `cache-models-2026-08-18.jsonl`、`cache-flash-scale-2026-08-18.jsonl`、`cache-flash-thresh-2026-08-18.jsonl` + `cache-decline-2026-09-03.jsonl`（v4-flash TTL 600s 增测与经桥塌落重判）
+> 脚本：`scripts/probe-cache-ttl.mjs`（`--mode ttl|sweep|thresh|predict`）；存量 `scripts/probe-cache.mjs`；2026-09-03 起 `scripts/probe-cache-decline.mjs`（burst/ttl/grow/replay/whoami，ck/oauth 双凭据）
 
 ## 1. 现象（上游咒语原文）
 
@@ -51,7 +51,7 @@
 - **稳定 TTL 类**（DeepSeek 缓存系、v4-flash）：条目在实测窗内确定存活。
   - v4-pro：60s / 120s / 240s 三档全部命中 2560/2684（本轮 ttl）；**TTL ≥ 240s**，真实会话跨分钟级轮次命中（存量诊断 §1.3）与此一致。
   - v3.2：60s 命中 2304/2538（**P1 预注册命中**）；TTL ≥ 60s。
-  - v4-flash：20s×3 + 60s 全命中（存量）；TTL ≥ 60s。
+  - v4-flash：20s×3 + 60s 全命中（存量）；**2026-09-03 增测：16k 与 32k 条目无刷新存活 600s（99.2%/99.8%，oauth 凭据，probe-cache-decline.mjs --mode ttl）**。经桥真实会话的"秒级失效/塌落"已重判为桥逐分片解码损坏，非网关 TTL——见 docs/diagnosis-cache-decline.md（H7 证伪）。
 - **概率保留类**（glm-5.1/5.2）：**不存在 TTL 边界**。glm-5.2 时间阶梯：5s miss、15s hit、30s miss、60s miss、120s hit——5s 可以丢、120s 反而中；2s 极速连发四连 miss/hit/miss/hit 交替（**P3 预注册命中**：≥1 miss）。咒语"秒-分钟级失效"的真身是**网关对 glm 条目的概率性保留**，任何确定性的"存活 T 秒"表述都不成立。glm-5v-turbo 未见 flap（仅 2 发），归类待复测。
 
 **预注册推翻**：H-TTL 原猜"glm 条目死于 5–120s 内某点"——非单调数据直接否决了确定性 TTL 的存在。
@@ -70,7 +70,7 @@
 |---|---|---|---|
 | deepseek-v4-pro | ≤173 tok | 128，floor 精确 | ≥240s 确定存活 |
 | deepseek-v3.2 | 未测（≤2.5k） | 128，偶少一块 | ≥60s 确定存活 |
-| deepseek-v4-flash | ≤412 tok | 128（存量） | ≥60s 确定存活；40k+ 真实内容保留不稳（存量 §7） |
+| deepseek-v4-flash | ≤412 tok | 128（存量） | ≥600s 确定存活（2026-09-03）；存量"40k+ 真实内容保留不稳"**已重判为桥逐分片解码损坏**（docs/diagnosis-cache-decline.md），网关直连受控探测稳定 |
 | glm-5.1 / 5.2 | 未测（≤2.4k） | 近全长 | **概率性保留，无 TTL 边界**（5s 可丢 / 120s 可中） |
 | kimi / minimax / glm-5v / hy3 | 未测 | 见 R-C2 表 | 未测 |
 | v3 / r1 / hy3-preview | —（不缓存） | — | — |

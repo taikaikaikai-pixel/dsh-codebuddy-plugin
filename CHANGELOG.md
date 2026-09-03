@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.1 (2026-09-03)
+
+- **设置卡交互重设计（用户"重新思考交互逻辑，每个卡片和功能最直观展示"驱动；lib/client.js 全量重写，路由契约零变化）**：
+  - **三层信息架构**取代"单卡展开 = 九分区 3000px 长滚动墙"：① 折叠态头部常显 3 枚状态芯片（登录 / 模型数 / 流式桥，数据来自挂载即拉的 GET 视图）——不展开即可读卡；② 展开态顶部 6 枚可点击状态芯片（登录/模型/桥/搜索/生图/Trae），点击直跳所属分区；③ 横向标签栏 7 分区（登录 / 模型 / 额度与用量 / 工具 / 服务商 / TraeWork CN / 桥与高级，工具 = 搜索抓取 + 图像生成合并，桥与高级 = 流式桥 + 网关地址合并）
+  - **标签懒挂载、隐藏不卸载**：分区首次访问才 mount，此后保持挂载（display:none）——草稿、滚动位置、已拉目录跨标签切换与保存保留（step22 DOM 标记法证明）；usage 10s 轮询仅分区可见期间运行，切走即停
+  - **额度与用量重做**：hero 大数字 + 周期进度条（cycleRemain/cycleSize）+ 总量口径副行；资源包按名称聚合（×N + 合计余量 + 最早周期至，>4 包默认聚合、明细可展开）；今日/累计统计卡；api-key 模式手填估算档不变
+  - **补齐两处后端已支持但 UI 缺失的设置点**：`upstreamFirstByteTimeoutMs`（Trae inline 首字节护栏，0.8.x 引入却无处可改）；Trae 逐模型启停（`trae-model-list` + `traeModelSetEnabled`，全禁 = 整块路由移除的提示就地展示）
+  - **修两个真 bug**：踩坑 #27 的去抖表每渲染重建（去抖从不生效）——改为 **useRef 同值去重**（重复 change 事件携带与上次已发送相同的目标态；不用时间窗，勾选往返 POST+reload 可以快过任何时间窗）；Trae 登录异步 window.open 会被弹窗拦截器吃掉——改为与 CodeBuddy 一致的同步开窗再导航
+  - **保存反馈**：成功保存后标签栏右侧"已保存 ✓"短提示（1.8s 自愈）；卡名随 0.9.0 更名改为 dsh-tap（槽位 label 同步）
+  - 回归：dsh-ui-test 全套重建适配（_helpers 换 /dsh-tap/settings 新路由 + tab() 驱动；step20 22 断言 / step22 22 / step24 7 / step25 13（新增未激活不轮询 + 切走即停两条）/ step26 8 / step27 4 / step28 9 / step29 10（移除已删 provider-efforts 路由的陈旧断言）/ step31-trae 19（新增 Trae 模型启停往返 + 连接域名折叠组））= **114 断言全绿**；verify-models --list / verify-bridge / verify-rotation / verify-core-generic / verify-providers / verify-trae-provider（81）全绿
+  - package.json 版本号从 0.8.7 对齐到 0.9.1（0.9.0 更名时漏 bump）
+
 ## 0.9.0 (2026-08-29)
 
 - **更名 dsh-codebuddy-plugin → dsh-tap**（用户“功能驳杂/名字绑定厂商”驱动；新名按功能命名——把订阅额度“接出来”的水龙头，厂商名会腐烂、tap 永远是真的；npm 可注册）：

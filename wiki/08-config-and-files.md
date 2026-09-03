@@ -8,7 +8,7 @@
 | `codebuddy-plugin-auth.json` | oauth.js 读写 | CodeBuddy OAuth 令牌 + 账号信息 | **永不回传浏览器** |
 | `trae-plugin-auth.json` | trae/oauth.js 读写 | Trae OAuth 令牌 + 账号 + **设备身份（P-256 私钥 PKCS#8）** | 私钥永不出存储；视图只出 `signatureFormat` |
 | `codebuddy-plugin-usage.json` | usage-meter | 用量累计（totalCredit/days/recent） | 5s 去抖写盘 |
-| `settings.yaml` | dsh 宿主（插件代写） | `llm-pi-ai.providers.codebuddy.models` / `.trae.models` / `.<extraId>` 块——chokidar 热加载，**免重启** | 注释保留的文档编辑（yaml 库 parseDocument/setIn/deleteIn） |
+| `settings.yaml` | dsh 宿主（插件代写） | `llm-pi-ai.providers.codebuddy.models` 镜像 / `providers.trae` **整块** / `providers.<extraId>` 块——chokidar 热加载，**免重启** | 注释保留的文档编辑（yaml 库 parseDocument/setIn/deleteIn） |
 | `.credentials.yaml` | 插件代写（dsh 约定） | 多服务商 key（`<ID>_API_KEY`）、`CODEBUDDY_API_KEY` 兜底 | **必须 0600**，写后 chmod |
 | `generated-images/` | images.js | 无会话工作区时的生图落盘 | — |
 
@@ -43,19 +43,20 @@ flowchart TB
 - 动态目录存活期间**恒铺**（镜像内容每次启动随网关刷新，不算"陈旧"）。
 - 基清单内的启停只动 `disabled`；目录新增模型禁用只删 `extra`（不写 disabled——否则状态永远非纯净）。
 
-### 2. Trae（恒铺纪律，踩坑 #25）
+### 2. Trae（路由存在性管理，踩坑 #25 终版）
+
+> 0.8.7 / dsh 0.1.1-rc.2 适配后的现行语义。旧版（≤0.8.5）"恒铺 models 路径 + 空数组遮蔽 patch 静态基线"已失效——llm-pi-ai 现在对非目录路由的**空 models 清单在 apply 时直接 throw**（连坐整棵 llm-pi-ai 纤维，主聊天全挂）。现行策略：patch **不带** trae 静态基线，`providers.trae` 路由的完整定义由镜像独占。
 
 ```mermaid
 flowchart TB
-    T(["syncTraeModelsToDshSettings()（恒铺）"]) --> C{"traeEnabled 且<br/>目录已同步?"}
-    C -->|是| REAL["铺有效清单（剔除 disabled）"]
-    C -->|否| EMPTY["铺空数组<br/>（pi-ai 接受且不毒化层）"]
-    REAL --> ON["选择器显示 trae 模型"]
-    EMPTY --> OFF["选择器隐藏通道"]
-    REAL -.->|"遮蔽"| BASE["patch 静态基线 24 模型<br/>（pi-ai 要求 provider 必须带 models，<br/>否则整棵插件树加载失败）"]
-    EMPTY -.->|"遮蔽"| BASE
-    EMPTY -.->|"若删路径（红线禁止）"| BAD["回落静态基线<br/>选择器显示不可用模型"]
+    T(["syncTraeModelsToDshSettings()"]) --> C{"traeEnabled 且目录已同步<br/>且非全部禁用?"}
+    C -->|是| REAL["铺完整块 providers.trae<br/>displayName / api / baseURL（跟 traeBridgePort）<br/>headers（哨兵 Bearer dsh-trae-bridge） / models"]
+    C -->|否| DEL["删除 providers.trae 整块"]
+    REAL --> ON["选择器显示 trae 模型<br/>（chokidar 热加载，改端口重铺即热生效）"]
+    DEL --> OFF["路由消失，选择器隐藏通道<br/>（无 patch 基线即无回落，删块即干净）"]
 ```
+
+升级注意：≤0.8.5 写入的旧 trae 块只带 models 路径（缺 baseURL 等字段），dsh 升到 0.1.1-rc.2 后首次启动前须手动清理，否则 llm-pi-ai 先于插件报错（详见 [CHANGELOG](../CHANGELOG.md) 0.8.7 迁移说明）。
 
 ### 3. 多服务商（整块代写）
 

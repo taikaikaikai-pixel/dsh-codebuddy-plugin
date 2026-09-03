@@ -4,7 +4,7 @@
 
 - **Node ≥ 22**（纯 ESM，`"type": "module"`）
 - 运行时依赖仅两个：`@deepseek-ai/schemastery`（3.18.1）、`yaml`（2.8.0）
-- dsh ≥ 0.1.0-rc.7（settings.plugin.item keyed 槽位；rc.6 有兼容写法，见踩坑 #18）
+- dsh ≥ 0.1.0-rc.7（settings.plugin.item keyed 槽位；rc.6 有兼容写法，见踩坑 #18）；0.8.7 起逐包适配至 **0.1.1-rc.2**（llm-pi-ai 对空 models 清单 apply 即 throw——从 ≤0.8.5 升级须先清理 settings.yaml 里的旧 trae 残块，见 [CHANGELOG](../CHANGELOG.md)）
 
 ## 安装与运行
 
@@ -40,7 +40,7 @@ TraeWork CN 分区：启用通道 → 登录（自持设备密钥的浏览器授
 | `node scripts/verify-core-generic.mjs` | core/ 通用性证伪：静态纯净扫描 + 第二 OpenAI 兼容上游全链路（含 developer 角色不被 core 改写的另一半证明） | — |
 | `node scripts/verify-rotation.mjs` | 多 Key 轮询（mock 网关按 Key 行为表；`?case=provider/bridge` 双实例隔离） | 25 项断言 |
 | `node scripts/verify-providers.mjs` | 多服务商骨架：/models 404 兜底 + 认证方言 | — |
-| `node scripts/verify-trae-provider.mjs` | Trae 通道：mock OAuth 全流程（**用我们注册的公钥验 DeviceProof 签名**）/ 目录映射 / 翻译网关 | 77 项断言 |
+| `node scripts/verify-trae-provider.mjs` | Trae 通道：mock OAuth 全流程（**用我们注册的公钥验 DeviceProof 签名**）/ 目录映射 / 翻译网关 | 81 项断言 |
 | `node scripts/verify-models.mjs` | 模型解析离线自检 / 在线探测可用性 / 目录漂移对比 | — |
 | `node scripts/verify-trae-model-catalog.mjs` | 目录提取器回归 | — |
 
@@ -79,7 +79,7 @@ CODEBUDDY_BRIDGE_DUMP=/tmp/dump dsh web           # 叠加请求体明文（仅�
 脚本位于**仓库外**本地目录 `dsh-ui-test/`（puppeteer-core + 系统 Chrome，不进仓库）：
 
 - `_helpers.js`：共享驱动（打开卡片、请求计数、Key 清理、模式切换、`normalizeField`——基线一律从 GET /settings 实况读取并收尾复原）；
-- step20（设置卡 20 断言）、step22（流畅度 22 断言：保存不卸载组件/严格 1 POST+1 GET/思考档位/Key 排序）、step24（生图 8 断言）、step25（额度与用量 12 断言）等；
+- step20（设置卡 22 断言，含 7 标签顺序与折叠态芯片）、step22（流畅度 22 断言：DOM 标记证明保存不卸载/严格 1 POST+1 GET/草稿跨标签保留/思考档位/Key 排序）、step24（生图 7 断言）、step25（额度与用量 13 断言：可见才轮询/切走即停）、step26/27/28/29/31-trae 等；
 - 跑前 `dsh web`（建议 `--disable-http-cache` 对抗浏览器缓存），跑后杀 3080；
 - 选择器一律按 `.cbc-*` 类与行内单元格精确匹配（step20 曾因模糊匹配误删 Key）。
 
@@ -113,6 +113,7 @@ flowchart LR
     INDEX --> CB
     INDEX --> TR
     INDEX --> OC
+    INDEX --> PRE
     INDEX --> LOCAL
     METER --> JS
     TR --> BRIDGE
@@ -130,6 +131,6 @@ flowchart LR
 | 主聊天 503 "credential unavailable" | 设置卡登录区（apiKeys 空 / OAuth 过期） |
 | 主聊天全挂 content_filter | 桥的 developer→system 重写是否被绕过（verify-bridge §9） |
 | 主聊天连接失败 | bridgePort 与 patch baseURL 是否一致；`bridgeRuntime.lastError`（设置卡桥分区） |
-| 设置卡模型勾了但选择器没有 | settings.yaml 镜像是否写入（`syncModelsToDshSettings`）；Trae 是否误删了镜像路径 |
+| 设置卡模型勾了但选择器没有 | CodeBuddy：settings.yaml 镜像是否写入（`syncModelsToDshSettings`）；Trae：`providers.trae` 整块是否存在（禁用/未同步 = 删块属正常语义） |
 | trae 3003 | 服务端 inline 面故障（非凭据问题）——切 remote 传输或等自愈 |
 | 添加服务商后整个用户层 provider 消失 | settings.yaml 坏块连坐（踩坑 #21）——检查手动写入的块 |
