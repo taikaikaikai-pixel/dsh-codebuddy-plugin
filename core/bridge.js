@@ -36,6 +36,28 @@ import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 // ---------------------------------------------------------------------------
+// Loopback Host gate ([8]+[26] hardening): the bridge carries the user's live
+// credential, so it must only answer callers that reached it the intended way
+// — a same-machine client addressing the loopback bind directly. A non-loopback
+// Host header (DNS-rebinding name, LAN-spoofed Host) is refused before any
+// body byte is read or proxied.
+// ---------------------------------------------------------------------------
+
+/** Hostnames a same-machine caller may present in Host (::1 bare for raw
+ * Host values; URL-parsed IPv6 keeps its brackets). */
+const LOOPBACK_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+
+/** True when the Host header (may carry a port) names the loopback. */
+export function hostIsLoopback(host) {
+  if (typeof host !== 'string' || !host) return false
+  try {
+    return LOOPBACK_HOSTNAMES.has(new URL(`http://${host}`).hostname)
+  } catch {
+    return false
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Session attribution
 // ---------------------------------------------------------------------------
 
@@ -489,6 +511,15 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
    */
   function listen(port) {
     const server = createServer((req, res) => {
+      // Host gate ([8]+[26]): the bind is loopback-only, but the Host header
+      // is still caller-controlled — a rebinding DNS name or a spoofed Host
+      // must not reach the credential-bearing proxy. Refuse before reading
+      // the body or dispatching anywhere.
+      if (!hostIsLoopback(req.headers.host)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' })
+        res.end('bridge: loopback-only (Host must be 127.0.0.1/localhost/::1)')
+        return
+      }
       // Bytes must be collected and decoded ONCE (踩坑 #28): implicit
       // per-chunk utf8 decoding (`rawBody += c`) corrupts any multibyte
       // character straddling a TCP chunk boundary into 3×U+FFFD at a

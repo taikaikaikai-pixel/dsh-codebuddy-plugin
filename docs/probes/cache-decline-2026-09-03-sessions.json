@@ -4,7 +4,7 @@
  "note": "per-step usage rows from ~/.dsh/sessions/**/session.jsonl.zstd; inputTokens==uncached(miss), cacheReadTokens==hit; prompt=inputTokens+cacheReadTokens",
  "sessions": [
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/9eb4e63b-45f9-4718-840b-bb3ea9a1981f/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/9eb4e63b-45f9-4718-840b-bb3ea9a1981f/session.jsonl.zstd",
    "sessionId": null,
    "lastWrite": "2026-08-15T17:31:18.529Z",
    "provider": "deepseek-official",
@@ -234,7 +234,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-1a8006b3-4acc-4d60-9daf-8a897c84b51e/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-1a8006b3-4acc-4d60-9daf-8a897c84b51e/session.jsonl.zstd",
    "sessionId": "session-1a8006b3-4acc-4d60-9daf-8a897c84b51e",
    "lastWrite": "2026-08-15T17:31:18.620Z",
    "provider": "codebuddy",
@@ -3544,7 +3544,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-6e0dd5fc-33b8-4f58-bcb9-b0d78836e0c8/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-6e0dd5fc-33b8-4f58-bcb9-b0d78836e0c8/session.jsonl.zstd",
    "sessionId": "session-6e0dd5fc-33b8-4f58-bcb9-b0d78836e0c8",
    "lastWrite": "2026-08-15T17:31:18.704Z",
    "provider": "codebuddy",
@@ -6902,7 +6902,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/e1298a3e-317c-4897-b7f8-1cac65a67a5f/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/e1298a3e-317c-4897-b7f8-1cac65a67a5f/session.jsonl.zstd",
    "sessionId": null,
    "lastWrite": "2026-08-15T17:31:18.722Z",
    "provider": "deepseek-official",
@@ -7116,7 +7116,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-3cd13fac-fb4e-44a2-a044-55b9e743da53/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-3cd13fac-fb4e-44a2-a044-55b9e743da53/session.jsonl.zstd",
    "sessionId": "session-3cd13fac-fb4e-44a2-a044-55b9e743da53",
    "lastWrite": "2026-08-15T17:31:18.745Z",
    "provider": "codebuddy",
@@ -7274,7 +7274,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-2d466232-e45e-4798-bb33-be5dd4c5ac40/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-2d466232-e45e-4798-bb33-be5dd4c5ac40/session.jsonl.zstd",
    "sessionId": "session-2d466232-e45e-4798-bb33-be5dd4c5ac40",
    "lastWrite": "2026-08-15T17:31:18.824Z",
    "provider": "codebuddy",
@@ -10584,7 +10584,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-982f513d-a1b6-4503-b202-a98b2e4a8455/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-982f513d-a1b6-4503-b202-a98b2e4a8455/session.jsonl.zstd",
    "sessionId": "session-982f513d-a1b6-4503-b202-a98b2e4a8455",
    "lastWrite": "2026-08-15T17:31:18.889Z",
    "provider": "codebuddy",
@@ -13894,7 +13894,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-0ce02b06-9435-4f19-9701-1f47cc4bb18e/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-0ce02b06-9435-4f19-9701-1f47cc4bb18e/session.jsonl.zstd",
    "sessionId": "session-0ce02b06-9435-4f19-9701-1f47cc4bb18e",
    "lastWrite": "2026-08-15T17:31:19.038Z",
    "provider": "codebuddy",
@@ -17204,7 +17204,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/3b731181-7727-4b2b-bf54-05c439e11a3e/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/3b731181-7727-4b2b-bf54-05c439e11a3e/session.jsonl.zstd",
    "sessionId": null,
    "lastWrite": "2026-08-15T17:31:19.061Z",
    "provider": "deepseek-official",
@@ -17522,7 +17522,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-a85b13a1-17d3-4b4c-9d40-3bf45972bbe7/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-a85b13a1-17d3-4b4c-9d40-3bf45972bbe7/session.jsonl.zstd",
    "sessionId": "session-a85b13a1-17d3-4b4c-9d40-3bf45972bbe7",
    "lastWrite": "2026-08-15T17:31:19.068Z",
    "provider": "codebuddy",
@@ -17552,7 +17552,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/376ca258-8f71-40de-b1a2-99ac8cdd5994/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/376ca258-8f71-40de-b1a2-99ac8cdd5994/session.jsonl.zstd",
    "sessionId": null,
    "lastWrite": "2026-08-15T17:31:19.086Z",
    "provider": "deepseek-official",
@@ -17734,7 +17734,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-cbd63721-6a6c-4c83-89b5-db33ed39333a/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-cbd63721-6a6c-4c83-89b5-db33ed39333a/session.jsonl.zstd",
    "sessionId": "session-cbd63721-6a6c-4c83-89b5-db33ed39333a",
    "lastWrite": "2026-08-15T17:31:19.094Z",
    "provider": "codebuddy",
@@ -17876,7 +17876,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-2ae5bfb6-7fa0-45ba-8f0e-ec8578f0bb4a/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-2ae5bfb6-7fa0-45ba-8f0e-ec8578f0bb4a/session.jsonl.zstd",
    "sessionId": "session-2ae5bfb6-7fa0-45ba-8f0e-ec8578f0bb4a",
    "lastWrite": "2026-08-15T17:31:19.114Z",
    "provider": "deepseek-official",
@@ -18386,7 +18386,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/68ae1302-4792-46ee-9fd1-1c7afac5c757/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/68ae1302-4792-46ee-9fd1-1c7afac5c757/session.jsonl.zstd",
    "sessionId": null,
    "lastWrite": "2026-08-15T17:31:19.125Z",
    "provider": "codebuddy",
@@ -18456,7 +18456,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-d166c4b7-27e3-458b-980f-ad5ae6d408ba/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-d166c4b7-27e3-458b-980f-ad5ae6d408ba/session.jsonl.zstd",
    "sessionId": "session-d166c4b7-27e3-458b-980f-ad5ae6d408ba",
    "lastWrite": "2026-08-15T17:31:19.148Z",
    "provider": "codebuddy",
@@ -18558,7 +18558,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-a6f5d215-1de3-419f-9c9b-f6ca5b9b138b/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-a6f5d215-1de3-419f-9c9b-f6ca5b9b138b/session.jsonl.zstd",
    "sessionId": "session-a6f5d215-1de3-419f-9c9b-f6ca5b9b138b",
    "lastWrite": "2026-08-15T17:31:19.153Z",
    "provider": "codebuddy",
@@ -18580,7 +18580,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-9ed8fd5e-8d01-43ac-9563-31e1c0fccb8e/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-9ed8fd5e-8d01-43ac-9563-31e1c0fccb8e/session.jsonl.zstd",
    "sessionId": "session-9ed8fd5e-8d01-43ac-9563-31e1c0fccb8e",
    "lastWrite": "2026-08-15T17:31:19.177Z",
    "provider": "codebuddy",
@@ -18602,7 +18602,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-4221b19f-aef5-451c-89ac-17a5427e2b84/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-4221b19f-aef5-451c-89ac-17a5427e2b84/session.jsonl.zstd",
    "sessionId": "session-4221b19f-aef5-451c-89ac-17a5427e2b84",
    "lastWrite": "2026-08-15T17:31:19.182Z",
    "provider": "codebuddy",
@@ -18624,7 +18624,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-5e038ab2-9d43-4407-9938-f4d0855c7098/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-5e038ab2-9d43-4407-9938-f4d0855c7098/session.jsonl.zstd",
    "sessionId": "session-5e038ab2-9d43-4407-9938-f4d0855c7098",
    "lastWrite": "2026-08-15T17:31:19.210Z",
    "provider": "codebuddy",
@@ -18646,7 +18646,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-4968d3fc-4026-4ade-bbcb-0d6bd8627407/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-4968d3fc-4026-4ade-bbcb-0d6bd8627407/session.jsonl.zstd",
    "sessionId": "session-4968d3fc-4026-4ade-bbcb-0d6bd8627407",
    "lastWrite": "2026-08-15T17:31:19.220Z",
    "provider": "codebuddy",
@@ -18668,7 +18668,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-d7291ec8-9c14-4718-896f-95b5fcbc4fef/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-d7291ec8-9c14-4718-896f-95b5fcbc4fef/session.jsonl.zstd",
    "sessionId": "session-d7291ec8-9c14-4718-896f-95b5fcbc4fef",
    "lastWrite": "2026-08-15T17:31:19.271Z",
    "provider": "codebuddy",
@@ -18690,7 +18690,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-a45b42a2-50fc-4ca1-b205-628a9aadc604/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-a45b42a2-50fc-4ca1-b205-628a9aadc604/session.jsonl.zstd",
    "sessionId": "session-a45b42a2-50fc-4ca1-b205-628a9aadc604",
    "lastWrite": "2026-08-15T17:31:19.287Z",
    "provider": "codebuddy",
@@ -18712,7 +18712,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-dev--/session-e403f403-7fe3-44f3-8dd6-7a7a2f1da0e0/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-dev--/session-e403f403-7fe3-44f3-8dd6-7a7a2f1da0e0/session.jsonl.zstd",
    "sessionId": "session-e403f403-7fe3-44f3-8dd6-7a7a2f1da0e0",
    "lastWrite": "2026-08-15T17:31:19.305Z",
    "provider": "codebuddy",
@@ -19944,7 +19944,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~4E60~60EF--/session-8eb3f217-4a82-4e99-988d-9a3f73cd34be/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~4E60~60EF--/session-8eb3f217-4a82-4e99-988d-9a3f73cd34be/session.jsonl.zstd",
    "sessionId": "session-8eb3f217-4a82-4e99-988d-9a3f73cd34be",
    "lastWrite": "2026-08-17T04:03:05.739Z",
    "provider": "codebuddy",
@@ -26510,7 +26510,7 @@
    ]
   },
   {
-   "file": "--mnt-c-Users-21613-OneDrive-~684C~9762-~5DE5~4F5C~53F0--/session-d0c39888-3cd7-4441-9fe7-adb63532d3d6/session.jsonl.zstd",
+   "file": "--mnt-c-Users-<redacted:username>-OneDrive-~684C~9762-~5DE5~4F5C~53F0--/session-d0c39888-3cd7-4441-9fe7-adb63532d3d6/session.jsonl.zstd",
    "sessionId": "session-d0c39888-3cd7-4441-9fe7-adb63532d3d6",
    "lastWrite": "2026-08-17T10:04:51.766Z",
    "provider": "codebuddy",

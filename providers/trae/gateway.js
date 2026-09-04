@@ -376,6 +376,30 @@ async function forEachSseEvent(body, parser, cb) {
 }
 
 /**
+ * Host 门（审计 [9]）：网关无认证，唯一防线是回环端口——但回环端口本机任意
+ * 进程/页面（含 DNS rebinding 把公网域名解析到 127.0.0.1 的浏览器请求）都能
+ * 连上。Host 白名单把表面收紧到回环主机名：Host 头可带端口，用 URL 解析出
+ * hostname 再比对（IPv6 经 URL 解析后 hostname 保留方括号，即 [::1]）；
+ * 解析失败一律拒绝。
+ */
+function isLoopbackHost(hostHeader) {
+  if (typeof hostHeader !== 'string' || !hostHeader) return false
+  let hostname
+  try {
+    hostname = new URL(`http://${hostHeader}`).hostname
+  } catch {
+    return false
+  }
+  return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1' || hostname === '[::1]'
+}
+
+/** SSE 单行值清洗（审计 [20]）：客户端/上游提供的字符串可能含 \r\n，直插
+ *  注释行会在响应流里伪造 SSE 帧——换行统一折叠为空格。 */
+function sseLineValue(value) {
+  return String(value).replace(/[\r\n]+/g, ' ')
+}
+
+/**
  * @param {{
  *   settings: () => object,            // 需要 traeChatBaseURL / maxConcurrentPerSession
  *   withCredentials: (attempt: (cred) => Promise<Response>) => Promise<{cred,res,err}>,
@@ -608,7 +632,9 @@ export function createTraeGateway(deps) {
         const actual = parser.providerModel()
         if (actual && !rerouteNotified && model && actual !== model) {
           rerouteNotified = true
-          if (wantStream) res.write(`: trae-reroute requested=${model} actual=${actual}\n\n`)
+          // 值过 sseLineValue 清洗（审计 [20]）：model/actual 任一方含 \r\n
+          // 都会在注释行后伪造 SSE 帧。其余 res.write 全部经 JSON.stringify。
+          if (wantStream) res.write(`: trae-reroute requested=${sseLineValue(model)} actual=${sseLineValue(actual)}\n\n`)
         }
         if (ev.reasoning) send(oaiChunk(id, model, { reasoning_content: ev.reasoning }))
         if (ev.text) {
@@ -675,6 +701,14 @@ export function createTraeGateway(deps) {
 
   function listen(port) {
     const server = createServer((req, res) => {
+      // Host 门（审计 [9]，listen 目标恒为 127.0.0.1）：非回环 Host → 403。
+      // 先 resume 丢弃未读请求体再应答，保证 403 完整送达后连接正常收尾。
+      if (!isLoopbackHost(req.headers.host)) {
+        req.resume()
+        res.writeHead(403, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: { message: 'forbidden: loopback host required' } }))
+        return
+      }
       // Buffer 收集 + 一次解码（踩坑 #28，同 core/bridge.js）：逐分片隐式
       // utf8 解码会把跨分片多字节字符损坏成 3×U+FFFD，译文上行带乱码。
       const chunks = []

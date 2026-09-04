@@ -45,7 +45,7 @@ CodeBuddy 那套规则（UA/缓存/路由/额度）对 TRAE 不直接适用，�
 ### 1.3 关键事实
 
 - TRAE 使用 ttnet（火山网络库）做 HTTP，带 ttnet fetch 日志前缀
-- 用户已登录（手机号 181****93，用户 ID 2112613667059747，LastLoginType=sms，注册 2025-08-09）
+- 用户已登录（手机号 <redacted:phone>，用户 ID <redacted:userId>，LastLoginType=sms，注册 2025-08-09）
 - token 有效期：expiredAt=2026-08-29、refreshExpiredAt=2027-02-11、tokenReleaseAt=2026-08-15，JWT refresh 被禁用
 
 ---

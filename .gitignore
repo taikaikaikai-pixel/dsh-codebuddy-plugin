@@ -4,3 +4,12 @@ node_modules/
 code/
 .trae/
 .trae-html-share-packages/
+.env*
+*.pem
+*.key
+codebuddy-plugin*.json
+*plugin-auth.json
+.credentials*
+.claude/
+.audit-27.md
+.extract-audit.py

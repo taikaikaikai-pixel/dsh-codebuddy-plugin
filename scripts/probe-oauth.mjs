@@ -446,7 +446,7 @@ if (SET === 'quota4') {
     ['resource-full', '/billing/meter/get-user-resource', {}, null, 'P-QP9'],
     ['daily-usage', '/billing/meter/get-user-daily-usage', { startTime: `${monthStart} 00:00:00`, endTime: `${today} 23:59:59`, pageNum: 1, pageSize: 50 }, null, 'P-QP10'],
     ['request-usage', '/billing/meter/get-user-request-usage', { startTime: `${monthStart} 00:00:00`, endTime: `${today} 23:59:59`, timezone: 'Asia/Shanghai', pageSize: 5, version: 2, pageToken: '' }, null, 'P-QP11'],
-    ['enterprise-usage', '/billing/meter/get-enterprise-user-usage', {}, 'f0bwg2yofpq8', 'P-QP13'],
+    ['enterprise-usage', '/billing/meter/get-enterprise-user-usage', {}, process.env.CODEBUDDY_ENTERPRISE_ID || null, 'P-QP13'],
   ]
   for (const [name, p, b, entId, pred] of arms) {
     const headers = entId ? { ...H, 'X-Enterprise-Id': entId } : H
@@ -481,10 +481,10 @@ if (SET === 'quota5') {
   const variants = [
     ['daily-endtime-now', '/billing/meter/get-user-daily-usage', { startTime: todayStart, endTime: nowStr, pageNum: 1, pageSize: 10 }, null],
     ['daily-pascal', '/billing/meter/get-user-daily-usage', { StartTime: todayStart, EndTime: nowStr, PageNum: 1, PageSize: 10 }, null],
-    ['daily-ent', '/billing/meter/get-user-daily-usage', { startTime: todayStart, endTime: nowStr, pageNum: 1, pageSize: 10 }, 'f0bwg2yofpq8'],
+    ['daily-ent', '/billing/meter/get-user-daily-usage', { startTime: todayStart, endTime: nowStr, pageNum: 1, pageSize: 10 }, process.env.CODEBUDDY_ENTERPRISE_ID || null],
     ['request-endtime-now', '/billing/meter/get-user-request-usage', { startTime: todayStart, endTime: nowStr, timezone: 'Asia/Shanghai', pageSize: 5, version: 2, pageToken: '' }, null],
     ['request-no-token', '/billing/meter/get-user-request-usage', { startTime: todayStart, endTime: nowStr, timezone: 'Asia/Shanghai', pageSize: 5, version: 2 }, null],
-    ['request-ent', '/billing/meter/get-user-request-usage', { startTime: todayStart, endTime: nowStr, timezone: 'Asia/Shanghai', pageSize: 5, version: 2, pageToken: '' }, 'f0bwg2yofpq8'],
+    ['request-ent', '/billing/meter/get-user-request-usage', { startTime: todayStart, endTime: nowStr, timezone: 'Asia/Shanghai', pageSize: 5, version: 2, pageToken: '' }, process.env.CODEBUDDY_ENTERPRISE_ID || null],
   ]
   for (const [name, p, b, entId] of variants) {
     const headers = entId ? { ...H, 'X-Enterprise-Id': entId } : H

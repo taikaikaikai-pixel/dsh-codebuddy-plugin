@@ -46,7 +46,7 @@
 
 import { chmodSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, dirname } from 'node:path'
+import { join, dirname, isAbsolute, normalize, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import z from '@deepseek-ai/schemastery'
@@ -155,6 +155,28 @@ export const SETTINGS_FIELDS = [
   { key: 'upstreamFirstByteTimeoutMs', kind: 'number' },
 ]
 
+/**
+ * Hostnames that count as "this machine" for the local-only HTTP surfaces
+ * (bridge Host gate, settings-route guard, plaintext-http baseURLs).
+ * `::1` (bare) is accepted for raw Host values; a URL-parsed IPv6 hostname
+ * keeps its brackets (`[::1]`).
+ */
+const LOOPBACK_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+
+/** Parse a Host header (may carry a port) into a bare hostname, or null. */
+function hostHeaderHostname(host) {
+  try {
+    return new URL(`http://${host}`).hostname
+  } catch {
+    return null
+  }
+}
+
+/** True when the URL hostname is loopback (plaintext http allowance). */
+function isLoopbackHostname(hostname) {
+  return LOOPBACK_HOSTNAMES.has(hostname)
+}
+
 /** Validate a baseURL candidate before it can reach a provider. */
 function validateBaseURL(value) {
   let parsed
@@ -163,8 +185,16 @@ function validateBaseURL(value) {
   } catch {
     throw new Error('baseURL 必须是绝对 http(s) 地址')
   }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+  if (parsed.protocol === 'https:') return
+  if (parsed.protocol !== 'http:') {
     throw new Error('baseURL 必须使用 http 或 https')
+  }
+  // 安全审计 [29]：明文 http 仅限回环——本插件的本地桥都绑 127.0.0.1；
+  // 指向远程明文端点会把 Bearer 凭据裸奔上网络。https 恒可。
+  if (!isLoopbackHostname(parsed.hostname)) {
+    throw new Error(
+      `baseURL 明文 http 仅允许回环地址（127.0.0.1/localhost/::1），收到 ${parsed.hostname}——远程上游必须使用 https`,
+    )
   }
 }
 
@@ -205,6 +235,19 @@ function readModelState() {
     // G5：每模型上下文/输出上限覆盖值 { [id]: { contextWindow?, maxTokens? } }。
     overrides: state.overrides && typeof state.overrides === 'object' && !Array.isArray(state.overrides)
       ? state.overrides : {},
+  }
+}
+
+/**
+ * 安全审计 [22]：POST 供给的模型 id 会成为对象键（state.extra/overrides[id]）
+ * 并镜像进 settings.yaml 的映射键。Object.prototype 关键段一律拒收——
+ * `extra['__proto__'] = <object>` 是真实原型污染写入；含这些关键段的
+ * “子路径”形式（a.constructor、x[__proto__] 等）同样拒绝。
+ */
+function assertSafeModelId(id) {
+  const unsafe = /(?:^|[.[\]])+(?:__proto__|constructor|prototype)(?:$|[.[\]])+/.test(id)
+  if (unsafe) {
+    throw new Error(`非法模型 id（保留键 ${JSON.stringify(id)} 拒绝写入）`)
   }
 }
 
@@ -324,6 +367,7 @@ function syncModelsToDshSettings() {
 /** Apply one enable/disable toggle and sync the effective list. */
 function setModelEnabled({ id, enabled, profile }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('modelSetEnabled 需要 id')
+  assertSafeModelId(id)
   const layer = readFileLayer()
   const state = readModelState()
   // G4：基清单 = 静态 ∪ 动态目录。基清单内的模型启停只动 disabled 标记，
@@ -366,6 +410,7 @@ function setModelEnabled({ id, enabled, profile }) {
  */
 function setModelLimits({ id, contextWindow, maxTokens }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('modelSetLimits 需要 id')
+  assertSafeModelId(id)
   const base = computeBaseModels().find((m) => m.id === id)
     ?? readModelState().extra[id]
     ?? null
@@ -786,8 +831,22 @@ function syncTraeModelsToDshSettings() {
   return true
 }
 
+/**
+ * 安全审计 [18]：state.vscdb 路径纵深防御（CSRF 已被 settings 路由本地门
+ * 挡住，这里是第二道）。规则：绝对路径、规范化后不含 .. 段、扩展名限
+ * .db/.vscdb。不校验存在性——不存在的路径沿用既有同步错误路径报错。
+ */
+function isSafeStateDbPath(p) {
+  if (typeof p !== 'string' || !p || !isAbsolute(p)) return false
+  const normalized = normalize(p)
+  if (normalized.split(/[\\/]/).includes('..')) return false
+  const ext = extname(normalized).toLowerCase()
+  return ext === '.db' || ext === '.vscdb'
+}
+
 function setTraeModelEnabled({ id, enabled }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('traeModelSetEnabled 需要 id')
+  assertSafeModelId(id)
   const view = traeProvider.catalogView()
   if (!view || !view.profiles.some((p) => p.id === id)) throw new Error(`${id} 不在 Trae 目录里（先同步目录）`)
   const layer = readFileLayer()
@@ -827,6 +886,35 @@ function sameOrigin(req) {
   } catch {
     return false
   }
+}
+
+/**
+ * 安全审计 [6]+[7]：/dsh-tap/settings 是本地特权面（读 OAuth 状态/桥端口/
+ * 目录，POST 改设置与凭据）。GET 与 POST 一体设防，统一判定不做分支复制：
+ *  - Host 门：Host 头必须解析为回环 hostname——防 DNS rebinding（攻击域
+ *    解析到 127.0.0.1 后借浏览器直读）与 LAN 直连。代价：经 LAN IP 访问
+ *    设置卡被拒，属有意收紧。
+ *  - Origin 门：带 Origin 头时其 host:port 必须与 Host 一致——浏览器跨站
+ *    请求必带 Origin，不一致即跨站伪造。
+ * Returns null to proceed, else the refusal reason (送 403 响应体).
+ */
+function localGuardFailure(req) {
+  const host = req.headers.host
+  const hostname = typeof host === 'string' ? hostHeaderHostname(host) : null
+  if (!hostname || !isLoopbackHostname(hostname)) {
+    return `本接口仅限本机访问：Host 必须是回环地址（127.0.0.1/localhost/::1），收到 ${host ?? '(缺失)'}`
+  }
+  const origin = req.headers.origin
+  if (origin !== undefined) {
+    let originMatches = false
+    try {
+      originMatches = new URL(origin).host === host
+    } catch {
+      originMatches = false
+    }
+    if (!originMatches) return `Origin 与 Host 不一致（疑似跨站请求）：${origin}`
+  }
+  return null
 }
 
 /** Mask a key for display: first 4 and last 4 characters. */
@@ -919,6 +1007,12 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
       kind: 'exact',
       path: '/dsh-tap/settings',
       handler: (request, response) => {
+        // 安全审计 [6]+[7]：GET 与 POST 都先过本地门（回环 Host + Origin 一致）。
+        const guardFail = localGuardFailure(request)
+        if (guardFail) {
+          sendJSON(response, 403, { ok: false, error: guardFail })
+          return
+        }
         if (request.method === 'GET') {
           sendJSON(response, 200, settingsView(resolveNow))
           return
@@ -1078,7 +1172,14 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               return
             }
             if (body?.action === 'trae-model-sync') {
-              traeProvider.syncCatalog(body?.dbPath && typeof body.dbPath === 'string' ? { dbPath: body.dbPath } : {})
+              // 安全审计 [18] 纵深防御：dbPath 是读文件的调用方输入——必须
+              // 绝对路径、规范化后无 .. 段、扩展名限 .db/.vscdb。不存在的
+              // 路径不在此预检，交给既有同步错误路径（502 + 原因）。
+              const dbPath = body?.dbPath
+              if (dbPath !== undefined && !isSafeStateDbPath(dbPath)) {
+                throw new Error('dbPath 必须是绝对路径、不含 .. 段且以 .db/.vscdb 结尾')
+              }
+              traeProvider.syncCatalog(typeof dbPath === 'string' ? { dbPath } : {})
                 .then((r) => {
                   syncTraeModelsToDshSettings()
                   sendJSON(response, 200, { ok: r.ok, sync: r, trae: settingsView(resolveNow).trae })

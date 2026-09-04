@@ -1,7 +1,7 @@
 {
   "at": "2026-08-24T14:20:58.840Z",
   "note": "诊断脚本见 scripts/probe-trae-3003-diagnosis.mjs；结论见 docs/diagnosis-trae-3003.md",
-  "accountUidMasked": "211***",
+  "accountUidMasked": "<redacted:accountUid>",
   "steps": {
     "pool_src0": [
       {

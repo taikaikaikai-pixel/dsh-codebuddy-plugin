@@ -24,12 +24,15 @@
  *        6. developer-role messages pass through UNCHANGED — the
  *           developer→system rewrite is owned by the codebuddy adapter,
  *           not by core (verify-bridge.mjs §9 locks the other half)
+ *        7. credential-file discipline: json-store writes land 0600, and
+ *           resolveEnvKey parses credentials lines without building a
+ *           RegExp from the settings-controlled name (no regex injection)
  *
  * Usage: node scripts/verify-core-generic.mjs   (no network, no credentials)
  */
 
 import { createServer } from 'node:http'
-import { mkdtempSync, readFileSync, readdirSync } from 'node:fs'
+import { mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -37,6 +40,7 @@ import { fileURLToPath } from 'node:url'
 import { KeyRotator } from '../core/rotation.js'
 import { createUsageMeter } from '../core/usage-meter.js'
 import { createBridge } from '../core/bridge.js'
+import { resolveEnvKey } from '../core/json-store.js'
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)))
 
@@ -248,6 +252,35 @@ async function main() {
   await stop()
   meter.dispose()
   await new Promise((r) => upstream.close(r))
+
+  console.log('\n[R7] json-store: 0600 credential files + injection-free key resolution')
+  {
+    // [11]+[13]: these files carry tokens/keys — the usage store is flushed
+    // through writeJson on dispose(), so the mode is observable here.
+    const st = statSync(join(tmp, 'usage.json'))
+    check('json-store file mode is 0600', (st.mode & 0o777) === 0o600,
+      `mode ${(st.mode & 0o777).toString(8)}`)
+
+    // [17]: the credentials file is parsed line-wise, never with a RegExp
+    // built from envName (settings-controlled free text). Prefixed names so
+    // a like-named process env var can never shadow the file values.
+    const credPath = join(tmp, 'creds.yaml')
+    writeFileSync(credPath, [
+      '# dsh flat credentials file',
+      'VCG_PLAIN: sk-plain-value',
+      'VCG_QUOTED: "sk-quoted-value"',
+      'VCG_OTHER: not-mine',
+      '',
+    ].join('\n'))
+    check('plain name resolves its file value', resolveEnvKey('VCG_PLAIN', credPath) === 'sk-plain-value',
+      String(resolveEnvKey('VCG_PLAIN', credPath)))
+    check('double-quoted value is dequoted', resolveEnvKey('VCG_QUOTED', credPath) === 'sk-quoted-value')
+    check('regex metachar name resolves null (no injection)',
+      resolveEnvKey('.*)|(', credPath) === null)
+    check('metachar name does NOT leak another line\'s value',
+      resolveEnvKey('.*)|(', credPath) !== 'not-mine')
+    check('absent name resolves null', resolveEnvKey('VCG_ABSENT', credPath) === null)
+  }
 
   console.log(failures === 0
     ? '\ncore/ generality proven: second OpenAI-compatible upstream wired with zero core/ changes'

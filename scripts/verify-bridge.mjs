@@ -32,6 +32,12 @@
  *      was not), and oauth-start rejects an upstream-poisoned authUrl
  *      before oauthPending activates (https + login-site-family gate;
  *      loopback mock pairs pass)
+ *  13. loopback gates + input guards (audit [6][7][8][18][22][29]):
+ *      bridge Host gate 403s non-loopback Host before proxying (loopback
+ *      names still pass), the settings route is Host/Origin-guarded on GET
+ *      as well as POST, trae-model-sync dbPath is path/extension-checked,
+ *      __proto__-family model ids are rejected, and plaintext http
+ *      baseURLs outside loopback fail validation without persisting
  *
  * Usage: node scripts/verify-bridge.mjs   (no network, no credentials)
  */
@@ -169,13 +175,13 @@ async function main() {
   const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => 'TIMEOUT')])
 
   /** Drive a captured settings-route handler with a mock req/res pair. */
-  const callRoute = (routesMap, body) => new Promise((resolve, reject) => {
+  const callRoute = (routesMap, body, headerOverrides = {}) => new Promise((resolve, reject) => {
     const handler = routesMap['/dsh-tap/settings']
     if (!handler) return reject(new Error('settings route not registered'))
     const req = new EventEmitter()
     req.method = body ? 'POST' : 'GET'
     // sameOrigin() gate: origin host must match the Host header.
-    req.headers = { host: '127.0.0.1:3080', origin: 'http://127.0.0.1:3080' }
+    req.headers = { host: '127.0.0.1:3080', origin: 'http://127.0.0.1:3080', ...headerOverrides }
     const res = {
       status: 0,
       writeHead(s) { this.status = s },
@@ -584,6 +590,70 @@ async function main() {
       res.status === 200 && res.json?.ok === true
         && /^http:\/\/127\.0\.0\.1:\d+\/authorize$/.test(res.json?.authUrl ?? ''),
       `HTTP ${res.status} ${res.json?.authUrl}`)
+  }
+
+  // ---------------------------------------------- 13. loopback gates + guards
+  // 安全审计回归锁（[6][7][8][18][22][29]）：
+  //   a) core/bridge.js Host 门——桥携带活凭据，非回环 Host（DNS rebinding/
+  //      伪造）在读 body/转发之前 403；回环名（localhost）照常代理。
+  //   b) index.js settings 路由本地门——GET（[7]：此前完全裸奔）与 POST 都
+  //      先过回环 Host + Origin 一致判定。
+  //   c) trae-model-sync dbPath 纵深防御、modelSetEnabled 原型键黑名单、
+  //      validateBaseURL 明文 http 仅限回环（拒绝不落盘）。
+  console.log('\n[13] loopback Host gates + input guards')
+  {
+    // 13a. bridge：伪造 Host 拒绝（fetch 不允许自定义 Host 头，走原生 socket）
+    const rawRequest = (hostLine) => new Promise((resolve, reject) => {
+      const sock = connect(bridgePort, '127.0.0.1', () => {
+        sock.write(`GET /v2/models HTTP/1.1\r\n${hostLine}Connection: close\r\n\r\n`)
+      })
+      let head = ''
+      sock.on('data', (d) => { head += d.toString('utf8') })
+      sock.on('error', reject)
+      sock.on('close', () => resolve(head))
+    })
+    const arrivalsBefore = arrivals.length
+    const evil = await rawRequest('Host: evil.example.com\r\n')
+    check('bridge refuses non-loopback Host with 403',
+      /HTTP\/1\.1 403/.test(evil), evil.split('\r\n')[0] || '(no response)')
+    check('refused request never proxied upstream', arrivals.length === arrivalsBefore,
+      `arrivals ${arrivalsBefore} → ${arrivals.length}`)
+    const ok = await rawRequest(`Host: localhost:${bridgePort}\r\n`)
+    check('loopback Host (localhost) still proxied',
+      /HTTP\/1\.1 200/.test(ok), ok.split('\r\n')[0] || '(no response)')
+
+    // 13b. settings 路由：GET 与 POST 一体设防
+    let res = await callRoute(routes, null, { host: '192.168.1.5:3080' })
+    check('settings GET with LAN Host → 403', res.status === 403, `HTTP ${res.status}`)
+    res = await callRoute(routes, null, { host: 'attacker.example:3080' })
+    check('settings GET with rebinding Host → 403', res.status === 403, `HTTP ${res.status}`)
+    res = await callRoute(routes, null, { origin: 'http://evil.example:3080' })
+    check('settings with cross-site Origin → 403', res.status === 403, `HTTP ${res.status}`)
+    res = await callRoute(routes, null)
+    check('loopback GET still answers 200', res.status === 200 && res.json?.value != null,
+      `HTTP ${res.status}`)
+
+    // 13c. 输入门：dbPath 路径防御
+    res = await callRoute(routes, { action: 'trae-model-sync', dbPath: '../../etc/passwd' })
+    check('trae-model-sync relative dbPath → 400 + reason',
+      res.status === 400 && /dbPath/.test(res.json?.error ?? ''), JSON.stringify(res.json))
+    res = await callRoute(routes, { action: 'trae-model-sync', dbPath: '/tmp/secret.txt' })
+    check('trae-model-sync non-.db/.vscdb extension → 400', res.status === 400, `HTTP ${res.status}`)
+    res = await callRoute(routes, { action: 'trae-model-sync', dbPath: '/tmp/no-such-state.vscdb' })
+    check('valid-shaped dbPath falls through to the normal sync error path',
+      res.status === 200 && res.json?.ok === false, `HTTP ${res.status} ok=${res.json?.ok}`)
+
+    // 13c. 原型污染键与明文 http baseURL
+    res = await callRoute(routes, { patch: { modelSetEnabled: { id: '__proto__', enabled: true, profile: {} } } })
+    check('modelSetEnabled rejects __proto__ id → 400', res.status === 400, `HTTP ${res.status}`)
+    res = await callRoute(routes, { patch: { modelSetEnabled: { id: 'x.constructor', enabled: true, profile: {} } } })
+    check('modelSetEnabled rejects prototype-segment id → 400', res.status === 400, `HTTP ${res.status}`)
+    res = await callRoute(routes, { patch: { baseURL: 'http://attacker.example/v2' } })
+    check('plaintext http to non-loopback baseURL → 400 (validateBaseURL)',
+      res.status === 400 && /回环/.test(res.json?.error ?? ''), JSON.stringify(res.json))
+    res = await callRoute(routes, null)
+    check('rejected patches persisted nothing (baseURL unchanged)',
+      res.json?.value?.baseURL === `http://127.0.0.1:${upstreamPort}`, res.json?.value?.baseURL)
   }
 
   console.log(failures === 0 ? '\nall bridge checks passed' : `\n${failures} check(s) FAILED`)

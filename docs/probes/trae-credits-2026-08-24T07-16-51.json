@@ -18,7 +18,7 @@
             "currency": 1,
             "end_time": 1788437783,
             "ent_status": 0,
-            "entitlement_id": "327611065346",
+            "entitlement_id": "<redacted:entitlement_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 0,
@@ -38,7 +38,7 @@
               "no_bonus_quota": true
             },
             "start_time": 1785759383,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788437783,
           "group_name": "用户福利",
@@ -46,7 +46,7 @@
           "is_hide": false,
           "is_last_period": false,
           "next_billing_time": 0,
-          "source_id": "327611065346",
+          "source_id": "<redacted:entitlement_id>",
           "status": 0,
           "usage": {
             "credits_amount": 0.5836
@@ -61,7 +61,7 @@
             "currency": 1,
             "end_time": 1788437783,
             "ent_status": 0,
-            "entitlement_id": "327611065602",
+            "entitlement_id": "<redacted:entitlement_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 0,
@@ -81,7 +81,7 @@
               "no_bonus_quota": true
             },
             "start_time": 1785759383,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788437783,
           "group_name": "用户福利",
@@ -89,7 +89,7 @@
           "is_hide": false,
           "is_last_period": false,
           "next_billing_time": 0,
-          "source_id": "327611065602",
+          "source_id": "<redacted:entitlement_id>",
           "status": 0,
           "usage": {
             "credits_amount": 1764.2052
@@ -104,7 +104,7 @@
             "currency": 0,
             "end_time": 1788191999,
             "ent_status": 0,
-            "entitlement_id": "free_utc20268_2112613667059747",
+            "entitlement_id": "free_utc20268_<redacted:user_id>",
             "product_extra": {
               "subscription_extra": {
                 "period_type": 0,
@@ -131,7 +131,7 @@
               "solo_agent_parallel_limit": 2
             },
             "start_time": 1785513600,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788191999,
           "is_hide": false,
@@ -150,7 +150,7 @@
             "currency": 1,
             "end_time": 1788191999,
             "ent_status": 0,
-            "entitlement_id": "monthly_bonus_20268_2112613667059747",
+            "entitlement_id": "monthly_bonus_20268_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 1,
@@ -181,7 +181,7 @@
               "solo_agent_parallel_limit": 2
             },
             "start_time": 1785513600,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788191999,
           "group_name": "每月登录积分",
@@ -204,7 +204,7 @@
             "currency": 1,
             "end_time": 1788438049,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260803_2112613667059747",
+            "entitlement_id": "checkin_20260803_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -222,7 +222,7 @@
               "credits_limit": 200
             },
             "start_time": 1785759649,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788438049,
           "group_name": "每日签到",
@@ -243,7 +243,7 @@
             "currency": 1,
             "end_time": 1788492579,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260804_2112613667059747",
+            "entitlement_id": "checkin_20260804_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -261,7 +261,7 @@
               "credits_limit": 200
             },
             "start_time": 1785814179,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788492579,
           "group_name": "每日签到",
@@ -282,7 +282,7 @@
             "currency": 1,
             "end_time": 1788537789,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260805_2112613667059747",
+            "entitlement_id": "checkin_20260805_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -300,7 +300,7 @@
               "credits_limit": 200
             },
             "start_time": 1785859389,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788537789,
           "group_name": "每日签到",
@@ -321,7 +321,7 @@
             "currency": 1,
             "end_time": 1788632325,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260806_2112613667059747",
+            "entitlement_id": "checkin_20260806_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -339,7 +339,7 @@
               "credits_limit": 200
             },
             "start_time": 1785953925,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788632325,
           "group_name": "每日签到",
@@ -360,7 +360,7 @@
             "currency": 1,
             "end_time": 1788771241,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260807_2112613667059747",
+            "entitlement_id": "checkin_20260807_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -378,7 +378,7 @@
               "credits_limit": 200
             },
             "start_time": 1786092841,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788771241,
           "group_name": "每日签到",
@@ -399,7 +399,7 @@
             "currency": 1,
             "end_time": 1789043450,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260810_2112613667059747",
+            "entitlement_id": "checkin_20260810_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -417,7 +417,7 @@
               "credits_limit": 200
             },
             "start_time": 1786365050,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789043450,
           "group_name": "每日签到",
@@ -438,7 +438,7 @@
             "currency": 1,
             "end_time": 1789099507,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260811_2112613667059747",
+            "entitlement_id": "checkin_20260811_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -456,7 +456,7 @@
               "credits_limit": 200
             },
             "start_time": 1786421107,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789099507,
           "group_name": "每日签到",
@@ -477,7 +477,7 @@
             "currency": 1,
             "end_time": 1789176578,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260812_2112613667059747",
+            "entitlement_id": "checkin_20260812_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -495,7 +495,7 @@
               "credits_limit": 200
             },
             "start_time": 1786498178,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789176578,
           "group_name": "每日签到",
@@ -516,7 +516,7 @@
             "currency": 1,
             "end_time": 1789265695,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260813_2112613667059747",
+            "entitlement_id": "checkin_20260813_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -534,7 +534,7 @@
               "credits_limit": 200
             },
             "start_time": 1786587295,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789265695,
           "group_name": "每日签到",
@@ -555,7 +555,7 @@
             "currency": 1,
             "end_time": 1789366781,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260814_2112613667059747",
+            "entitlement_id": "checkin_20260814_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -573,7 +573,7 @@
               "credits_limit": 200
             },
             "start_time": 1786688381,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789366781,
           "group_name": "每日签到",
@@ -594,7 +594,7 @@
             "currency": 1,
             "end_time": 1789471212,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260815_2112613667059747",
+            "entitlement_id": "checkin_20260815_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -612,7 +612,7 @@
               "credits_limit": 200
             },
             "start_time": 1786792812,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789471212,
           "group_name": "每日签到",
@@ -633,7 +633,7 @@
             "currency": 1,
             "end_time": 1789537262,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260816_2112613667059747",
+            "entitlement_id": "checkin_20260816_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -651,7 +651,7 @@
               "credits_limit": 200
             },
             "start_time": 1786858862,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789537262,
           "group_name": "每日签到",
@@ -672,7 +672,7 @@
             "currency": 1,
             "end_time": 1789702184,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260818_2112613667059747",
+            "entitlement_id": "checkin_20260818_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -690,7 +690,7 @@
               "credits_limit": 200
             },
             "start_time": 1787023784,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789702184,
           "group_name": "每日签到",
@@ -711,7 +711,7 @@
             "currency": 1,
             "end_time": 1789798230,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260819_2112613667059747",
+            "entitlement_id": "checkin_20260819_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -729,7 +729,7 @@
               "credits_limit": 200
             },
             "start_time": 1787119830,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789798230,
           "group_name": "每日签到",
@@ -750,7 +750,7 @@
             "currency": 1,
             "end_time": 1790067453,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260822_2112613667059747",
+            "entitlement_id": "checkin_20260822_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -768,7 +768,7 @@
               "credits_limit": 200
             },
             "start_time": 1787389053,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1790067453,
           "group_name": "每日签到",
@@ -789,7 +789,7 @@
             "currency": 1,
             "end_time": 1790154827,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260823_2112613667059747",
+            "entitlement_id": "checkin_20260823_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -807,7 +807,7 @@
               "credits_limit": 200
             },
             "start_time": 1787476427,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1790154827,
           "group_name": "每日签到",
@@ -828,7 +828,7 @@
             "currency": 1,
             "end_time": 1790214786,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260824_2112613667059747",
+            "entitlement_id": "checkin_20260824_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -846,7 +846,7 @@
               "credits_limit": 200
             },
             "start_time": 1787536386,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1790214786,
           "group_name": "每日签到",
@@ -881,7 +881,7 @@
             "currency": 1,
             "end_time": 1788437783,
             "ent_status": 0,
-            "entitlement_id": "327611065346",
+            "entitlement_id": "<redacted:entitlement_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 0,
@@ -901,7 +901,7 @@
               "no_bonus_quota": true
             },
             "start_time": 1785759383,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788437783,
           "group_name": "用户福利",
@@ -909,7 +909,7 @@
           "is_hide": false,
           "is_last_period": false,
           "next_billing_time": 0,
-          "source_id": "327611065346",
+          "source_id": "<redacted:entitlement_id>",
           "status": 0,
           "usage": {
             "credits_amount": 0.5836
@@ -924,7 +924,7 @@
             "currency": 0,
             "end_time": 1788191999,
             "ent_status": 0,
-            "entitlement_id": "free_utc20268_2112613667059747",
+            "entitlement_id": "free_utc20268_<redacted:user_id>",
             "product_extra": {
               "subscription_extra": {
                 "period_type": 0,
@@ -951,7 +951,7 @@
               "solo_agent_parallel_limit": 2
             },
             "start_time": 1785513600,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788191999,
           "is_hide": false,
@@ -970,7 +970,7 @@
             "currency": 1,
             "end_time": 1788191999,
             "ent_status": 0,
-            "entitlement_id": "monthly_bonus_20268_2112613667059747",
+            "entitlement_id": "monthly_bonus_20268_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 1,
@@ -1001,7 +1001,7 @@
               "solo_agent_parallel_limit": 2
             },
             "start_time": 1785513600,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788191999,
           "group_name": "每月登录积分",
@@ -1038,7 +1038,7 @@
             "currency": 1,
             "end_time": 1788437783,
             "ent_status": 0,
-            "entitlement_id": "327611065346",
+            "entitlement_id": "<redacted:entitlement_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 0,
@@ -1058,7 +1058,7 @@
               "no_bonus_quota": true
             },
             "start_time": 1785759383,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788437783,
           "group_name": "用户福利",
@@ -1066,7 +1066,7 @@
           "is_hide": false,
           "is_last_period": false,
           "next_billing_time": 0,
-          "source_id": "327611065346",
+          "source_id": "<redacted:entitlement_id>",
           "status": 0,
           "usage": {
             "credits_amount": 0.5836
@@ -1081,7 +1081,7 @@
             "currency": 1,
             "end_time": 1788437783,
             "ent_status": 0,
-            "entitlement_id": "327611065602",
+            "entitlement_id": "<redacted:entitlement_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 0,
@@ -1101,7 +1101,7 @@
               "no_bonus_quota": true
             },
             "start_time": 1785759383,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788437783,
           "group_name": "用户福利",
@@ -1109,7 +1109,7 @@
           "is_hide": false,
           "is_last_period": false,
           "next_billing_time": 0,
-          "source_id": "327611065602",
+          "source_id": "<redacted:entitlement_id>",
           "status": 0,
           "usage": {
             "credits_amount": 1764.2052
@@ -1124,7 +1124,7 @@
             "currency": 0,
             "end_time": 1788191999,
             "ent_status": 0,
-            "entitlement_id": "free_utc20268_2112613667059747",
+            "entitlement_id": "free_utc20268_<redacted:user_id>",
             "product_extra": {
               "subscription_extra": {
                 "period_type": 0,
@@ -1151,7 +1151,7 @@
               "solo_agent_parallel_limit": 2
             },
             "start_time": 1785513600,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788191999,
           "is_hide": false,
@@ -1170,7 +1170,7 @@
             "currency": 1,
             "end_time": 1788191999,
             "ent_status": 0,
-            "entitlement_id": "monthly_bonus_20268_2112613667059747",
+            "entitlement_id": "monthly_bonus_20268_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 1,
@@ -1201,7 +1201,7 @@
               "solo_agent_parallel_limit": 2
             },
             "start_time": 1785513600,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788191999,
           "group_name": "每月登录积分",
@@ -1224,7 +1224,7 @@
             "currency": 1,
             "end_time": 1788438049,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260803_2112613667059747",
+            "entitlement_id": "checkin_20260803_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1242,7 +1242,7 @@
               "credits_limit": 200
             },
             "start_time": 1785759649,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788438049,
           "group_name": "每日签到",
@@ -1263,7 +1263,7 @@
             "currency": 1,
             "end_time": 1788492579,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260804_2112613667059747",
+            "entitlement_id": "checkin_20260804_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1281,7 +1281,7 @@
               "credits_limit": 200
             },
             "start_time": 1785814179,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788492579,
           "group_name": "每日签到",
@@ -1302,7 +1302,7 @@
             "currency": 1,
             "end_time": 1788537789,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260805_2112613667059747",
+            "entitlement_id": "checkin_20260805_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1320,7 +1320,7 @@
               "credits_limit": 200
             },
             "start_time": 1785859389,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788537789,
           "group_name": "每日签到",
@@ -1341,7 +1341,7 @@
             "currency": 1,
             "end_time": 1788632325,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260806_2112613667059747",
+            "entitlement_id": "checkin_20260806_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1359,7 +1359,7 @@
               "credits_limit": 200
             },
             "start_time": 1785953925,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788632325,
           "group_name": "每日签到",
@@ -1380,7 +1380,7 @@
             "currency": 1,
             "end_time": 1788771241,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260807_2112613667059747",
+            "entitlement_id": "checkin_20260807_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1398,7 +1398,7 @@
               "credits_limit": 200
             },
             "start_time": 1786092841,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1788771241,
           "group_name": "每日签到",
@@ -1419,7 +1419,7 @@
             "currency": 1,
             "end_time": 1789043450,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260810_2112613667059747",
+            "entitlement_id": "checkin_20260810_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1437,7 +1437,7 @@
               "credits_limit": 200
             },
             "start_time": 1786365050,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789043450,
           "group_name": "每日签到",
@@ -1458,7 +1458,7 @@
             "currency": 1,
             "end_time": 1789099507,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260811_2112613667059747",
+            "entitlement_id": "checkin_20260811_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1476,7 +1476,7 @@
               "credits_limit": 200
             },
             "start_time": 1786421107,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789099507,
           "group_name": "每日签到",
@@ -1497,7 +1497,7 @@
             "currency": 1,
             "end_time": 1789176578,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260812_2112613667059747",
+            "entitlement_id": "checkin_20260812_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1515,7 +1515,7 @@
               "credits_limit": 200
             },
             "start_time": 1786498178,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789176578,
           "group_name": "每日签到",
@@ -1536,7 +1536,7 @@
             "currency": 1,
             "end_time": 1789265695,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260813_2112613667059747",
+            "entitlement_id": "checkin_20260813_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1554,7 +1554,7 @@
               "credits_limit": 200
             },
             "start_time": 1786587295,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789265695,
           "group_name": "每日签到",
@@ -1575,7 +1575,7 @@
             "currency": 1,
             "end_time": 1789366781,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260814_2112613667059747",
+            "entitlement_id": "checkin_20260814_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1593,7 +1593,7 @@
               "credits_limit": 200
             },
             "start_time": 1786688381,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789366781,
           "group_name": "每日签到",
@@ -1614,7 +1614,7 @@
             "currency": 1,
             "end_time": 1789471212,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260815_2112613667059747",
+            "entitlement_id": "checkin_20260815_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1632,7 +1632,7 @@
               "credits_limit": 200
             },
             "start_time": 1786792812,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789471212,
           "group_name": "每日签到",
@@ -1653,7 +1653,7 @@
             "currency": 1,
             "end_time": 1789537262,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260816_2112613667059747",
+            "entitlement_id": "checkin_20260816_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1671,7 +1671,7 @@
               "credits_limit": 200
             },
             "start_time": 1786858862,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789537262,
           "group_name": "每日签到",
@@ -1692,7 +1692,7 @@
             "currency": 1,
             "end_time": 1789702184,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260818_2112613667059747",
+            "entitlement_id": "checkin_20260818_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1710,7 +1710,7 @@
               "credits_limit": 200
             },
             "start_time": 1787023784,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789702184,
           "group_name": "每日签到",
@@ -1731,7 +1731,7 @@
             "currency": 1,
             "end_time": 1789798230,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260819_2112613667059747",
+            "entitlement_id": "checkin_20260819_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1749,7 +1749,7 @@
               "credits_limit": 200
             },
             "start_time": 1787119830,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1789798230,
           "group_name": "每日签到",
@@ -1770,7 +1770,7 @@
             "currency": 1,
             "end_time": 1790067453,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260822_2112613667059747",
+            "entitlement_id": "checkin_20260822_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1788,7 +1788,7 @@
               "credits_limit": 200
             },
             "start_time": 1787389053,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1790067453,
           "group_name": "每日签到",
@@ -1809,7 +1809,7 @@
             "currency": 1,
             "end_time": 1790154827,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260823_2112613667059747",
+            "entitlement_id": "checkin_20260823_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1827,7 +1827,7 @@
               "credits_limit": 200
             },
             "start_time": 1787476427,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1790154827,
           "group_name": "每日签到",
@@ -1848,7 +1848,7 @@
             "currency": 1,
             "end_time": 1790214786,
             "ent_status": 0,
-            "entitlement_id": "checkin_20260824_2112613667059747",
+            "entitlement_id": "checkin_20260824_<redacted:user_id>",
             "product_extra": {
               "package_extra": {
                 "duration": 31,
@@ -1866,7 +1866,7 @@
               "credits_limit": 200
             },
             "start_time": 1787536386,
-            "user_id": "2112613667059747"
+            "user_id": "<redacted:user_id>"
           },
           "expire_time": 1790214786,
           "group_name": "每日签到",

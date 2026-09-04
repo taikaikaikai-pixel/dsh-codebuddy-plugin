@@ -28,7 +28,7 @@
  */
 
 import { createServer } from 'node:http'
-import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign, createPrivateKey } from 'node:crypto'
+import { createHash, generateKeyPairSync, randomBytes, randomInt, randomUUID, sign, createPrivateKey } from 'node:crypto'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
@@ -47,6 +47,17 @@ function normalizeExpiry(value) {
 
 function b64url(buf) {
   return Buffer.from(buf).toString('base64url')
+}
+
+/** HTML 转义（审计 [10]/[15]/[21]/[24]）：登录回调页以 text/html 应答，所有
+ *  来自 URL query / 上游响应的插值必须先转义，杜绝回环页上的脚本注入。 */
+function esc(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
 }
 
 /** 从设备身份生成出站 DeviceInfo（公钥用 SPKI base64，私钥永不出存储）。 */
@@ -100,8 +111,9 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
     const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' })
     const device = {
       clientId: CLIENT_ID_SOLO_LITE,
-      // 设备标识形态对齐官方日志：十进制设备 id + 64 hex 机器 id。
-      deviceId: String(Math.floor(Math.random() * 8.9e15) + 1e15),
+      // 设备标识形态对齐官方日志：十进制设备 id + 64 hex 机器 id。16 位、
+      // 首位非零——node:crypto 随机（审计 [16]：Math.random 可预测，凭据栈禁用）。
+      deviceId: Array.from({ length: 16 }, (_, i) => randomInt(i === 0 ? 1 : 0, 10)).join(''),
       machineId: randomBytes(32).toString('hex'),
       deviceName: 'DESKTOP-' + randomBytes(4).toString('hex').toUpperCase(),
       deviceModel: 'PC',
@@ -304,8 +316,12 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
         const q = url.searchParams
         const errCode = q.get('error_code')
         if (errCode) {
-          finish(`<h3>登录失败</h3><p>${errCode} ${q.get('error_msg') ?? ''}</p>`,
-            `登录失败：${errCode} ${q.get('error_msg') ?? ''}`)
+          const errMsg = q.get('error_msg') ?? ''
+          // query 是外部输入：进 text/html 前一律转义（审计 [10]/[15]/[21]/[24]）。
+          // pending.error 是 JSON 状态视图字段（设置卡按 React 文本节点渲染），
+          // 保持原文不双转义。
+          finish(`<h3>登录失败</h3><p>${esc(errCode)} ${esc(errMsg)}</p>`,
+            `登录失败：${errCode} ${errMsg}`)
           return
         }
         let authCode = null
@@ -331,7 +347,7 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
         })
         const parsed = parseExchangeResult(await res2.json().catch(() => null))
         if (parsed.error) {
-          finish(`<h3>Token 交换失败</h3><p>${parsed.error}</p>`, parsed.error)
+          finish(`<h3>Token 交换失败</h3><p>${esc(parsed.error)}</p>`, parsed.error)
           return
         }
         const auth = {
@@ -366,7 +382,8 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
         writeAuth({ ...readAuth(), auth, account })
         finish('<h3>登录成功</h3><p>可以回到 dsh 设置卡继续。</p>')
       } catch (err) {
-        finish(`<h3>登录处理异常</h3><p>${String(err?.message ?? err)}</p>`, String(err?.message ?? err))
+        const errMsg = String(err?.message ?? err)
+        finish(`<h3>登录处理异常</h3><p>${esc(errMsg)}</p>`, errMsg)
       }
     }
 

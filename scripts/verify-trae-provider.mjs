@@ -25,7 +25,7 @@
  *   node scripts/verify-trae-provider.mjs
  */
 
-import { createServer } from 'node:http'
+import { createServer, request as httpRequest } from 'node:http'
 import { createHash, verify as cryptoVerify, createPublicKey } from 'node:crypto'
 import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -48,6 +48,20 @@ function check(label, cond, detail = '') {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+// 原生 http 客户端：fetch 的 Host 是 forbidden header 伪造不了——Host 门测试专用。
+// 响应必须消费（踩坑 #29：不挂 data 监听流会 paused，'end' 永不派发）。
+function rawRequest(port, path, { method = 'GET', headers = {} } = {}) {
+  return new Promise((resolve, reject) => {
+    const req = httpRequest({ host: '127.0.0.1', port, path, method, headers }, (res) => {
+      let body = ''
+      res.on('data', (c) => { body += c })
+      res.on('end', () => resolve({ status: res.statusCode, body }))
+    })
+    req.on('error', reject)
+    req.end()
+  })
+}
 
 // ---------------------------------------------------------------------------
 // mock api.trae.cn (OAuth + account)
@@ -226,7 +240,7 @@ function mockTraeRemote({ authedToken = 'tok-live', failFirstCreates = 0, hangCr
 // mock Trae chat cloud (SSE)
 // ---------------------------------------------------------------------------
 
-function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false, sseError = null, hang = false, fnError = null } = {}) {
+function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = false, sseError = null, hang = false, fnError = null, providerModel = 'kimi-k2.6' } = {}) {
   const state = { requests: [] }
   const server = createServer((req, res) => {
     let raw = ''
@@ -290,7 +304,7 @@ function mockTraeChat({ authedToken = 'tok-live', status = 200, withTools = fals
       res.write('event: metadata\n')
       res.write(`data: ${JSON.stringify({ model: '', session_id: 's', prompt_completion_id: 0 })}\n\n`)
       res.write('event: timing_cost\n')
-      res.write(`data: ${JSON.stringify({ name: 'llm_raw_chat_v2', provider_model_name: 'kimi-k2.6' })}\n\n`)
+      res.write(`data: ${JSON.stringify({ name: 'llm_raw_chat_v2', provider_model_name: providerModel })}\n\n`)
       res.write('event: output\n')
       res.write(`data: ${JSON.stringify({ response: '你好', reasoning_content: null })}\n\n`)
       res.write('event: output\n')
@@ -374,7 +388,7 @@ try {
   check('client_id 用 SOLO Lite 分支', authUrl.searchParams.get('client_id') === 'en1oxy7wnw8j9n')
   const cb = authUrl.searchParams.get('auth_callback_url')
   check('回调 URL 在 127.0.0.1 且路径 /authorize', cb != null && /^http:\/\/127\.0\.0\.1:\d+\/authorize$/.test(cb))
-  check('设备双 id 已上 URL（machine_id/device_id）', (authUrl.searchParams.get('machine_id') ?? '').length === 64 && /^\d+$/.test(authUrl.searchParams.get('device_id') ?? ''))
+  check('设备双 id 已上 URL（machine_id/device_id，16 位首位非零——审计 [16] 形态锁）', (authUrl.searchParams.get('machine_id') ?? '').length === 64 && /^[1-9]\d{15}$/.test(authUrl.searchParams.get('device_id') ?? ''))
 
   // 模拟浏览器 302 回调
   const cbUrl = new URL(cb)
@@ -433,6 +447,21 @@ try {
   await fetch(cb2)
   await sleep(150)
   check('坏 AuthCode → pending.error 记录、无令牌', oauth2.oauthStatus().error.includes('10101') && !oauth2.oauthStatus().signedIn)
+
+  // XSS 回归锁（审计 [10]/[15]/[21]/[24]）：回调 query 的 error_code/error_msg
+  // 是外部输入，进 text/html 失败页前必须转义——不能出现原始 <script>/<img> 标签。
+  const oauthX = createTraeOAuth({
+    readAuth: () => store.read(),
+    writeAuth: (v) => writeFileSync(authPath, JSON.stringify(v)),
+  })
+  const sx = await oauthX.startOAuth(settings)
+  const cbX = new URL(new URL(sx.authUrl).searchParams.get('auth_callback_url'))
+  cbX.search = '?' + new URLSearchParams({ error_code: '<script>', error_msg: '<img src=x onerror=alert(1)>' }).toString()
+  const xssRes = await fetch(cbX)
+  const xssBody = await xssRes.text()
+  check('登录失败页 XSS 转义：query 参数不进原始 HTML',
+    xssRes.status === 200 && xssBody.includes('&lt;script&gt;') && xssBody.includes('&lt;img src=x onerror=alert(1)&gt;')
+    && !xssBody.includes('<script>') && !xssBody.includes('<img'))
 
   // 安全审计回归锁：traeLoginHost 基址门禁 + authUrl 解析构造
   // （providers/trae/oauth.js startOAuth——手改设置文件塞进 javascript: 之类
@@ -517,6 +546,13 @@ try {
   await sleep(80) // listening 事件异步回填 runtime.port
   const gwPort = traeRuntime.port
   check('网关监听临时端口', traeRuntime.running === true && gwPort > 0)
+
+  // Host 门回归锁（审计 [9]）：仅回环 Host 可达网关——非回环 Host 403 且不触上游；
+  // 白名单放行形态不误伤（fetch 伪造不了 Host，走原生 http 客户端）。
+  const evilHost = await rawRequest(gwPort, '/v1/models', { headers: { Host: 'evil.example.com' } })
+  check('Host 门：非回环 Host → 403', evilHost.status === 403, `status=${evilHost.status}`)
+  const ipv6Host = await rawRequest(gwPort, '/v1/models', { headers: { Host: '[::1]' } })
+  check('Host 门：回环白名单 Host（[::1]）正常放行', ipv6Host.status === 200 && (() => { try { return JSON.parse(ipv6Host.body).object === 'list' } catch { return false } })())
 
   // 流式
   const streamRes = await fetch(`http://127.0.0.1:${gwPort}/v1/chat/completions`, {
@@ -692,6 +728,37 @@ try {
   stop()
   chatMock.server.closeAllConnections?.()
   chatMock.server.close()
+
+  // SSE 注释行清洗回归锁（审计 [20]）：上游 provider_model_name 带 \r\n 时，
+  // reroute 注释行必须折叠为单行——不能在响应流里伪造 SSE 帧。
+  const injectMock = await mockTraeChat({ authedToken: 'tok-live', providerModel: 'evil\ndata: {"injected":true}\n\n' })
+  const rtInj = { running: false, port: null, lastError: null }
+  const gatewayInj = createTraeGateway({
+    settings: () => ({ ...settings, traeChatBaseURL: injectMock.base, maxConcurrentPerSession: 4 }),
+    withCredentials: async (attempt) => {
+      try { return { cred: cred3, res: await attempt(cred3), err: null } } catch (err) { return { cred: cred3, res: null, err } }
+    },
+    readAuthDevice: () => null,
+    readAuthMeta: () => ({ uid: 'u-001' }),
+    meter: { record: () => {} },
+    runtime: rtInj,
+    getCatalogIds: () => [],
+  })
+  const stopInj = gatewayInj.listen(0)
+  await sleep(80)
+  const injRes = await fetch(`http://127.0.0.1:${rtInj.port}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'glm-5.3', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const injText = await injRes.text()
+  check('SSE 清洗：reroute 注释行折叠换行（注入载荷不成帧）',
+    injRes.status === 200 && !injText.includes('{"injected":true}\n')
+    && injText.includes(': trae-reroute requested=glm-5.3 actual=evil data: {"injected":true} \n\n'),
+    injText.split('\n').find((l) => l.startsWith(': trae-reroute')) ?? '(no reroute line)')
+  check('SSE 清洗：流本体不受影响（[DONE] 正常收尾）', injText.includes('data: [DONE]'))
+  stopInj()
+  injectMock.server.closeAllConnections?.()
+  injectMock.server.close()
 
   // =========================================================================
   console.log('== remote 传输（chat_sessions，mock remote 云端）==')

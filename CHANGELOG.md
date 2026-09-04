@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.4 (2026-09-04)
+
+- **安全审计 30 项确认发现全闭环**（0.9.3 修 3 项，本轮 3 子代理并行修复 25 项 + 2 项记录性接受；发现清单 .audit-27.md 本地留存，不入库）：
+  - **providers/trae/gateway.js**：本地翻译网关入站 Host 门（非回环 Host 先 req.resume() 丢体再 403，防 LAN/跨网直连与 DNS rebinding）；SSE reroute 注释行插值清洗（[\r\n]+ 折叠为单空格，防帧注入）
+  - **providers/trae/oauth.js**：三处 finish() HTML 页插值（登录失败 errCode/error_msg、token 交换 error、异常 message）加 esc() 全转义（& 首位防双转义；pending.error 走 JSON→React 文本节点，保持原文）；deviceId 从 Math.random 换 node:crypto randomInt（16 位首位非零语义不变，无模偏差）
+  - **core/bridge.js**：createServer handler 入口 Host 门（provider 无关 hostIsLoopback helper，core 纯净性保持）；回环绑定核实已在位（127.0.0.1）
+  - **core/json-store.js**：全部落盘文件 writeFileSync 0600 + 既有文件 chmod 补齐（Windows ENOTSUP 静默忽略）——token/ECDSA 设备私钥/插件文件层/计量统一收紧；resolveEnvKey 删 `new RegExp(拼 envName)` 改逐行字符串解析（regex 注入根除，名字段语义逐点对齐）
+  - **index.js**：/dsh-tap/settings GET+POST 统一 localGuardFailure 门（Host 非回环 403——**LAN IP 访问设置卡自此被拒，有意收紧**；带 Origin 时与 Host 不一致 403）；validateBaseURL http 仅回环 hostname 放行（**LAN 明文 http 上游自此拒绝**，错误带原因）；trae dbPath 门（绝对路径 + 无 .. 段 + .db/.vscdb 扩展名）；模型 id 黑名单守卫（__proto__/constructor/prototype 及 `x.constructor` 型子路径，覆盖 setModelEnabled/setModelLimits/setTraeModelEnabled 三条 POST 写入通路）
+  - **docs/probes 证据脱敏**：17 文件约 273 处个人/账户标识（uid/uin/enterpriseId 族/手机号/user_id×85/IP/geo via 头/Windows 用户名）原位替换 `<redacted:字段>`，JSON/JSONL 逐行校验合法；scripts/probe-oauth.mjs 硬编码 enterpriseId 改 `CODEBUDDY_ENTERPRISE_ID` 环境变量注入；docs/rules/trae-surface.md 同源 PII 一并脱敏
+  - **.gitignore**：追加 .env*/\*.pem/\*.key/codebuddy-plugin\*.json/\*plugin-auth.json（覆盖 trae 令牌+设备私钥）/.credentials\*/.claude/ 等 9 行
+  - **记录性接受（不改，CHANGELOG 留痕）**：git 历史含旧版未脱敏证据——重写已推送历史需 force-push，代价大于收益，脱敏止于 HEAD；package-lock 源 registry.npmmirror.com 为国内镜像环境选择，sha512 完整性已钉
+  - **回归锁**：verify-trae-provider +5（Host 门 403 与 [::1] 放行——新增 rawRequest 原生客户端防 fetch 伪造 Host / SSE 注入帧清洗 / XSS 实体化 / deviceId 形态收紧，84 → **89**）；verify-bridge 新 **[13]** 节 +14（桥与 settings 的 Host 门、跨站 Origin 403、回环 GET 仍 200、dbPath 三态、原型污染拒收、明文 http 非回环 400、拒绝不落盘）；verify-core-generic 新 **[R7]** 节 +6（usage 文件 0600、resolveEnvKey 普通/带引号/元字符名/缺席名四态）
+  - 回归：verify-bridge（13 用例）/ verify-trae-provider（89）/ verify-core-generic / verify-providers / verify-rotation / verify-models --list（18 模型）全绿
+
 ## 0.9.3 (2026-09-04)
 
 - **全仓库安全审计落地三补丁**（7 维度并行审查 + 逐发现对抗验证：secrets-history / network-surface / credentials / injection / web-ui-xss / supply-chain-config，确认项 30、证伪 0；用户"把 3 个修复补丁直接打上，做好记录"驱动）：
