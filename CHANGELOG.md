@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.3 (2026-09-04)
+
+- **全仓库安全审计落地三补丁**（7 维度并行审查 + 逐发现对抗验证：secrets-history / network-surface / credentials / injection / web-ui-xss / supply-chain-config，确认项 30、证伪 0；用户"把 3 个修复补丁直接打上，做好记录"驱动）：
+  - **补丁 1（index.js）**：设置路由四个 POST 响应（apiKeysAdd 走通用 patch、modelSetEnabled / modelSetLimits / traeModelSetEnabled 走层叠重读）曾把**原始文件层（含明文 apiKey）整块回传浏览器**——GET 视图 f9aeeaa（踩坑 #26）已脱敏，POST 漏网。提取 `maskedUserLayer()` 统一四处置位；设置卡只消费 `user` 的顶层字段存在性（overriddenFor → hasOwnProperty），脱敏无损
+  - **补丁 2（providers/codebuddy/oauth.js）**：新增 `assertSafeAuthUrl` 出宿主门禁——上游响应给出的 authUrl 直送浏览器两个导航汇（lib/client.js 的 window.open / location.href），上游被劫持/投毒时可把用户导向钓鱼页或 `javascript:` 串。门禁在置位 oauthPending **之前**：拒绝时 pending 不激活（oauthStatus 不再外泄该 URL）、组合根 oauth-start 的 catch 回 502 + 原因。规则：scheme 一律 https（authUrl 与 baseURL 双双回环时例外——离线 verify 的 mock 上游走 127.0.0.1）；host 必须是发起 auth/state 的 baseURL 本身或官方登录站点族（tencent.com / workbuddy.cn / codebuddy.cn 子域放行，依据 docs/rules/gateway-facts.md 账户体系 + oauth-token 探针的 domain 证据）
+  - **补丁 3（providers/trae/oauth.js）**：`traeLoginHost` 基址前置校验（保存侧 validateBaseURL 之外的第二道）——手改设置文件塞进 `javascript:` 之类非法值时在**开回环服务之前**响亮失败（不留监听句柄），而非拼出可执行授权页 URL 直送浏览器；authUrl 构造从字符串拼接改 `new URL('/authorization?…', loginBase)` 路径绝对引用，杜绝基址带尾路径/尾斜杠时的 `//authorization` 双斜杠与路径串联
+  - **回归锁**：verify-bridge 新增 **[12]**（mock 网关补可投毒的 `/v2/plugin/auth/state`）：三条 POST 路径断言响应内明文 key 全脱敏 + 投毒 authUrl（钓鱼域 / javascript:）502 拒绝且 oauth-status 无外泄 + 回环对正例放行；verify-trae-provider 新增 3 断言（javascript: scheme 门 / 非法 URL 解析门 / URL 解析构造——路径绝对引用无双斜杠，81 → **84**）
+  - 回归：verify-bridge（12 用例含新 [12]）/ verify-trae-provider（84）/ verify-core-generic / verify-providers / verify-rotation / verify-models --list（18 模型）全绿
+
 ## 0.9.2 (2026-09-03)
 
 - **修复 v4-flash"经桥缓存命中率下降快"根因：桥逐分片隐式 utf8 解码损坏出站前缀**（踩坑 #28，完整证据链与机制分析 docs/diagnosis-cache-decline.md）：

@@ -835,6 +835,19 @@ function maskKey(key) {
   return `${key.slice(0, 4)}…${key.slice(-4)}`
 }
 
+/**
+ * File layer safe to ship to the browser: plaintext apiKeys[].key masked away.
+ * Same policy as the GET view — f9aeeaa covered GET only; the four POST
+ * responses that also carried the raw file layer regressed it. The card
+ * consumes `user` solely for top-level field presence (overriddenFor →
+ * hasOwnProperty), never nested key material — masking here is lossless.
+ */
+function maskedUserLayer(user) {
+  return Array.isArray(user.apiKeys)
+    ? { ...user, apiKeys: user.apiKeys.map((k) => ({ ...k, key: maskKey(k.key) })) }
+    : user
+}
+
 /** The GET view: resolved settings with secrets masked, plus OAuth status. */
 function settingsView(resolveNow) {
   const s = resolveNow()
@@ -847,9 +860,7 @@ function settingsView(resolveNow) {
     },
     // The raw file layer carries plaintext apiKeys[].key — never ship it to
     // the browser (the card only checks top-level field presence).
-    user: Array.isArray(user.apiKeys)
-      ? { ...user, apiKeys: user.apiKeys.map((k) => ({ ...k, key: maskKey(k.key) })) }
-      : user,
+    user: maskedUserLayer(user),
     fields: SETTINGS_FIELDS,
     oauth: provider.oauth.oauthStatus(),
     bridge: {
@@ -1136,7 +1147,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               sendJSON(response, 200, {
                 ok: true,
                 value: settingsView(resolveNow).value,
-                user: after,
+                user: maskedUserLayer(after),
                 models: settingsView(resolveNow).models,
               })
               applyLive()
@@ -1154,7 +1165,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               sendJSON(response, 200, {
                 ok: true,
                 value: settingsView(resolveNow).value,
-                user: after,
+                user: maskedUserLayer(after),
                 models: settingsView(resolveNow).models,
               })
               applyLive()
@@ -1170,7 +1181,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               sendJSON(response, 200, {
                 ok: true,
                 value: settingsView(resolveNow).value,
-                user: after,
+                user: maskedUserLayer(after),
                 trae: settingsView(resolveNow).trae,
               })
               applyLive()
@@ -1197,7 +1208,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
             }
             writeFileLayer(nextUser)
             applyLive()
-            sendJSON(response, 200, { ok: true, value: settingsView(resolveNow).value, user: nextUser })
+            sendJSON(response, 200, { ok: true, value: settingsView(resolveNow).value, user: maskedUserLayer(nextUser) })
           } catch (err) {
             sendJSON(response, 400, { ok: false, error: err.message })
           }

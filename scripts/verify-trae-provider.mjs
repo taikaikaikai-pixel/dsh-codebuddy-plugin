@@ -9,6 +9,9 @@
  *      - refresh path with DeviceProof VERIFIED by the mock using the public
  *        key our flow registered (proves the self-held ECDSA keypair works)
  *      - failure/timeout/logout semantics
+ *      - security regression: traeLoginHost base gate (javascript: / invalid
+ *        URL rejected BEFORE the loopback listener opens) and authUrl built
+ *        via URL parsing (path-absolute /authorization, no // doubling)
  *   2. catalog: fixture state.vscdb -> profiles (BYOK excluded, multimodal,
  *      ctx fallback), syncCatalog/catalogView/catalogIds
  *   3. gateway translation against a mock Trae cloud:
@@ -430,6 +433,37 @@ try {
   await fetch(cb2)
   await sleep(150)
   check('坏 AuthCode → pending.error 记录、无令牌', oauth2.oauthStatus().error.includes('10101') && !oauth2.oauthStatus().signedIn)
+
+  // 安全审计回归锁：traeLoginHost 基址门禁 + authUrl 解析构造
+  // （providers/trae/oauth.js startOAuth——手改设置文件塞进 javascript: 之类
+  // 非法基址时，必须在开回环服务之前响亮失败，而不是拼出可执行授权页 URL
+  // 直送浏览器导航；URL 拼接改 new URL() 路径绝对引用，杜绝 //authorization
+  // 双斜杠与基址路径串联）。
+  const oauth3 = createTraeOAuth({
+    readAuth: () => store.read(),
+    writeAuth: (v) => writeFileSync(authPath, JSON.stringify(v)),
+  })
+  let gateErr = null
+  await oauth3.startOAuth({ ...settings, traeLoginHost: 'javascript:alert(document.domain)' })
+    .catch((e) => { gateErr = e.message })
+  check('traeLoginHost=javascript: 在 listen 前被拒（scheme 门）',
+    gateErr === 'traeLoginHost 必须使用 http 或 https', gateErr)
+  let gateErr2 = null
+  await oauth3.startOAuth({ ...settings, traeLoginHost: '::not-a-url::' })
+    .catch((e) => { gateErr2 = e.message })
+  check('traeLoginHost 非法 URL 被拒（解析门）',
+    gateErr2 === 'traeLoginHost 不是合法 URL', gateErr2)
+  const s3 = await oauth3.startOAuth({ ...settings, traeLoginHost: 'https://login.example.test/prefix/' })
+  const u3 = new URL(s3.authUrl)
+  check('authUrl 解析构造：路径绝对引用（无 //authorization、无基址路径串联）',
+    u3.hostname === 'login.example.test' && u3.pathname === '/authorization'
+      && !s3.authUrl.includes('//authorization'),
+    s3.authUrl)
+  // 收尾：驱动一次坏回调关闭回环服务（不遗留监听句柄）
+  const cb3 = new URL(new URL(s3.authUrl).searchParams.get('auth_callback_url'))
+  cb3.search = '?' + new URLSearchParams({ authCodeInfo: JSON.stringify({ AuthCode: 'bogus' }) }).toString()
+  await fetch(cb3)
+  await sleep(150)
 
   mock.server.closeAllConnections?.()
   mock.server.close()

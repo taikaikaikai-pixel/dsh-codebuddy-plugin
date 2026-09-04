@@ -213,6 +213,22 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
   async function startOAuth(s) {
     if (pending.active) return { started: true, authUrl: pending.authUrl }
 
+    // 基址前置校验（开回环服务之前）：traeLoginHost 保存侧已过 validateBaseURL
+    // （组合根），但手改设置文件仍可能塞进 javascript: 之类非法值——在此响亮
+    // 失败，而不是拼出可执行授权页 URL 直送浏览器导航。与 codebuddy 的
+    // assertSafeAuthUrl 不同：本 URL 的 host 来自本地用户设置而非上游响应，
+    // 故只做基址校验、不做站点族校验。校验置于 listen 之前：失败时不遗留
+    // 回环监听句柄。
+    let loginBase
+    try {
+      loginBase = new URL(s.traeLoginHost)
+    } catch {
+      throw new Error('traeLoginHost 不是合法 URL')
+    }
+    if (loginBase.protocol !== 'http:' && loginBase.protocol !== 'https:') {
+      throw new Error('traeLoginHost 必须使用 http 或 https')
+    }
+
     const store = readAuth()
     const device = ensureDevice(store)
     const codeVerifier = b64url(randomBytes(48))
@@ -250,7 +266,10 @@ export function createTraeOAuth({ readAuth, writeAuth }) {
       code_challenge_method: 'S256',
       hide_saas_login: 'true',
     })
-    const authUrl = `${s.traeLoginHost}/authorization?${params.toString()}`
+    // URL 解析构造：合法 http(s) 基址 + 路径绝对引用恒可解析；基址带尾路径或
+    // 尾斜杠时以 /authorization 为准（旧字符串拼接会产出 `//authorization`
+    // 双斜杠或把基址路径串进授权页路径）。
+    const authUrl = new URL(`/authorization?${params.toString()}`, loginBase).toString()
 
     pending.active = true
     pending.authUrl = authUrl

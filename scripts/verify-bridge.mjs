@@ -27,6 +27,11 @@
  *      chars into 3×U+FFFD and drifted the outbound prefix every request)
  *  11. bridge listen EADDRINUSE degrades to a warning, never crashes
  *      (regression: an unhandled 'error' event took the whole process down)
+ *  12. settings POST responses mask plaintext apiKeys (regression: four POST
+ *      paths shipped the raw file layer — GET was masked in f9aeeaa, POST
+ *      was not), and oauth-start rejects an upstream-poisoned authUrl
+ *      before oauthPending activates (https + login-site-family gate;
+ *      loopback mock pairs pass)
  *
  * Usage: node scripts/verify-bridge.mjs   (no network, no credentials)
  */
@@ -49,7 +54,22 @@ process.env.CODEBUDDY_BRIDGE_LOG = join(process.env.DSH_HOME, 'bridge-log.jsonl'
 // ---------------------------------------------------------------- mock gateway
 
 const arrivals = [] // {path, stream, headers, at} in upstream-arrival order
+// [12] oauth-start 门禁用：auth/state 响应里的 authUrl（null → 回环默认值，
+// 即通过门禁的正例；置为投毒值即负例）。
+let oauthStateAuthUrl = null
 const upstream = createServer((req, res) => {
+  // OAuth 设备流第一步（安全审计回归锁 [12]）：authUrl 可投毒。
+  if (req.url.startsWith('/v2/plugin/auth/state')) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({
+      code: 0,
+      data: {
+        state: 'st-verify',
+        authUrl: oauthStateAuthUrl ?? `http://127.0.0.1:${upstream.address()?.port}/authorize`,
+      },
+    }))
+    return
+  }
   // Buffer 收集 + 一次解码：mock 自身不能带踩坑 #28 的缺陷，否则分片
   // 用例的损坏源是 mock 而不是被测桥，断言就测不到真东西。
   const chunks = []
@@ -499,6 +519,71 @@ async function main() {
     const stillUp = await withTimeout(chat({ model: 'm1', stream: true, messages: [] }).then((r) => r.text()), 3000)
     check('first bridge keeps serving afterwards', stillUp !== 'TIMEOUT' && stillUp.includes('[DONE]'))
     await new Promise((r) => squatter.close(r))
+  }
+
+  // ------------------------------------------- 12. POST masking + authUrl gate
+  // 安全审计回归锁（两补丁）：
+  //   a) index.js maskedUserLayer——四个 POST 响应（apiKeysAdd 走通用 patch、
+  //      modelSetEnabled / modelSetLimits 走层叠重读；traeModelSetEnabled 同型，
+  //      无 Trae 目录时不可驱动，形状与另两条层叠路径逐字相同）曾原样回传
+  //      文件层——明文 apiKey 下发浏览器（GET 视图 f9aeeaa 已脱敏，POST 漏网）。
+  //   b) providers/codebuddy/oauth.js assertSafeAuthUrl——上游投毒 authUrl
+  //      （钓鱼域 / javascript: 串）在置位 oauthPending 之前响亮失败，
+  //      oauthStatus 不外泄该 URL，组合根 oauth-start 回 502。
+  console.log('\n[12] settings POST responses mask keys; oauth-start gates authUrl')
+  {
+    const PLAIN = 'ck_secret_plaintext_2f9b5678'
+    const MASKED = 'ck_s…5678' // maskKey：首 4 … 尾 4
+
+    // 12a. 通用 patch 路径（apiKeysAdd）
+    let res = await callRoute(routes, { patch: { apiKeysAdd: { name: 'verify-mask', key: PLAIN } } })
+    const added = Array.isArray(res.json?.user?.apiKeys)
+      && res.json.user.apiKeys.find((k) => k?.name === 'verify-mask')
+    check('apiKeysAdd response ships masked key only',
+      res.json?.ok === true && added?.key === MASKED, JSON.stringify(added))
+    check('plaintext key absent from entire POST response', !JSON.stringify(res.json).includes(PLAIN))
+
+    // 12b. modelSetEnabled 层叠路径
+    res = await callRoute(routes, { patch: { modelSetEnabled: { id: 'deepseek-v3', enabled: false } } })
+    check('modelSetEnabled response ships masked key only',
+      res.json?.ok === true
+        && res.json?.user?.apiKeys?.some((k) => k?.name === 'verify-mask' && k?.key === MASKED)
+        && !JSON.stringify(res.json).includes(PLAIN),
+      JSON.stringify(res.json?.user?.apiKeys))
+
+    // 12c. modelSetLimits 层叠路径
+    res = await callRoute(routes, { patch: { modelSetLimits: { id: 'deepseek-v3', contextWindow: 65536 } } })
+    check('modelSetLimits response ships masked key only',
+      res.json?.ok === true
+        && res.json?.user?.apiKeys?.some((k) => k?.name === 'verify-mask' && k?.key === MASKED)
+        && !JSON.stringify(res.json).includes(PLAIN))
+
+    // 12d. oauth-start：上游投毒 authUrl（https 但钓鱼域）→ 502，pending 不激活
+    oauthStateAuthUrl = 'https://evil.example.com/authorize'
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('poisoned authUrl (foreign host) rejected with 502 + reason',
+      res.status === 502 && res.json?.ok === false
+        && /evil\.example\.com/.test(res.json?.error ?? ''),
+      `HTTP ${res.status} ${JSON.stringify(res.json)}`)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('rejected start leaves no pending authUrl leak',
+      res.json?.oauth?.pending === false && res.json?.oauth?.authUrl === ''
+        && !JSON.stringify(res.json).includes('evil.example.com'))
+
+    // 12e. oauth-start：javascript: 串（scheme 门）
+    oauthStateAuthUrl = 'javascript:alert(document.domain)'
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('javascript: authUrl rejected (scheme gate)',
+      res.status === 502 && /https/.test(res.json?.error ?? ''),
+      `HTTP ${res.status} ${JSON.stringify(res.json)}`)
+
+    // 12f. 正例：回环对（mock baseURL 与 authUrl 同为 127.0.0.1）放行
+    oauthStateAuthUrl = null
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('loopback pair passes the gate (200 + authUrl)',
+      res.status === 200 && res.json?.ok === true
+        && /^http:\/\/127\.0\.0\.1:\d+\/authorize$/.test(res.json?.authUrl ?? ''),
+      `HTTP ${res.status} ${res.json?.authUrl}`)
   }
 
   console.log(failures === 0 ? '\nall bridge checks passed' : `\n${failures} check(s) FAILED`)

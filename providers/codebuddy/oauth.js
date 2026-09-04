@@ -18,6 +18,37 @@ const AUTH_PENDING_CODE = 11217 // ERROR_CODES[11217]：三态同码，勿当"�
 const LOGIN_TIMEOUT_MS = 10 * 60 * 1000
 const LOGIN_POLL_INTERVAL_MS = 1000
 
+// 授权页允许的站点族：CodeBuddy（copilot.tencent.com）与 WorkBuddy
+// （www.workbuddy.cn）同账户体系（docs/rules/gateway-facts.md）；codebuddy.cn
+// 依据 docs/probes/oauth-token-2026-08-19.jsonl 的账户 domain 证据一并放行。
+const LOGIN_SITE_SUFFIXES = ['tencent.com', 'workbuddy.cn', 'codebuddy.cn']
+const isLoopbackHost = (h) => h === '127.0.0.1' || h === 'localhost' || h === '[::1]'
+
+/**
+ * 授权页出宿主前的门禁：authUrl 由上游响应原样给出，浏览器侧直送
+ * window.open / location.href（lib/client.js 两个汇）。上游被劫持/投毒时
+ * 必须在此响亮失败，而不是把用户导去钓鱼页或 javascript: 串：
+ *   - scheme 一律 https（authUrl 与 baseURL 双双回环时例外——离线 verify
+ *     的 mock 上游走 http://127.0.0.1）；
+ *   - host 必须是发起 auth/state 的 baseURL 本身或官方登录站点族（子域放行，
+ *     兼容代理转发不改写 body 的部署）。
+ */
+function assertSafeAuthUrl(authUrl, baseURL) {
+  let parsed
+  try { parsed = new URL(String(authUrl)) } catch { throw new Error('authUrl 不是合法 URL') }
+  let base
+  try { base = new URL(baseURL) } catch { throw new Error('baseURL 不是合法 URL') }
+  const loopbackPair = isLoopbackHost(parsed.hostname) && isLoopbackHost(base.hostname)
+  if (parsed.protocol !== 'https:' && !loopbackPair) {
+    throw new Error(`authUrl 必须使用 https（收到 ${parsed.protocol}//）`)
+  }
+  const hostOk = parsed.hostname === base.hostname || loopbackPair
+    || LOGIN_SITE_SUFFIXES.some((s) => parsed.hostname === s || parsed.hostname.endsWith(`.${s}`))
+  if (!hostOk) {
+    throw new Error(`authUrl 域名 ${parsed.hostname} 不在预期登录域（${base.hostname} 或 ${LOGIN_SITE_SUFFIXES.join(' / ')} 站点族）`)
+  }
+}
+
 /**
  * @param {{ readAuth: () => object, writeAuth: (v: object) => void }} deps
  *   令牌存储 IO（组合根绑定到 ~/.dsh/codebuddy-plugin-auth.json；令牌永不
@@ -108,6 +139,11 @@ export function createOAuth({ readAuth, writeAuth }) {
       throw new Error(`auth state error: ${body.code} ${body.msg ?? ''}`)
     }
     const { state, authUrl } = body.data
+    // 门禁在置位 oauthPending 之前：拒绝时 pending 不激活（oauthStatus 不再
+    // 外泄该 URL），组合根 oauth-start 的 catch 回 502 + 错误信息。缓存的
+    // oauthPending.authUrl（上方早退分支与 oauthStatus 视图）因此必已过检
+    // ——浏览器的两个导航汇（window.open / location.href）被同一单点覆盖。
+    assertSafeAuthUrl(authUrl, baseURL)
     oauthPending.active = true
     oauthPending.authUrl = authUrl
     oauthPending.error = ''
