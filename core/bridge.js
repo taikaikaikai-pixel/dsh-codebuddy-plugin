@@ -9,6 +9,16 @@
  * (excess queue, FIFO), and (c) aggregate the upstream SSE stream into
  * classic non-streaming OpenAI JSON for callers that need it.
  *
+ * Generic transport guardrails (no provider specifics involved):
+ *   - client hangup (res 'close' before completion) aborts the queued wait,
+ *     the upstream fetch and the SSE relay, and frees the limiter slot;
+ *   - every upstream attempt carries a first-byte timer
+ *     (`settings.upstreamFirstByteTimeoutMs`, default 45s) that fails fast
+ *     when the peer connects but never sends response headers — the timer
+ *     clears on headers, so long SSE streams are unaffected;
+ *   - an inbound body past 32MB is answered 413, not silently destroyed;
+ *   - aggregated chat.completion JSON carries the captured usage object.
+ *
  * Everything upstream-specific is injected through the `provider` adapter:
  *   bridgeHeaders()          static outbound headers for proxied calls
  *   transformChatPayload(p)  in-place rewrite of a parsed chat payload
@@ -46,6 +56,9 @@ import { join } from 'node:path'
 /** Hostnames a same-machine caller may present in Host (::1 bare for raw
  * Host values; URL-parsed IPv6 keeps its brackets). */
 const LOOPBACK_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+
+/** Inbound request-body ceiling; past it the caller gets a real 413. */
+const MAX_BODY_BYTES = 32 * 1024 * 1024
 
 /** True when the Host header (may carry a port) names the loopback. */
 export function hostIsLoopback(host) {
@@ -86,23 +99,41 @@ export function extractSessionId(headers, payload) {
 /**
  * Per-session concurrency governor: per-id in-flight counters with FIFO
  * waiting queues. acquire() resolves once this call may proceed.
+ *
+ * An optional AbortSignal covers the queued wait: when it fires while the
+ * call is still waiting, the waiter is removed from the queue and the
+ * promise rejects with signal.reason — a caller that went away must never
+ * be woken to fire upstream. A call that already holds its slot is
+ * unaffected (its release still comes from the caller's finally).
  */
 export class SessionLimiter {
   constructor() {
     this.inflight = new Map()
     this.queues = new Map()
   }
-  acquire(id, limit) {
+  acquire(id, limit, signal) {
     if (id === null) return Promise.resolve(() => {})
+    if (signal?.aborted) return Promise.reject(signal.reason ?? new Error('aborted'))
     const running = this.inflight.get(id) ?? 0
     if (running < limit) {
       this.inflight.set(id, running + 1)
       return Promise.resolve(() => this.release(id))
     }
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const q = this.queues.get(id) ?? []
-      q.push(() => resolve(() => this.release(id)))
+      const waiter = () => {
+        signal?.removeEventListener('abort', onAbort)
+        resolve(() => this.release(id))
+      }
+      const onAbort = () => {
+        const idx = q.indexOf(waiter)
+        if (idx >= 0) q.splice(idx, 1)
+        if (q.length === 0) this.queues.delete(id)
+        reject(signal.reason ?? new Error('aborted'))
+      }
+      q.push(waiter)
       this.queues.set(id, q)
+      signal?.addEventListener('abort', onAbort, { once: true })
     })
   }
   release(id) {
@@ -222,7 +253,8 @@ function summarizeChatPayload(rawBody, payload) {
 
 /**
  * @param {() => object} settings live-resolved settings (needs baseURL,
- *   sessionHeadersEnabled, sessionHeaderFormat, maxConcurrentPerSession)
+ *   sessionHeadersEnabled, sessionHeaderFormat, maxConcurrentPerSession;
+ *   upstreamFirstByteTimeoutMs optional, default 45000)
  * @param {object} provider upstream adapter (hooks listed at the top)
  * @param {(attempt: (cred: object) => Promise<Response>) => Promise<{cred: object|null, res: Response|null, err: Error|null}>} withCredentials
  *   credential-owning runner from the composition root
@@ -322,7 +354,9 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
             finish_reason: finishReason ?? 'stop',
           },
         ],
-        usage: {},
+        // The caller asked for classic JSON — give it the usage the stream
+        // carried ({} only when the upstream truly sent none).
+        usage: tap?.usage ?? {},
       }),
     )
   }
@@ -340,6 +374,24 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
     const isChat = req.url?.endsWith('/chat/completions') === true
     const logId = forensics.logPath() ? ++logSeq : 0
     const t0 = Date.now()
+
+    // Client-disconnect propagation: when the caller goes away before the
+    // response completed, abort everything downstream — the queued wait, the
+    // upstream fetch, and the SSE relay — and free the limiter slot (finally
+    // below). The signal is res 'close' with writableEnded === false: since
+    // Node 16, req 'close' fires on EVERY fully-received request body, so it
+    // cannot tell a hangup from a normal request; res 'close' can.
+    // Abort reasons carry name 'AbortError' so the rotation engine treats
+    // them as caller-side (no cooldown, no failover to the next key).
+    const clientAbort = new AbortController()
+    const onClientClose = () => {
+      if (res.writableEnded) return
+      const err = new Error('client disconnected')
+      err.name = 'AbortError'
+      err.clientDisconnected = true
+      clientAbort.abort(err)
+    }
+    res.on('close', onClientClose)
 
     // Parse the body only for chat (the session hint may live there); other
     // paths pass the bytes through untouched.
@@ -409,26 +461,58 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
       })
     }
 
-    // Concurrency gate only applies to chat (LLM calls).
-    const release = isChat ? await limiter.acquire(sessionId, s.maxConcurrentPerSession) : () => {}
+    // Concurrency gate only applies to chat (LLM calls). A caller that hangs
+    // up while queued rejects out of the wait and never reaches the upstream.
+    let release
+    try {
+      release = isChat ? await limiter.acquire(sessionId, s.maxConcurrentPerSession, clientAbort.signal) : () => {}
+    } catch {
+      logOut({ waitMs: Date.now() - t0, clientGone: true })
+      return
+    }
+    if (clientAbort.signal.aborted) {
+      // Woken in the same tick the caller disconnected: hand the slot back.
+      release()
+      logOut({ waitMs: Date.now() - t0, clientGone: true })
+      return
+    }
     const waitMs = Date.now() - t0
     // Header names the current credential candidate contributed; removed
     // before the next attempt so a stale identity header from a prior
     // candidate never leaks across failovers.
     let credHeaderNames = []
     try {
+      // First-byte guardrail: if the upstream connects but never sends
+      // response headers, fail fast instead of hanging the caller forever.
+      // The timer clears the moment headers arrive (fetch resolves), so a
+      // long SSE stream is unaffected. Per attempt, so a failover retry gets
+      // its own window.
+      const firstByteMs = Number(s.upstreamFirstByteTimeoutMs) > 0 ? Number(s.upstreamFirstByteTimeoutMs) : 45_000
       const { cred, res: upstream0, err } = await withCredentials((c) => {
         outHeaders.Authorization = c.authorization
         for (const name of credHeaderNames) delete outHeaders[name]
         credHeaderNames = Object.keys(c.headers ?? {})
         Object.assign(outHeaders, c.headers)
+        const attemptAbort = new AbortController()
+        const firstByteTimer = setTimeout(() => {
+          const err = new Error(`upstream sent no response headers within ${firstByteMs}ms (first-byte timeout)`)
+          err.name = 'AbortError'
+          err.firstByteTimeout = true
+          attemptAbort.abort(err)
+        }, firstByteMs)
         return fetch(`${s.baseURL}${req.url}`, {
           method: req.method,
           headers: outHeaders,
           body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body,
-        })
+          signal: AbortSignal.any([clientAbort.signal, attemptAbort.signal]),
+        }).finally(() => clearTimeout(firstByteTimer))
       })
       if (!cred || err) {
+        if (err?.clientDisconnected === true) {
+          // The caller hung up mid-handshake — nobody left to answer.
+          logOut({ waitMs, clientGone: true })
+          return
+        }
         // No credential at all (503) or every candidate failed at the network
         // layer (502) — the caller gets a classic JSON error either way. The
         // composition root flags its empty-candidate error with
@@ -483,8 +567,15 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
           }
         }
         if (!res.write(value)) {
-          await new Promise((resolve) => res.once('drain', resolve))
+          // Backpressure wait — but a hangup never drains; close wins the
+          // race and the aborted check below unwinds the loop instead of
+          // hanging on a dead socket (and writing to it).
+          await new Promise((resolve) => {
+            res.once('drain', resolve)
+            res.once('close', resolve)
+          })
         }
+        if (clientAbort.signal.aborted) throw clientAbort.signal.reason
       }
       res.end()
       if (usage && isChat && payload) {
@@ -492,6 +583,12 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
       }
       logOut({ status: upstream.status, waitMs, ttfbMs, usage })
     } catch (err) {
+      if (err?.clientDisconnected === true) {
+        // Caller hung up mid-stream: upstream is aborted, the slot frees in
+        // the finally, and res is already gone — nothing left to write.
+        logOut({ waitMs, clientGone: true })
+        return
+      }
       logOut({ err: String(err?.message ?? err) })
       throw err
     } finally {
@@ -528,14 +625,26 @@ export function createBridge({ settings, provider, withCredentials, meter, foren
       // corruption point.
       const chunks = []
       let received = 0
+      let oversize = false
       req.on('data', (c) => {
+        if (oversize) return // already answered 413; drain and drop the rest
         chunks.push(c)
         received += c.length
-        if (received > 32 * 1024 * 1024) req.destroy()
+        if (received > MAX_BODY_BYTES) {
+          oversize = true
+          chunks.length = 0
+          // Answer, don't destroy: a bare req.destroy() left the caller with
+          // a reset connection and no status. Connection: close because the
+          // unframed remainder of the upload must not poison keep-alive.
+          res.writeHead(413, { 'Content-Type': 'application/json', Connection: 'close' })
+          res.end(JSON.stringify({ error: { message: `request body too large (limit ${MAX_BODY_BYTES} bytes)` } }))
+        }
       })
       req.on('end', () => {
+        if (oversize) return
         const rawBody = Buffer.concat(chunks).toString('utf8')
         proxyUpstream(req, res, rawBody).catch((err) => {
+          if (res.destroyed || res.writableEnded) return // caller already gone
           if (!res.headersSent) res.writeHead(500)
           res.end(`stream bridge error: ${err.message}`)
         })

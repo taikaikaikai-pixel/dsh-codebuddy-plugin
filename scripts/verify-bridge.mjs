@@ -38,6 +38,15 @@
  *      as well as POST, trae-model-sync dbPath is path/extension-checked,
  *      __proto__-family model ids are rejected, and plaintext http
  *      baseURLs outside loopback fail validation without persisting
+ *  14. G8 per-model reasoning_effort injection (effortByModel level → wire
+ *      value; caller-set wins, off/table-less/unknown inject nothing)
+ *  15. cancellation & guardrails: mid-stream client disconnect aborts the
+ *      upstream fetch; a queued waiter whose caller hung up never fires
+ *      upstream and the aborted holder's slot is really released; bodies
+ *      past 32MB get a real 413 JSON (was: silent req.destroy); aggregated
+ *      non-streaming responses carry the captured usage (was: always {});
+ *      a silent upstream fails fast with 502 + first-byte reason
+ *      (upstreamFirstByteTimeoutMs, symmetric with the trae gateway)
  *
  * Usage: node scripts/verify-bridge.mjs   (no network, no credentials)
  */
@@ -63,6 +72,10 @@ const arrivals = [] // {path, stream, headers, at} in upstream-arrival order
 // [12] oauth-start 门禁用：auth/state 响应里的 authUrl（null → 回环默认值，
 // 即通过门禁的正例；置为投毒值即负例）。
 let oauthStateAuthUrl = null
+// [15] 取消传播用：model 'hang' = 永远不出响应头（首字节超时/排队 waiter 用
+// 例）；model 'drip' = 发一块后沉默（流式中途断连用例）。两者记录桥何时
+// 丢弃上游连接（res close 且 writableEnded=false = 对端中止，不是正常完成）。
+const hangCloses = []
 const upstream = createServer((req, res) => {
   // OAuth 设备流第一步（安全审计回归锁 [12]）：authUrl 可投毒。
   if (req.url.startsWith('/v2/plugin/auth/state')) {
@@ -96,6 +109,14 @@ const upstream = createServer((req, res) => {
     })
     setTimeout(() => {
       if (req.url.endsWith('/chat/completions')) {
+        // [15] 挂起模式：bridge 侧中止/超时时连接被丢弃，res close 为证。
+        if (parsed?.model === 'hang' || parsed?.model === 'drip') {
+          res.on('close', () => { hangCloses.push({ model: parsed.model, at: Date.now(), writableEnded: res.writableEnded }) })
+          if (parsed.model === 'hang') return // 永远不出响应头
+          res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+          res.write('data: {"id":"mock","choices":[{"index":0,"delta":{"content":"partial "}}]}\n\n')
+          return // 一块之后沉默
+        }
         res.writeHead(200, { 'Content-Type': 'text/event-stream' })
         res.end([
           'data: {"id":"mock","choices":[{"index":0,"delta":{"content":"hello "}}]}',
@@ -691,6 +712,108 @@ async function main() {
       !arrivals.slice(before).some((a) => a.raw.includes('reasoning_effort')))
 
     writeLayer({})
+  }
+
+  // ------------------------- 15. 取消传播 / 413 / 聚合 usage / 首字节超时
+  //   a) 流式中途客户端断连 → 桥中止上游 fetch（mock 'drip'：一块后沉默，
+  //      上游连接被丢弃以 res close 且 writableEnded=false 为证）。
+  //   b) 排队 waiter 断连后不被唤醒发上游；占用者中止后槽位真正归还
+  //      （新请求能完成——旧实现槽位随挂死请求永久泄漏）。
+  //   c) 请求体超 32MB → 413 JSON（旧行为 req.destroy()：客户端只见连接
+  //      被重置，拿不到任何状态码）。
+  //   d) 非流式聚合回传流里抓到的 usage（旧行为恒 {}）。
+  //   e) 上游收下不出头 → 首字节超时快速 502（与 trae 侧护栏对称）。
+  console.log('\n[15] cancellation propagation / 413 / aggregated usage / first-byte timeout')
+  {
+    // 15a. 流式中途断连
+    const hangBefore = hangCloses.length
+    const ac1 = new AbortController()
+    const res1 = await fetch(`${bridge}/v2/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'drip', stream: true, messages: [] }),
+      signal: ac1.signal,
+    })
+    const reader1 = res1.body.getReader()
+    await withTimeout(reader1.read(), 3000) // 第一块到达 = 流已建立
+    ac1.abort()
+    await reader1.read().catch(() => {}) // 客户端读取侧收尾
+    let abortedUpstream = false
+    for (let i = 0; i < 30 && !abortedUpstream; i++) {
+      await sleep(100)
+      abortedUpstream = hangCloses.slice(hangBefore).some((c) => c.model === 'drip' && c.writableEnded === false)
+    }
+    check('mid-stream client disconnect aborts the upstream fetch', abortedUpstream,
+      JSON.stringify(hangCloses.slice(hangBefore)))
+
+    // 15b. 排队 waiter 不泄漏
+    setLimit(1)
+    arrivals.length = 0
+    const sessQ = { 'X-Session-ID': 'sess-Q' }
+    const ac2 = new AbortController() // R1：'hang' 占住唯一槽位
+    const r1p = fetch(`${bridge}/v2/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...sessQ },
+      body: JSON.stringify({ model: 'hang', stream: true, messages: [] }),
+      signal: ac2.signal,
+    }).then((r) => r.text()).catch(() => 'aborted')
+    for (let i = 0; i < 40 && !arrivals.some((a) => a.sessionId === 'sess-Q'); i++) await sleep(50)
+    check('holder request reached upstream (the one slot is occupied)',
+      arrivals.filter((a) => a.sessionId === 'sess-Q').length === 1, JSON.stringify(arrivals.length))
+    const ac3 = new AbortController() // R2：排队后断连
+    const r2p = fetch(`${bridge}/v2/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...sessQ },
+      body: JSON.stringify({ model: 'm1', stream: true, messages: [] }),
+      signal: ac3.signal,
+    }).then((r) => r.text()).catch(() => 'aborted')
+    await sleep(150) // 足够进队列
+    ac3.abort()
+    await r2p
+    await sleep(400) // 若被错误唤醒，早已发到上游
+    check('queued waiter never fires upstream after its caller disconnects',
+      arrivals.filter((a) => a.sessionId === 'sess-Q').length === 1,
+      JSON.stringify(arrivals.map((a) => a.sessionId)))
+    ac2.abort() // R1 断连 → 槽位归还
+    await r1p
+    const r3 = await withTimeout(chat({ model: 'm1', stream: true, messages: [] }, sessQ).then((r) => r.text()), 4000)
+    check('limiter slot released after the aborted holder (fresh same-session request completes)',
+      r3 !== 'TIMEOUT')
+    setLimit(2)
+
+    // 15c. 超 32MB → 413（fetch/undici 对“边发边收早回”的容忍度不一，走裸 socket）
+    const bigLen = 33 * 1024 * 1024
+    const head413 = await new Promise((resolve, reject) => {
+      const sock = connect(bridgePort, '127.0.0.1', () => {
+        sock.write(`POST /v2/chat/completions HTTP/1.1\r\nHost: 127.0.0.1:${bridgePort}\r\nContent-Type: application/json\r\nContent-Length: ${bigLen}\r\nConnection: close\r\n\r\n`)
+        sock.write(Buffer.alloc(bigLen, 120)) // 'x' × 33MB
+      })
+      let out = ''
+      sock.on('data', (d) => { out += d.toString('utf8') })
+      // 413 在收满 32MB 即回；剩余字节撞在关闭中的 socket 上不算失败。
+      sock.on('error', (err) => { out ? resolve(out) : reject(err) })
+      sock.on('close', () => resolve(out))
+    })
+    check('body past 32MB gets a real 413 JSON (was: silent req.destroy)',
+      /HTTP\/1\.1 413/.test(head413) && /too large/.test(head413), head413.slice(0, 140))
+
+    // 15d. 聚合 usage 回传
+    const resU = await chat({ model: 'm1', stream: false, messages: [] })
+    const jsonU = await resU.json().catch(() => null)
+    check('aggregated chat.completion carries the captured usage (was: always {})',
+      jsonU?.usage?.total_tokens === 5 && jsonU?.usage?.credit === 0.01, JSON.stringify(jsonU?.usage))
+
+    // 15e. 首字节超时（层文件压到 schema 下限 1000ms；'hang' 永远不出头）
+    writeFileSync(join(process.env.DSH_HOME, 'codebuddy-plugin.json'),
+      JSON.stringify({ maxConcurrentPerSession: 2, upstreamFirstByteTimeoutMs: 1000 }) + '\n')
+    const t0 = Date.now()
+    const resT = await chat({ model: 'hang', stream: true, messages: [] })
+    const msT = Date.now() - t0
+    const jsonT = await resT.json().catch(() => null)
+    check('silent upstream fails fast with 502 + first-byte reason (default window is 45s)',
+      resT.status === 502 && /first-byte timeout/.test(jsonT?.error?.message ?? '') && msT < 5000,
+      `HTTP ${resT.status} in ${msT}ms: ${JSON.stringify(jsonT)}`)
+    setLimit(2) // 恢复层文件（顺带清掉临时超时档）
   }
 
   console.log(failures === 0 ? '\nall bridge checks passed' : `\n${failures} check(s) FAILED`)
