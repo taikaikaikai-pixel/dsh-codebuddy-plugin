@@ -46,7 +46,7 @@ flowchart TB
         direction LR
         G1["copilot.tencent.com"]
         G2["trae-api-cn.mchost.guru（聊天）<br/>api.trae.cn（OAuth / 额度）"]
-        G3["Ark · 百炼 · iFlow · Qwen · 自定义"]
+        G3["8 家 preset（Ark/百炼/DeepSeek/智谱/Moonshot/OpenRouter/iFlow/Qwen）· 自定义"]
     end
 
     H1 -->|"OpenAI 方言 + 哨兵 Authorization（:3901）"| L3

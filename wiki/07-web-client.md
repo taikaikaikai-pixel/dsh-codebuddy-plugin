@@ -15,7 +15,7 @@ window.__ModuleLoader__.load({
 ```
 
 - 包声明：`dsh.client.inject = ['@deepseek-ai/dsh-client-runtime', '@deepseek-ai/dsh-client-ui-slots']`，platform web。
-- 注册卡：带 `key: "dsh-tap"`（rc.7 keyed 槽位）——卡片渲染前提是宿主半 `settings.register('dsh-tap', Config)` 命名空间声明已落地（见 [02](02-composition-root.md)）。
+- 注册卡：dsh 0.1.5 起 `settings.plugin.item` 槽位改为设置页运行时声明——卡片经 `slots.inject("settings.plugin.item", () => slots.register({ name, key, inject }, Card))` 等声明落地再注册（直接 register 抢跑会**静默不出现**，踩坑 #30；带 rc.7 keyed 槽位回退写法）——卡片渲染前提是宿主半 `settings.register('dsh-tap', Config)` 命名空间声明已落地（见 [02](02-composition-root.md)）。
 
 ## 卡片结构（状态芯片 + 7 标签页，2026-09 重设计）
 

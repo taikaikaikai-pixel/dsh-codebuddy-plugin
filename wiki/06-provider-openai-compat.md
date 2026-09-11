@@ -13,18 +13,22 @@
 | `fetchOpenAIModels(baseURL, apiKey, {timeoutMs=15000})` | `GET {baseURL}/models`（Bearer key）→ `[{id}]` | 非 2xx 带上游摘要抛错；**HTTP 404 单独标记 `err.code = 'MODELS_ENDPOINT_404'`**（部分上游根本没有 /models 路由）；空清单抛错（key 可能无权限） |
 | `providerBlock(preset, models)` | 组装 llm-pi-ai provider 块 | `{displayName, api:'openai-completions', baseURL, apiKeyEnv, models}`——写 settings.yaml 的形状 |
 | `probeChatKey(baseURL, apiKey, model, {timeoutMs=20000})` | 最小 chat 探针验 key | `POST /chat/completions`（max_tokens 1）。认证失败的身体特征汇总：标准 401/403 或 `error.code=invalid_api_key` 类，或 **iFlow 方言 HTTP 200 + `{"status":"434"}`**；其余一切响应（含模型错误 4xx）视为 key 有效——服务器拒绝的是请求内容不是凭据；网络错误原样抛 |
-| `createOpenAICompatProvider(preset)` | 注册表入口 | `{ id, displayName, baseURL, keyRef, fallbackModels, fetchModels(apiKey), modelBlock(models) }`；`fetchModels`：/models 404 且 preset 带 fallbackModels 时 → probeChatKey 验 key + 兜底清单 |
+| `createOpenAICompatProvider(preset)` | 注册表入口 | `{ id, displayName, baseURL, keyRef, fallbackModels, staticCatalog, fetchModels(apiKey), modelBlock(models) }`；`fetchModels`：`staticCatalog` 且带 fallbackModels 时**不调 /models**（公开目录型上游），probeChatKey 验 key + 恒吃内置精选表；否则 /models 404 且 preset 带 fallbackModels 时 → probeChatKey 验 key + 兜底清单 |
 
-## 四个 preset
+## 八个 preset（0.9.5：4 → 8）
 
 | preset | id | baseURL | fallbackModels | 备注 |
 |--------|-----|---------|------------------|------|
 | [ark/index.js](../providers/ark/index.js) | `ark` | `https://ark.cn-beijing.volces.com/api/v3` | — | 火山引擎方舟 |
 | [bailian/index.js](../providers/bailian/index.js) | `bailian` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | — | 阿里云百炼兼容模式 |
+| [deepseek/index.js](../providers/deepseek/index.js) | `deepseek` | `https://api.deepseek.com/v1` | — | DeepSeek 官方（0.9.5 新增） |
+| [bigmodel/index.js](../providers/bigmodel/index.js) | `bigmodel` | `https://open.bigmodel.cn/api/paas/v4` | — | 智谱 BigModel（0.9.5 新增） |
+| [moonshot/index.js](../providers/moonshot/index.js) | `moonshot` | `https://api.moonshot.cn/v1` | — | Moonshot AI（0.9.5 新增） |
+| [openrouter/index.js](../providers/openrouter/index.js) | `openrouter` | `https://openrouter.ai/api/v1` | 10 个各厂旗舰 | **staticCatalog**：/models 公开（任意 key 200、437 条全量），探针验 key + 内置精选表（0.9.5 新增，E-P7） |
 | [iflow/index.js](../providers/iflow/index.js) | `iflow` | `https://apis.iflow.cn/v1` | qwen3-coder-plus 等 5 个 | **无 /models 端点**（404）；认证方言 status:434 |
 | [qwen/index.js](../providers/qwen/index.js) | `qwen` | `https://portal.qwen.ai/v1` | qwen3-coder-plus/flash | 无 /models；Qwen OAuth 免费额度 2026-04-15 停服，存量 token 大概率被拒（导入探针会如实拒绝） |
 
-preset 即 `createOpenAICompatProvider({id, displayName, baseURL, fallbackModels?})` 的调用结果，自定义上游在 `addExtraProvider` 里现场构造同形态适配器。
+preset 即 `createOpenAICompatProvider({id, displayName, baseURL, fallbackModels?, staticCatalog?})` 的调用结果，自定义上游在 `addExtraProvider` 里现场构造同形态适配器。
 
 ## 落点与纪律（踩坑 #21）
 

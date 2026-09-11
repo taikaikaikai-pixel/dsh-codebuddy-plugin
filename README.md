@@ -86,10 +86,10 @@ describe-image:
 
 ### 服务商
 
-key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark**、**阿里云百炼**、**iFlow 心流**、**Qwen Code**，或自定义（id + baseURL）+ API Key。
+key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark**、**阿里云百炼**、**DeepSeek**、**智谱 BigModel**、**Moonshot AI**、**OpenRouter**、**iFlow 心流**、**Qwen Code** 8 家，或自定义（id + baseURL）+ API Key。
 
 - 添加时会先实测 `GET /models` 验证 key 并拉取目录，模型写进选择器**免重启**（provider 块落 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.<id>`，key 落 `~/.dsh/.credentials.yaml` 的 `<ID>_API_KEY`，文件权限 0600，只回脱敏显示）
-- 无 `/models` 端点的上游（iFlow、Qwen Code）自动改用最小 chat 探针验 key + 内置模型清单兜底
+- 无 `/models` 端点的上游（iFlow、Qwen Code）自动改用最小 chat 探针验 key + 内置模型清单兜底；**公开目录型**上游（OpenRouter，/models 任意 key 都 200 且全量 400+ 条）走 chat 探针验 key + 静态精选目录（staticCatalog，docs/rules/extra-providers.md E-P7）
 - 每行可"刷新模型"（重拉目录）与"删除"（连同凭据一起清）
 - **本机凭据**行（v0.8 G7）：只读扫描本机已安装 agent 工具（iFlow、Qwen Code 等）的登录态/凭据文件，检测到即提示"一键导入"——导入是逐个确认的显式动作，扫描绝不回传任何 secret 值
 

@@ -206,7 +206,12 @@ export function createOAuth({ readAuth, writeAuth }) {
         oauthPending.active = false
       }
     }
-    poll()
+    // Fire-and-forget, but never unhandled: writeAuth (json-store) throws
+    // synchronously on ENOSPC/EACCES/EROFS, and an unhandled rejection here
+    // would take the whole dsh process down (Node ≥15 default).
+    poll().catch((err) => {
+      oauthPending.error = String(err?.message ?? err)
+    })
     return { started: true, authUrl }
   }
 

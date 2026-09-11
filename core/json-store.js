@@ -6,7 +6,7 @@
  * file knows anything about any specific upstream gateway.
  */
 
-import { readFileSync, writeFileSync, chmodSync, mkdirSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, renameSync, unlinkSync, mkdirSync, existsSync } from 'node:fs'
 import { dirname } from 'node:path'
 
 /** Read a JSON object file; missing/corrupt/non-object all yield {}. */
@@ -20,21 +20,35 @@ export function readJson(path) {
 }
 
 /**
- * Write a JSON object file (pretty, trailing newline), creating parents.
- * These files carry credentials/tokens, so they are created 0600 (same
- * discipline as the dsh credentials file). mode only applies at creation —
- * an existing world-readable file is chmod'ed back (a no-op failure on
- * Windows is silently tolerated).
+ * Atomic file write: tmp sibling + rename, so a crash mid-write never leaves
+ * a truncated file behind. Truncation is worse than a clean failure here —
+ * a truncated settings.yaml often stays VALID yaml and silently drops config,
+ * and a truncated JSON token store reads back as {} (tokens/keys gone).
+ * Every write lands a fresh inode, so `mode` reliably applies (credentials
+ * and token stores pass 0600 — same discipline as the dsh credentials file).
+ */
+export function writeTextAtomic(path, text, mode) {
+  mkdirSync(dirname(path), { recursive: true })
+  const tmp = `${path}.${process.pid}.tmp`
+  try {
+    writeFileSync(tmp, text, mode ? { mode } : undefined)
+    renameSync(tmp, path)
+  } catch (err) {
+    try {
+      unlinkSync(tmp)
+    } catch {
+      // tmp never created (e.g. mkdir failed) — nothing to sweep
+    }
+    throw err
+  }
+}
+
+/**
+ * Write a JSON object file (pretty, trailing newline) atomically.
+ * These files carry credentials/tokens, so they are written 0600.
  */
 export function writeJson(path, value) {
-  mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, JSON.stringify(value, null, 2) + '\n', { mode: 0o600 })
-  try {
-    // mode only applies at file creation — re-assert on pre-existing files.
-    chmodSync(path, 0o600)
-  } catch {
-    // e.g. Windows ENOTSUP — nothing to harden there
-  }
+  writeTextAtomic(path, JSON.stringify(value, null, 2) + '\n', 0o600)
 }
 
 /**

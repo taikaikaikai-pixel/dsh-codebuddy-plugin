@@ -11,5 +11,5 @@ codebuddy-plugin*.json
 *plugin-auth.json
 .credentials*
 .claude/
-.audit-27.md
+.audit-*.md
 .extract-audit.py

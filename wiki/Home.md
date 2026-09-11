@@ -48,7 +48,7 @@ dsh-tap/
 │   ├── codebuddy/            # CodeBuddy 上游适配器（headers/errors/oauth/catalog/agenttool/images）
 │   ├── trae/                 # TraeWork CN 适配器（oauth/catalog/gateway/remote/errors）
 │   ├── openai-compat.js      # key 型 OpenAI 兼容上游共享骨架
-│   ├── ark/ bailian/ iflow/ qwen/   # 四个 preset
+│   ├── ark/ bailian/ deepseek/ bigmodel/ moonshot/ openrouter/ iflow/ qwen/   # 八个 preset
 ├── lib/client.js             # 浏览器半：设置卡（React.createElement，无构建步骤）
 ├── scripts/                  # 验证（verify-*）/ 探测（probe-*）/ 测量（measure-*）脚本
 └── docs/                     # 规则裁判文档（rules/）、逆向档案（reverse/）、探测证据（probes/）

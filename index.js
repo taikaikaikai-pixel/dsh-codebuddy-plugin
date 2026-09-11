@@ -44,14 +44,14 @@
  *   via the refresh token with a single-flight lock.
  */
 
-import { chmodSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, dirname, isAbsolute, normalize, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import z from '@deepseek-ai/schemastery'
 
-import { readJson, writeJson, resolveEnvKey } from './core/json-store.js'
+import { readJson, writeJson, writeTextAtomic, resolveEnvKey } from './core/json-store.js'
 import { KeyRotator } from './core/rotation.js'
 import { createUsageMeter } from './core/usage-meter.js'
 import { createBridge } from './core/bridge.js'
@@ -63,6 +63,10 @@ import { PROVIDER_ID_RE, createOpenAICompatProvider } from './providers/openai-c
 import { scanLocalCredentials, readImportCredential } from './local-scan.js'
 import arkProvider from './providers/ark/index.js'
 import bailianProvider from './providers/bailian/index.js'
+import deepseekProvider from './providers/deepseek/index.js'
+import bigmodelProvider from './providers/bigmodel/index.js'
+import moonshotProvider from './providers/moonshot/index.js'
+import openrouterProvider from './providers/openrouter/index.js'
 import iflowProvider from './providers/iflow/index.js'
 import qwenProvider from './providers/qwen/index.js'
 
@@ -343,7 +347,7 @@ function syncModelsToDshSettings() {
   if (pristine) {
     if (!doc.getIn(path)) return false
     doc.deleteIn(path)
-    writeFileSync(DSH_SETTINGS_PATH, String(doc))
+    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
     return true
   }
   const next = YAML.parse(YAML.stringify(computeEffectiveModels()))
@@ -355,12 +359,12 @@ function syncModelsToDshSettings() {
   if (next.length === 0) {
     if (!doc.getIn(path)) return false
     doc.deleteIn(path)
-    writeFileSync(DSH_SETTINGS_PATH, String(doc))
+    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
     return true
   }
   if (YAML.stringify(current ?? null) === YAML.stringify(next)) return false
   doc.setIn(path, next)
-  writeFileSync(DSH_SETTINGS_PATH, String(doc))
+  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
   return true
 }
 
@@ -467,7 +471,7 @@ function syncModelsFromGateway(resolveNow) {
 }
 
 // ---------------------------------------------------------------------------
-// G6 多服务商注册表：key 型 OpenAI 兼容上游（火山 ark / 阿里百炼 / 自定义）。
+// G6 多服务商注册表：key 型 OpenAI 兼容上游（preset 见下 + 自定义）。
 // 机制与官方 CustomProviderCard 相同：provider 块写 settings.yaml 的
 // llm-pi-ai.providers.<id>（chokidar 热加载、原地换路由，免重启），key 写
 // ~/.dsh/.credentials.yaml 的 <ID>_API_KEY（凭据缝每请求活解析，免重启）。
@@ -477,7 +481,11 @@ function syncModelsFromGateway(resolveNow) {
 // codebuddy 路由。
 // ---------------------------------------------------------------------------
 
-const PROVIDER_PRESETS = [arkProvider, bailianProvider, iflowProvider, qwenProvider]
+const PROVIDER_PRESETS = [
+  arkProvider, bailianProvider,
+  deepseekProvider, bigmodelProvider, moonshotProvider, openrouterProvider,
+  iflowProvider, qwenProvider,
+]
 
 function readManagedProviders() {
   const list = readFileLayer().managedProviders
@@ -501,7 +509,7 @@ function writeCredential(ref, value) {
     doc = new YAML.Document()
   }
   doc.set(ref, value)
-  writeFileSync(DSH_CREDENTIALS_PATH, String(doc))
+  writeTextAtomic(DSH_CREDENTIALS_PATH, String(doc), 0o600)
   chmodSync(DSH_CREDENTIALS_PATH, 0o600)
 }
 
@@ -512,7 +520,7 @@ function deleteCredential(ref) {
   } catch {
     return
   }
-  if (doc.delete(ref)) writeFileSync(DSH_CREDENTIALS_PATH, String(doc))
+  if (doc.delete(ref)) writeTextAtomic(DSH_CREDENTIALS_PATH, String(doc), 0o600)
 }
 
 function readSettingsProviders() {
@@ -538,7 +546,7 @@ function writeProviderBlock(id, block) {
   } else {
     doc.setIn(path, YAML.parse(YAML.stringify(block)))
   }
-  writeFileSync(DSH_SETTINGS_PATH, String(doc))
+  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
 }
 
 /**
@@ -602,9 +610,10 @@ async function refreshExtraProviderModels(id) {
   if (!entry) throw new Error(`${id} 不在注册表里`)
   const key = resolveEnvKey(entry.keyRef, DSH_CREDENTIALS_PATH)
   if (!key) throw new Error(`凭据 ${entry.keyRef} 不在环境或 .credentials.yaml 里`)
-  // preset 条目带上 fallbackModels：无 /models 的上游刷新 = 探针复验 + 沿用兜底清单。
+  // preset 条目带上 fallbackModels/staticCatalog：无 /models 或静态目录的
+  // 上游刷新 = 探针复验 + 沿用兜底/内置清单。
   const presetHit = PROVIDER_PRESETS.find((p) => p.id === entry.preset)
-  const adapter = createOpenAICompatProvider({ ...entry, fallbackModels: presetHit?.fallbackModels })
+  const adapter = createOpenAICompatProvider({ ...entry, fallbackModels: presetHit?.fallbackModels, staticCatalog: presetHit?.staticCatalog })
   const models = await adapter.fetchModels(key)
   writeProviderBlock(id, adapter.modelBlock(models))
   return { id, modelCount: models.length }
@@ -814,7 +823,7 @@ function syncTraeModelsToDshSettings() {
   if (!models || models.length === 0) {
     if (!doc.getIn(path)) return false
     doc.deleteIn(path)
-    writeFileSync(DSH_SETTINGS_PATH, String(doc))
+    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
     return true
   }
   const block = {
@@ -827,7 +836,7 @@ function syncTraeModelsToDshSettings() {
   const current = doc.getIn(path)
   if (YAML.stringify(current ?? null) === YAML.stringify(block)) return false
   doc.setIn(path, YAML.parse(YAML.stringify(block)))
-  writeFileSync(DSH_SETTINGS_PATH, String(doc))
+  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
   return true
 }
 
@@ -949,7 +958,6 @@ function settingsView(resolveNow) {
     // The raw file layer carries plaintext apiKeys[].key — never ship it to
     // the browser (the card only checks top-level field presence).
     user: maskedUserLayer(user),
-    fields: SETTINGS_FIELDS,
     oauth: provider.oauth.oauthStatus(),
     bridge: {
       running: bridgeRuntime.running,
@@ -1417,7 +1425,10 @@ export function apply(ctx, config = {}) {
       bridgeRuntime.lastError = null
       return
     }
-    if (stopBridge && runningPort === s.bridgePort) return
+    // A wedged listener (EADDRINUSE race with a previous stop, or another
+    // instance holding the port) leaves lastError set — do NOT early-return
+    // then, or the bridge stays down until restart; fall through and retry.
+    if (stopBridge && runningPort === s.bridgePort && !bridgeRuntime.lastError) return
     if (stopBridge) stopBridge()
     runningPort = s.bridgePort
     bridgeRuntime.running = false
@@ -1452,7 +1463,9 @@ export function apply(ctx, config = {}) {
       syncTraeModelsToDshSettings()
       return
     }
-    if (stopTraeBridge && traeRunningPort === s.traeBridgePort) return
+    // Same wedge self-heal as syncBridge above: lastError set = not actually
+    // listening, retry instead of early-returning.
+    if (stopTraeBridge && traeRunningPort === s.traeBridgePort && !traeRuntime.lastError) return
     if (stopTraeBridge) stopTraeBridge()
     traeRunningPort = s.traeBridgePort
     traeRuntime.running = false

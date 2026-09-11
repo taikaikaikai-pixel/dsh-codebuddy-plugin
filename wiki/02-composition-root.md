@@ -126,10 +126,10 @@ flowchart TB
 | `writeProviderBlock(id, block)` | 写/删（`null`）`llm-pi-ai.providers.<id>` 块（注释保留编辑） |
 | `addExtraProvider({preset, id, baseURL, displayName, apiKey})` | 添加上游五步：preset/自定义校验 → 保留路由检查（`codebuddy` 禁用）→ **实测 GET /models 验 key**（失败不落盘）→ 写凭据 → 写块 → 登记册 |
 | `removeExtraProvider(id)` | 删块 + 删凭据 + 出登记册（外部已删块也照常清理） |
-| `refreshExtraProviderModels(id)` | 重拉模型清单（key 从 credentials.yaml 活解析；preset 条目带 fallbackModels） |
+| `refreshExtraProviderModels(id)` | 重拉模型清单（key 从 credentials.yaml 活解析；preset 条目的 fallbackModels/staticCatalog 一并透传） |
 | `extraProvidersView()` | 设置卡视图：登记册 × settings.yaml 实况对账，块被外部删除的条目自动出册；key 只回脱敏 |
 
-presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, iflowProvider, qwenProvider]`。
+presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, deepseekProvider, bigmodelProvider, moonshotProvider, openrouterProvider, iflowProvider, qwenProvider]`（0.9.5 起 8 家）。
 
 ## Trae 通道接线
 
