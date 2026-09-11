@@ -103,13 +103,22 @@ export async function probeChatKey(baseURL, apiKey, model, { timeoutMs = 20000 }
 /** 注册表入口：preset + 凭据引用 + 通用行为。 */
 export function createOpenAICompatProvider(preset) {
   const fallback = Array.isArray(preset.fallbackModels) ? preset.fallbackModels.filter((m) => typeof m === 'string' && m) : []
+  const staticCatalog = !!preset.staticCatalog
   return {
     id: preset.id,
     displayName: preset.displayName,
     baseURL: preset.baseURL,
     keyRef: keyRefFor(preset.id),
     fallbackModels: fallback,
+    staticCatalog,
     async fetchModels(apiKey) {
+      // 静态目录模式（公开目录型上游：/models 任意 key 都 200，
+      // 验不了 key，且全量 400+ 条进选择器不可用）：chat 探针验 key，
+      // 清单恒吃 fallbackModels 内置表（裁判 docs/rules/extra-providers.md E-P7）。
+      if (staticCatalog && fallback.length) {
+        await probeChatKey(preset.baseURL, apiKey, fallback[0])
+        return fallback.map((id) => ({ id }))
+      }
       try {
         return await fetchOpenAIModels(preset.baseURL, apiKey)
       } catch (err) {
