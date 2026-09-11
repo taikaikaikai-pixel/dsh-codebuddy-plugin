@@ -10,8 +10,9 @@
  *   GET  /v2/plugin/login/account?state=…    → {uid, nickname, …}
  *   POST /v2/plugin/auth/token/refresh       → 刷新（bogus refresh → 401+12153）
  *
- * 实例状态（refresh 单飞锁、pending 视图）在本工厂闭包内——组合根每个插件
- * 模块实例创建一个 provider 实例，隔离语义与重构前模块全局一致。
+ * 实例状态（refresh 单飞锁、poll 代际号、pending 视图、relogin 粘性信号）
+ * 在本工厂闭包内——组合根每个插件模块实例创建一个 provider 实例，隔离语义
+ * 与重构前模块全局一致。
  */
 
 const AUTH_PENDING_CODE = 11217 // ERROR_CODES[11217]：三态同码，勿当"未完成"以外含义用
@@ -56,6 +57,14 @@ function assertSafeAuthUrl(authUrl, baseURL) {
  */
 export function createOAuth({ readAuth, writeAuth }) {
   let refreshInFlight = null
+  // 进行中的 poll 代际号：logout 令其失效（poll 循环每步复查），logout 后
+  // 浏览器才完成的授权不再被写回——旧实现 while 只看 deadline，logout 后
+  // 10 分钟内授权仍会被重新登进。
+  let pollGeneration = 0
+  // refresh 实败（refreshOAuth 返回 undefined）的粘性信号：accessToken 还在
+  // 但聊天已全 503 时，oauthStatus 必须暴露"需重新登录"而不是只报已登录。
+  // 下次 refresh 成功自愈；logout 清除。
+  let reloginNeeded = false
   const oauthPending = { active: false, authUrl: '', error: '' }
 
   /**
@@ -79,9 +88,9 @@ export function createOAuth({ readAuth, writeAuth }) {
           method: 'POST',
           headers,
         })
-        if (!res.ok) return undefined
+        if (!res.ok) { reloginNeeded = true; return undefined }
         const body = await res.json().catch(() => null)
-        if (!body || body.code !== 0 || !body.data?.accessToken) return undefined
+        if (!body || body.code !== 0 || !body.data?.accessToken) { reloginNeeded = true; return undefined }
         const store = readAuth()
         store.auth = {
           accessToken: body.data.accessToken,
@@ -93,8 +102,10 @@ export function createOAuth({ readAuth, writeAuth }) {
           domain: body.data.domain ?? auth.domain,
         }
         writeAuth(store)
+        reloginNeeded = false // 刷新成功自愈
         return store.auth
       } catch {
+        reloginNeeded = true
         return undefined
       } finally {
         refreshInFlight = null
@@ -149,10 +160,15 @@ export function createOAuth({ readAuth, writeAuth }) {
     oauthPending.error = ''
 
     const poll = async () => {
+      const gen = pollGeneration
+      // 代际守卫：logout（或新一轮 start）后本 poll 已失效——循环每步复查，
+      // 拿到令牌写回前再复查一次，logout 后完成的授权绝不落盘。
+      const alive = () => gen === pollGeneration && oauthPending.active
       const deadline = Date.now() + LOGIN_TIMEOUT_MS
       try {
-        while (Date.now() < deadline) {
+        while (alive() && Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, LOGIN_POLL_INTERVAL_MS))
+          if (!alive()) return
           let response
           try {
             response = await fetch(`${baseURL}/v2/plugin/auth/token?state=${encodeURIComponent(state)}`, {
@@ -170,6 +186,7 @@ export function createOAuth({ readAuth, writeAuth }) {
             return
           }
           const token = body.data
+          if (!alive()) return // 令牌在飞期间用户已退出
           // Fetch the account facts before persisting.
           let account = {}
           try {
@@ -187,6 +204,7 @@ export function createOAuth({ readAuth, writeAuth }) {
           } catch {
             // account facts are best-effort; tokens alone still work
           }
+          if (!alive()) return // 账户信息在飞期间用户已退出
           writeAuth({
             auth: {
               accessToken: token.accessToken,
@@ -199,11 +217,14 @@ export function createOAuth({ readAuth, writeAuth }) {
             },
             account,
           })
+          reloginNeeded = false // 新登录落成，旧的 refresh 失败信号作废
           return
         }
-        oauthPending.error = '登录超时（10 分钟未完成）'
+        if (alive()) oauthPending.error = '登录超时（10 分钟未完成）'
       } finally {
-        oauthPending.active = false
+        // 只清自己这一代的 pending：代际已过时（logout 后用户可能又开始了
+        // 新一轮登录），老 poll 不得动新 poll 的状态。
+        if (gen === pollGeneration) oauthPending.active = false
       }
     }
     // Fire-and-forget, but never unhandled: writeAuth (json-store) throws
@@ -219,11 +240,16 @@ export function createOAuth({ readAuth, writeAuth }) {
   function oauthStatus() {
     const store = readAuth()
     const auth = store.auth
+    // 需重新登录信号：refresh 令牌本身已过期（refreshExpiresAt 存了就要查），
+    // 或最近一次 refresh 实败。accessToken 还在 ≠ 可用——此时聊天全 503，
+    // signedIn 照常报（令牌确实在），needsRelogin 单独暴露给 UI。
+    const refreshExpired = typeof auth?.refreshExpiresAt === 'number' && auth.refreshExpiresAt <= Date.now()
     return {
       pending: oauthPending.active,
       authUrl: oauthPending.active ? oauthPending.authUrl : '',
       error: oauthPending.error,
       signedIn: Boolean(auth?.accessToken),
+      needsRelogin: Boolean(auth?.accessToken) && (refreshExpired || reloginNeeded),
       account: store.account?.nickname ? {
         nickname: store.account.nickname,
         uid: store.account.uid,
@@ -234,7 +260,9 @@ export function createOAuth({ readAuth, writeAuth }) {
   }
 
   function logout() {
+    pollGeneration++ // 终止进行中的 poll：代际失效，授权晚到也不落盘
     writeAuth({})
+    reloginNeeded = false
     oauthPending.active = false
     oauthPending.error = ''
   }

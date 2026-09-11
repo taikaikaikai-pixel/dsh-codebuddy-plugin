@@ -47,6 +47,10 @@
  *      non-streaming responses carry the captured usage (was: always {});
  *      a silent upstream fails fast with 502 + first-byte reason
  *      (upstreamFirstByteTimeoutMs, symmetric with the trae gateway)
+ *  16. OAuth state machine: logout() terminates an in-flight poll
+ *      (generation guard — a post-logout authorization never signs back
+ *      in; uninterrupted poll still completes); a failed refresh and an
+ *      expired refreshExpiresAt both surface needsRelogin in oauthStatus
  *
  * Usage: node scripts/verify-bridge.mjs   (no network, no credentials)
  */
@@ -54,7 +58,7 @@
 import { createServer } from 'node:http'
 import { connect } from 'node:net'
 import { EventEmitter } from 'node:events'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -76,6 +80,10 @@ let oauthStateAuthUrl = null
 // 例）；model 'drip' = 发一块后沉默（流式中途断连用例）。两者记录桥何时
 // 丢弃上游连接（res close 且 writableEnded=false = 对端中止，不是正常完成）。
 const hangCloses = []
+// [16] OAuth 状态机用：token 轮询在 pending（11217）与 success（发令牌）间
+// 切换，refresh 在 ok 与 fail（401+12153，对齐 bogus refresh 实测）间切换。
+let oauthTokenMode = 'pending'
+let oauthRefreshMode = 'ok'
 const upstream = createServer((req, res) => {
   // OAuth 设备流第一步（安全审计回归锁 [12]）：authUrl 可投毒。
   if (req.url.startsWith('/v2/plugin/auth/state')) {
@@ -87,6 +95,26 @@ const upstream = createServer((req, res) => {
         authUrl: oauthStateAuthUrl ?? `http://127.0.0.1:${upstream.address()?.port}/authorize`,
       },
     }))
+    return
+  }
+  // [16] OAuth 设备流后续端点：refresh 必须先于 token 匹配（前缀包含关系）。
+  if (req.url.startsWith('/v2/plugin/auth/token/refresh')) {
+    res.writeHead(oauthRefreshMode === 'fail' ? 401 : 200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(oauthRefreshMode === 'fail'
+      ? { code: 12153, msg: 'invalid refresh token' }
+      : { code: 0, data: { accessToken: 'at-refreshed', expiresIn: 3600, refreshToken: 'rt-new', domain: '' } }))
+    return
+  }
+  if (req.url.startsWith('/v2/plugin/auth/token')) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(oauthTokenMode === 'success'
+      ? { code: 0, data: { accessToken: 'at-polled', expiresIn: 3600, refreshToken: 'rt-polled', refreshExpiresAt: 30 * 86400, domain: '' } }
+      : { code: 11217, msg: 'pending' }))
+    return
+  }
+  if (req.url.startsWith('/v2/plugin/login/account')) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ code: 0, data: { uid: 'u-verify', nickname: 'verify-account' } }))
     return
   }
   // Buffer 收集 + 一次解码：mock 自身不能带踩坑 #28 的缺陷，否则分片
@@ -814,6 +842,82 @@ async function main() {
       resT.status === 502 && /first-byte timeout/.test(jsonT?.error?.message ?? '') && msT < 5000,
       `HTTP ${resT.status} in ${msT}ms: ${JSON.stringify(jsonT)}`)
     setLimit(2) // 恢复层文件（顺带清掉临时超时档）
+  }
+
+  // --------------------------------------------- 16. OAuth 状态机回归
+  //   a) logout() 终止进行中的 poll（代际失效）：logout 后浏览器才完成的授权
+  //      不得写回令牌库（旧实现 while 只看 deadline——logout 后 10 分钟内
+  //      授权完成会被重新登进）。附正例对照：未打断的 poll 正常登录。
+  //   b) refresh 实败（/token/refresh 401）→ oauthStatus 暴露 needsRelogin
+  //      （旧实现 signedIn 只看 accessToken 在不在：UI 显示已登录、聊天
+  //      全 503 而无从察觉）。
+  //   c) refreshExpiresAt 已过期（此前存了从不检查的字段）→ 无需 refresh
+  //      尝试即暴露 needsRelogin。
+  console.log('\n[16] OAuth state machine: logout kills the poll; refresh failure surfaces needsRelogin')
+  {
+    const authFile = join(process.env.DSH_HOME, 'codebuddy-plugin-auth.json')
+    const readAuthFile = () => { try { return JSON.parse(readFileSync(authFile, 'utf8')) } catch { return {} } }
+
+    // 16a. logout 终止 poll
+    let res = await callRoute(routes, { action: 'oauth-start' })
+    check('oauth-start activates pending', res.status === 200 && res.json?.ok === true)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('pending after start', res.json?.oauth?.pending === true, JSON.stringify(res.json?.oauth))
+    res = await callRoute(routes, { action: 'oauth-logout' })
+    check('logout clears pending immediately', res.json?.oauth?.pending === false)
+    oauthTokenMode = 'success' // 浏览器在 logout 之后才完成授权
+    await sleep(2600) // >2 个轮询周期：poll 若没死早已写入令牌
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('authorization landing after logout never signs back in',
+      res.json?.oauth?.signedIn === false && !readAuthFile()?.auth?.accessToken,
+      JSON.stringify({ oauth: res.json?.oauth, file: readAuthFile() }))
+
+    // 正例对照：未被 logout 打断的 poll 正常完成登录
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('restart after logout works (pending again)', res.status === 200 && res.json?.ok === true)
+    let signed = false
+    for (let i = 0; i < 40 && !signed; i++) { await sleep(200); signed = Boolean(readAuthFile()?.auth?.accessToken) }
+    check('uninterrupted poll completes login (control)', signed)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('control login visible in status, needsRelogin false',
+      res.json?.oauth?.signedIn === true && res.json?.oauth?.needsRelogin === false, JSON.stringify(res.json?.oauth))
+    res = await callRoute(routes, { action: 'oauth-logout' })
+    oauthTokenMode = 'pending'
+    check('control cleanup: signed out again', res.json?.oauth?.signedIn === false)
+
+    // 16b. refresh 实败 → needsRelogin
+    await callRoute(routes, { patch: { authMode: 'oauth' } })
+    writeFileSync(authFile, JSON.stringify({
+      auth: { accessToken: 'at-expired', expiresAt: Date.now() - 1000, refreshToken: 'rt-bogus', refreshExpiresAt: Date.now() + 86400_000, domain: '' },
+      account: { uid: 'u-verify', nickname: 'verify' },
+    }) + '\n')
+    oauthRefreshMode = 'fail'
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('before any refresh attempt: signedIn true, needsRelogin false',
+      res.json?.oauth?.signedIn === true && res.json?.oauth?.needsRelogin === false, JSON.stringify(res.json?.oauth))
+    const chatRes = await chat({ model: 'm1', stream: true, messages: [] })
+    await chatRes.text()
+    check('chat with an unrefreshable token → 503 credential unavailable', chatRes.status === 503, `got ${chatRes.status}`)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('refresh failure exposed as needsRelogin (signedIn stays literally true)',
+      res.json?.oauth?.needsRelogin === true && res.json?.oauth?.signedIn === true, JSON.stringify(res.json?.oauth))
+
+    // 16c. refreshExpiresAt 过期（先 logout 清掉 16b 的粘性信号以隔离路径）
+    await callRoute(routes, { action: 'oauth-logout' })
+    writeFileSync(authFile, JSON.stringify({
+      auth: { accessToken: 'at-live', expiresAt: Date.now() + 3600_000, refreshToken: 'rt', refreshExpiresAt: Date.now() - 1000, domain: '' },
+    }) + '\n')
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('expired refreshExpiresAt alone surfaces needsRelogin (no attempt needed)',
+      res.json?.oauth?.needsRelogin === true && res.json?.oauth?.signedIn === true, JSON.stringify(res.json?.oauth))
+
+    // 收尾：登出并复原模式（本测试自建的层/令牌不向后传染）
+    await callRoute(routes, { action: 'oauth-logout' })
+    await callRoute(routes, { patch: { authMode: null } })
+    oauthRefreshMode = 'ok'
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('cleanup: signed out, mode restored, signal cleared',
+      res.json?.oauth?.signedIn === false && res.json?.oauth?.needsRelogin === false, JSON.stringify(res.json?.oauth))
   }
 
   console.log(failures === 0 ? '\nall bridge checks passed' : `\n${failures} check(s) FAILED`)
