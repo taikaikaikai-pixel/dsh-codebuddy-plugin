@@ -15,7 +15,7 @@
 | `web_search` / `web_fetch` 后端 | `providers/codebuddy/agenttool.js` | dsh 原生工具的 CodeBuddy `/agenttool` 实现 |
 | `image_generate` 生图工具 | `providers/codebuddy/images.js` | 混元生图 `/v2/images/generations` |
 | TraeWork CN 通道 | `providers/trae/`（翻译网关 `:3902`） | OAuth 订阅额度 + OpenAI↔Trae 协议翻译 + state.vscdb 目录 |
-| 多服务商注册表 | `providers/openai-compat.js` + presets | key 型 OpenAI 兼容上游（Ark/百炼/iFlow/Qwen/自定义），免重启热加载 |
+| 多服务商注册表 | `providers/openai-compat.js` + presets | key 型 OpenAI 兼容上游（Ark/百炼/DeepSeek/智谱/Moonshot/OpenRouter/Qwen/自定义），免重启热加载 |
 | Web UI 设置卡 | `lib/client.js` | 设置 → 插件配置 → CodeBuddy（九个功能分区） |
 
 ## 文档导航
@@ -48,7 +48,7 @@ dsh-tap/
 │   ├── codebuddy/            # CodeBuddy 上游适配器（headers/errors/oauth/catalog/agenttool/images）
 │   ├── trae/                 # TraeWork CN 适配器（oauth/catalog/gateway/remote/errors）
 │   ├── openai-compat.js      # key 型 OpenAI 兼容上游共享骨架
-│   ├── ark/ bailian/ deepseek/ bigmodel/ moonshot/ openrouter/ iflow/ qwen/   # 八个 preset
+│   ├── ark/ bailian/ deepseek/ bigmodel/ moonshot/ openrouter/ qwen/   # 七个 preset
 ├── lib/client.js             # 浏览器半：设置卡（React.createElement，无构建步骤）
 ├── scripts/                  # 验证（verify-*）/ 探测（probe-*）/ 测量（measure-*）脚本
 └── docs/                     # 规则裁判文档（rules/）、逆向档案（reverse/）、探测证据（probes/）

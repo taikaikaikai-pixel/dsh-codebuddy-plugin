@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.6 (2026-09-11)
+
+- **移除 iFlow preset**（2026-09 停服）：providers/iflow/、PROVIDER_PRESETS、local-scan 探测器、verify-providers 断言同步移除；openai-compat 骨架的 status:434 认证方言识别保留（历史 iFlow 形态，对任何同形态上游仍有效）；docs/rules/extra-providers.md 矩阵删行、E-P6 转历史留存。用户 settings.yaml 里已存在的 iflow 块不动
+
 ## 0.9.5 (2026-09-11)
 
 - **服务商页重构 + dsh 0.1.5 适配**：

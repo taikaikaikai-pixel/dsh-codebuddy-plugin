@@ -1,6 +1,6 @@
 # 06 — 多服务商注册表（openai-compat + presets + local-scan）
 
-> 目标：key 型 OpenAI 兼容上游（火山 Ark / 阿里百炼 / iFlow / Qwen / 自定义）接入 dsh 选择器，**免重启**（settings.yaml chokidar 热加载 + 凭据缝每请求活解析）。机制与 dsh 官方 CustomProviderCard 相同，落点相同、形状相同。裁判文档：`docs/rules/extra-providers.md`。
+> 目标：key 型 OpenAI 兼容上游（火山 Ark / 阿里百炼 / DeepSeek / 智谱 / Moonshot / OpenRouter / Qwen / 自定义）接入 dsh 选择器，**免重启**（settings.yaml chokidar 热加载 + 凭据缝每请求活解析）。机制与 dsh 官方 CustomProviderCard 相同，落点相同、形状相同。裁判文档：`docs/rules/extra-providers.md`。
 
 ## providers/openai-compat.js — 共享骨架
 
@@ -12,10 +12,10 @@
 | `keyRefFor(id)` | `(id) => '<ID>_API_KEY'` | 凭据命名惯例：大写、非字母数字折 `_` |
 | `fetchOpenAIModels(baseURL, apiKey, {timeoutMs=15000})` | `GET {baseURL}/models`（Bearer key）→ `[{id}]` | 非 2xx 带上游摘要抛错；**HTTP 404 单独标记 `err.code = 'MODELS_ENDPOINT_404'`**（部分上游根本没有 /models 路由）；空清单抛错（key 可能无权限） |
 | `providerBlock(preset, models)` | 组装 llm-pi-ai provider 块 | `{displayName, api:'openai-completions', baseURL, apiKeyEnv, models}`——写 settings.yaml 的形状 |
-| `probeChatKey(baseURL, apiKey, model, {timeoutMs=20000})` | 最小 chat 探针验 key | `POST /chat/completions`（max_tokens 1）。认证失败的身体特征汇总：标准 401/403 或 `error.code=invalid_api_key` 类，或 **iFlow 方言 HTTP 200 + `{"status":"434"}`**；其余一切响应（含模型错误 4xx）视为 key 有效——服务器拒绝的是请求内容不是凭据；网络错误原样抛 |
+| `probeChatKey(baseURL, apiKey, model, {timeoutMs=20000})` | 最小 chat 探针验 key | `POST /chat/completions`（max_tokens 1）。认证失败的身体特征汇总：标准 401/403 或 `error.code=invalid_api_key` 类，或 HTTP 200 + `{"status":"434"}`（历史 iFlow 方言，同形态通用）；其余一切响应（含模型错误 4xx）视为 key 有效——服务器拒绝的是请求内容不是凭据；网络错误原样抛 |
 | `createOpenAICompatProvider(preset)` | 注册表入口 | `{ id, displayName, baseURL, keyRef, fallbackModels, staticCatalog, fetchModels(apiKey), modelBlock(models) }`；`fetchModels`：`staticCatalog` 且带 fallbackModels 时**不调 /models**（公开目录型上游），probeChatKey 验 key + 恒吃内置精选表；否则 /models 404 且 preset 带 fallbackModels 时 → probeChatKey 验 key + 兜底清单 |
 
-## 八个 preset（0.9.5：4 → 8）
+## 七个 preset（0.9.5：4 → 8；0.9.6 移除停服的 iFlow）
 
 | preset | id | baseURL | fallbackModels | 备注 |
 |--------|-----|---------|------------------|------|
@@ -25,7 +25,6 @@
 | [bigmodel/index.js](../providers/bigmodel/index.js) | `bigmodel` | `https://open.bigmodel.cn/api/paas/v4` | — | 智谱 BigModel（0.9.5 新增） |
 | [moonshot/index.js](../providers/moonshot/index.js) | `moonshot` | `https://api.moonshot.cn/v1` | — | Moonshot AI（0.9.5 新增） |
 | [openrouter/index.js](../providers/openrouter/index.js) | `openrouter` | `https://openrouter.ai/api/v1` | 10 个各厂旗舰 | **staticCatalog**：/models 公开（任意 key 200、437 条全量），探针验 key + 内置精选表（0.9.5 新增，E-P7） |
-| [iflow/index.js](../providers/iflow/index.js) | `iflow` | `https://apis.iflow.cn/v1` | qwen3-coder-plus 等 5 个 | **无 /models 端点**（404）；认证方言 status:434 |
 | [qwen/index.js](../providers/qwen/index.js) | `qwen` | `https://portal.qwen.ai/v1` | qwen3-coder-plus/flash | 无 /models；Qwen OAuth 免费额度 2026-04-15 停服，存量 token 大概率被拒（导入探针会如实拒绝） |
 
 preset 即 `createOpenAICompatProvider({id, displayName, baseURL, fallbackModels?, staticCatalog?})` 的调用结果，自定义上游在 `addExtraProvider` 里现场构造同形态适配器。
@@ -42,7 +41,7 @@ preset 即 `createOpenAICompatProvider({id, displayName, baseURL, fallbackModels
 ```mermaid
 flowchart TB
     A(["addExtraProvider 输入<br/>（preset 或 id + baseURL + apiKey）"]) --> B{"preset 或自定义?"}
-    B -->|"preset"| C["PROVIDER_PRESETS 查找<br/>（ark / bailian / iflow / qwen）"]
+    B -->|"preset"| C["PROVIDER_PRESETS 查找<br/>（ark / bailian / … / qwen）"]
     B -->|自定义| D["id 正则校验 + validateBaseURL<br/>+ 现场构造适配器"]
     C --> E{"保留路由 / 已登记 /<br/>settings.yaml 已存在?"}
     D --> E
@@ -68,7 +67,6 @@ flowchart TB
 
 | source | 路径 | 可导入 | 说明 |
 |--------|------|--------|------|
-| `iflow` | `~/.iflow/settings.json` | ✔（apiKey + baseUrl） | key 型 |
 | `qwen` | `~/.qwen/oauth_creds.json` | ✔（access_token 当 Bearer 直用，端点 `https://<resource_url>/v1`） | OAuth；`expiredHint` 只是提示，有效性以导入探针实测为准 |
 | `codex` | `~/.codex/auth.json` | ✘ | ChatGPT responses 方言，v0.8 不支持 |
 | `codebuddy-cli` | `~/.codebuddy/` | ✘ | 登录态在 keyring/内存；本插件 OAuth 已覆盖同一网关 |

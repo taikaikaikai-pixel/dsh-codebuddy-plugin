@@ -82,16 +82,17 @@ describe-image:
 
 - **勾选启用/禁用**：勾选状态 = 是否出现在对话模型选择器（写入 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.codebuddy.models` 覆盖层，下次请求生效，无需重启）
 - **行内调节上下文/输出上限**：ctx 与输出两栏可直接改（覆盖值存 `modelState.overrides`），不得超过目录给定的该模型实际上限；清空输入框即恢复目录默认
-- 徽标区分来源（"插件"静态 / "目录"网关）与能力（CLI / 图 / 思考档位）
+- **逐模型思考强度**：静态清单带档位表的模型行内出下拉框（默认 / off / low / medium / high / max 中该模型实际支持的档），所选档位存档 `effortByModel`，桥出站按档位表注入 `reasoning_effort`；选"默认"即不注入，请求方显式携带时不覆盖
+- 徽标区分来源（"插件"静态 / "目录"网关）与能力（CLI / 图）；**思考强度逐模型可调**（档位 select 存 `effortByModel`，桥出站注入 `reasoning_effort`）
 
 ### 服务商
 
-key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark**、**阿里云百炼**、**DeepSeek**、**智谱 BigModel**、**Moonshot AI**、**OpenRouter**、**iFlow 心流**、**Qwen Code** 8 家，或自定义（id + baseURL）+ API Key。
+key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark**、**阿里云百炼**、**DeepSeek**、**智谱 BigModel**、**Moonshot AI**、**OpenRouter**、**Qwen Code** 7 家，或自定义（id + baseURL）+ API Key。
 
 - 添加时会先实测 `GET /models` 验证 key 并拉取目录，模型写进选择器**免重启**（provider 块落 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.<id>`，key 落 `~/.dsh/.credentials.yaml` 的 `<ID>_API_KEY`，文件权限 0600，只回脱敏显示）
-- 无 `/models` 端点的上游（iFlow、Qwen Code）自动改用最小 chat 探针验 key + 内置模型清单兜底；**公开目录型**上游（OpenRouter，/models 任意 key 都 200 且全量 400+ 条）走 chat 探针验 key + 静态精选目录（staticCatalog，docs/rules/extra-providers.md E-P7）
+- 无 `/models` 端点的上游（Qwen Code）自动改用最小 chat 探针验 key + 内置模型清单兜底；**公开目录型**上游（OpenRouter，/models 任意 key 都 200 且全量 400+ 条）走 chat 探针验 key + 静态精选目录（staticCatalog，docs/rules/extra-providers.md E-P7）
 - 每行可"刷新模型"（重拉目录）与"删除"（连同凭据一起清）
-- **本机凭据**行（v0.8 G7）：只读扫描本机已安装 agent 工具（iFlow、Qwen Code 等）的登录态/凭据文件，检测到即提示"一键导入"——导入是逐个确认的显式动作，扫描绝不回传任何 secret 值
+- **本机凭据**行（v0.8 G7）：只读扫描本机已安装 agent 工具（Qwen Code 等）的登录态/凭据文件，检测到即提示"一键导入"——导入是逐个确认的显式动作，扫描绝不回传任何 secret 值
 
 ### 网络搜索与抓取
 

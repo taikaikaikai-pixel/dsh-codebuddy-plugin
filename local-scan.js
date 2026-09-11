@@ -35,20 +35,6 @@ function exists(path) {
 
 /** 各工具探测器。新增工具 = 往这里加一条（保持只读）。 */
 const DETECTORS = [
-  function iflow() {
-    const settings = readJsonSafe(join(HOME, '.iflow', 'settings.json'))
-    if (!settings) return null
-    const apiKey = typeof settings.apiKey === 'string' && settings.apiKey ? settings.apiKey : null
-    const baseURL = typeof settings.baseUrl === 'string' && settings.baseUrl.startsWith('http')
-      ? settings.baseUrl : 'https://apis.iflow.cn/v1'
-    if (!apiKey) {
-      return { source: 'iflow', label: 'iFlow', path: '~/.iflow/settings.json', kind: 'apikey', importable: false, reason: 'settings.json 里没有 apiKey' }
-    }
-    return {
-      source: 'iflow', label: 'iFlow', path: '~/.iflow/settings.json', kind: 'apikey', importable: true,
-      detail: { import: { id: 'iflow', displayName: 'iFlow', baseURL, keyFrom: { file: join(HOME, '.iflow', 'settings.json'), field: 'apiKey' } } },
-    }
-  },
   function qwen() {
     const creds = readJsonSafe(join(HOME, '.qwen', 'oauth_creds.json'))
     if (!creds) return null

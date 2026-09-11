@@ -656,6 +656,43 @@ async function main() {
       res.json?.value?.baseURL === `http://127.0.0.1:${upstreamPort}`, res.json?.value?.baseURL)
   }
 
+  // ------------------------------------------------- 14. G8 思考强度注入
+  //   文件层 effortByModel 只存档位名；桥出站按静态清单 reasoningEfforts 表
+  //   注入线值——调用方显式携带不覆盖、off（线值 null）不注入、无表模型与
+  //   非法档位不注入。
+  console.log('\n[14] G8 per-model reasoning_effort injection')
+  {
+    const layerPath = join(process.env.DSH_HOME, 'codebuddy-plugin.json')
+    const writeLayer = (obj) => writeFileSync(layerPath, JSON.stringify(obj) + '\n')
+
+    writeLayer({ effortByModel: { 'deepseek-v4-pro': 'high' } })
+    let before = arrivals.length
+    await chat({ model: 'deepseek-v4-pro', stream: false, messages: [] })
+    check('effortByModel high → reasoning_effort injected upstream',
+      arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"high"')))
+
+    before = arrivals.length
+    await chat({ model: 'deepseek-v4-pro', stream: false, reasoning_effort: 'low', messages: [] })
+    check('caller-set reasoning_effort never overridden',
+      arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"low"'))
+        && !arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"high"')))
+
+    writeLayer({ effortByModel: { 'deepseek-v4-pro': 'off' } })
+    before = arrivals.length
+    await chat({ model: 'deepseek-v4-pro', stream: false, messages: [] })
+    check('off (wire null) injects nothing',
+      !arrivals.slice(before).some((a) => a.raw.includes('reasoning_effort')))
+
+    writeLayer({ effortByModel: { 'deepseek-v3': 'high', 'deepseek-v4-pro': 'bogus' } })
+    before = arrivals.length
+    await chat({ model: 'deepseek-v3', stream: false, messages: [] })
+    await chat({ model: 'deepseek-v4-pro', stream: false, messages: [] })
+    check('table-less model and unknown level both inject nothing',
+      !arrivals.slice(before).some((a) => a.raw.includes('reasoning_effort')))
+
+    writeLayer({})
+  }
+
   console.log(failures === 0 ? '\nall bridge checks passed' : `\n${failures} check(s) FAILED`)
   process.exit(failures === 0 ? 0 : 1)
 }

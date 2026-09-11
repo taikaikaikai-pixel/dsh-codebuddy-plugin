@@ -39,6 +39,7 @@
 | `imageGenModel` | string（`hunyuan-image-v3.0-art`） | 生图模型 |
 | `keyCooldownMs` | ≥100（60000） | 失败 Key 冷却时长 |
 | `quotaTotalManual` | ≥0（0） | api-key 模式手填总额度（估算档；OAuth 用真实 API） |
+| `effortByModel` | dict<string,string>（{}） | G8 逐模型思考强度：档位名 → 桥出站注入 `reasoning_effort` 线值（off 线值 null/无表模型/非法档位均不注入；调用方显式携带不覆盖） |
 | `traeEnabled` | bool（false） | TraeWork CN 通道总开关 |
 | `traeAuthBaseURL` | string（`https://api.trae.cn`） | OAuth 域 |
 | `traeChatBaseURL` | string（`https://trae-api-cn.mchost.guru`） | 聊天网关域 |
@@ -129,7 +130,7 @@ flowchart TB
 | `refreshExtraProviderModels(id)` | 重拉模型清单（key 从 credentials.yaml 活解析；preset 条目的 fallbackModels/staticCatalog 一并透传） |
 | `extraProvidersView()` | 设置卡视图：登记册 × settings.yaml 实况对账，块被外部删除的条目自动出册；key 只回脱敏 |
 
-presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, deepseekProvider, bigmodelProvider, moonshotProvider, openrouterProvider, iflowProvider, qwenProvider]`（0.9.5 起 8 家）。
+presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, deepseekProvider, bigmodelProvider, moonshotProvider, openrouterProvider, qwenProvider]`（0.9.5 起 8 家，0.9.6 移除停服的 iFlow 后 7 家）。
 
 ## Trae 通道接线
 

@@ -39,6 +39,7 @@ const LOG_HEADER_NAMES = [
  *   envKey: (envName: string|undefined) => string|null,
  *   withKeyRotation: (settingsFn: () => object, attempt: Function) => Promise<object>,
  *   resolveCredential: (settingsFn: () => object) => Promise<object|null>,
+ *   effortWireFor: (model: string) => string|undefined, // G8 思考强度线值（可无）
  *   dshHome: string,
  * }} deps 组合根注入的 core 原语与凭据编排（迟绑定箭头，循环引用靠它解开）
  */
@@ -78,6 +79,13 @@ export function createCodeBuddyProvider(deps) {
         for (const m of payload.messages) {
           if (m?.role === 'developer') m.role = 'system'
         }
+      }
+      // G8 思考强度注入：effortWireFor 只在档位线值非空时返回（off 的线值
+      // 是 null = 省略参数；无表模型/非法档位同）。调用方（pi-ai / dsh 核心
+      // UI）显式携带 reasoning_effort 时绝不覆盖。
+      if (payload && payload.reasoning_effort == null) {
+        const wire = deps.effortWireFor?.(payload.model)
+        if (wire) payload.reasoning_effort = wire
       }
     },
 

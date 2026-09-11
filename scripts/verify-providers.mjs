@@ -9,7 +9,7 @@
  *   5. /models 404 + fallbackModels + bad key (std 401 invalid_api_key) → throws
  *   6. iFlow dialect: 200 + {"status":"434"} → auth fail; 200 + choices → ok
  *   7. providerBlock shape (apiKeyEnv convention)
- *   8. shipped presets: baseURL 钉选；iflow/qwen 兜底、openrouter staticCatalog
+ *   8. shipped presets: baseURL 钉选；qwen 兜底、openrouter staticCatalog
  *   9. staticCatalog 形态：公开 /models 不调不验，chat 探针验 key，吃内置清单
  *
  * Usage: node scripts/verify-providers.mjs   (no network, no credentials)
@@ -24,7 +24,6 @@ import deepseek from '../providers/deepseek/index.js'
 import bigmodel from '../providers/bigmodel/index.js'
 import moonshot from '../providers/moonshot/index.js'
 import openrouter from '../providers/openrouter/index.js'
-import iflow from '../providers/iflow/index.js'
 import qwen from '../providers/qwen/index.js'
 
 let failures = 0
@@ -127,9 +126,8 @@ const GOOD = 'sk-good-key'
 {
   check('8a ark/bailian/deepseek/bigmodel/moonshot 无兜底（有真 /models）',
     [ark, bailian, deepseek, bigmodel, moonshot].every((p) => p.fallbackModels.length === 0 && !p.staticCatalog))
-  check('8b iflow/qwen 带兜底清单且首项可作探针模型',
-    iflow.fallbackModels.length >= 2 && qwen.fallbackModels.length >= 1
-      && typeof iflow.fallbackModels[0] === 'string' && typeof qwen.fallbackModels[0] === 'string')
+  check('8b qwen 带兜底清单且首项可作探针模型',
+    qwen.fallbackModels.length >= 1 && typeof qwen.fallbackModels[0] === 'string')
   check('8c preset baseURL 不被意外改动',
     ark.baseURL === 'https://ark.cn-beijing.volces.com/api/v3'
       && bailian.baseURL === 'https://dashscope.aliyuncs.com/compatible-mode/v1'
@@ -137,7 +135,6 @@ const GOOD = 'sk-good-key'
       && bigmodel.baseURL === 'https://open.bigmodel.cn/api/paas/v4'
       && moonshot.baseURL === 'https://api.moonshot.cn/v1'
       && openrouter.baseURL === 'https://openrouter.ai/api/v1'
-      && iflow.baseURL === 'https://apis.iflow.cn/v1'
       && qwen.baseURL === 'https://portal.qwen.ai/v1')
   check('8d openrouter 静态目录：staticCatalog + 内置精选清单（id 含 / 且去重）',
     openrouter.staticCatalog === true && openrouter.fallbackModels.length >= 5

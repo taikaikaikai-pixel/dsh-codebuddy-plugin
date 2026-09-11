@@ -28,7 +28,7 @@ window.__ModuleLoader__.load({
 | 标签 | 内容 |
 |------|------|
 | `LoginSection`（登录） | 登录模式（api-key / oauth）、多 Key 管理（脱敏列表 + 增删 + 活跃选择）、OAuth 启动/状态/登出、环境变量引用、失败冷却 |
-| `ModelsSection`（模型） | 目录同步状态 + 筛选框 + 逐模型启停 + 行内 contextWindow/maxTokens 调节 + 思考档位徽标 |
+| `ModelsSection`（模型） | 目录同步状态 + 筛选框 + 逐模型启停 + 行内 contextWindow/maxTokens 调节 + 思考强度 select（G8：静态行有档位表即可设档，存 `effortByModel`，桥出站注入；off 线值为 null 不进选项） |
 | `UsageSection`（额度与用量） | `action:'usage'` 轮询（仅分区可见期间 10s）——hero 大数字 + 周期进度条、资源包按名聚合（>4 包默认折叠、明细可展开）、今日/累计统计卡、轮次表；api-key 模式手填估算档 |
 | `ToolsSection`（工具） | 网络搜索与抓取（searchEnabled / searchMaxResults / fetchBodyCap）+ 图像生成（imageGenEnabled / imageGenModel） |
 | `ProvidersSection`（服务商） | preset/自定义添加、刷新模型、删除、本机凭据扫描导入（G7） |

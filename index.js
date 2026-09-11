@@ -67,7 +67,6 @@ import deepseekProvider from './providers/deepseek/index.js'
 import bigmodelProvider from './providers/bigmodel/index.js'
 import moonshotProvider from './providers/moonshot/index.js'
 import openrouterProvider from './providers/openrouter/index.js'
-import iflowProvider from './providers/iflow/index.js'
 import qwenProvider from './providers/qwen/index.js'
 
 export const name = 'dsh-tap'
@@ -111,6 +110,10 @@ export const Config = z.object({
   // 「手填总额 − 本插件计量累计」并标注"估算"；0 = 未设置。OAuth 模式不用
   // （真实数值来自 /billing/meter/get-user-resource，quota-signals.md R-Q7）。
   quotaTotalManual: z.number().min(0).default(0),
+  // G8 逐模型思考强度：{ [modelId]: 档位名 }。桥出站对未显式携带
+  // reasoning_effort 的请求按静态清单的 reasoningEfforts 表注入线值；
+  // off 的线值是 null（= 省略参数）或无表模型/非法档位都不注入。
+  effortByModel: z.dict(z.string(), z.string()).default({}),
   // ---- TraeWork CN（Trae 订阅额度通道，v0.8.x）----
   // 默认关闭：开启后同步本机 state.vscdb 模型目录到选择器（providers.trae），
   // 并在 traeBridgePort 上启动 OpenAI↔Trae 翻译网关；主聊天经 patch 的 trae
@@ -150,6 +153,7 @@ export const SETTINGS_FIELDS = [
   { key: 'imageGenModel', kind: 'text' },
   { key: 'keyCooldownMs', kind: 'number' },
   { key: 'quotaTotalManual', kind: 'number' },
+  { key: 'effortByModel', kind: 'dict' },
   { key: 'traeEnabled', kind: 'boolean' },
   { key: 'traeAuthBaseURL', kind: 'text' },
   { key: 'traeChatBaseURL', kind: 'text' },
@@ -270,6 +274,26 @@ function catalogToProfile(m) {
   if (m.maxOutputTokens != null) p.maxTokens = m.maxOutputTokens
   if (m.images === true) p.input = ['text', 'image']
   return p
+}
+
+/**
+ * G8：模型当前该注入的 reasoning_effort 线值。文件层的 effortByModel 只存
+ * 档位名，线值查静态清单的 reasoningEfforts 表——off 的线值是 null（=
+ * 省略参数，不注入）；目录条目本就不含该键，无表模型/非法档位同样不注入。
+ * 表 Map 懒构建一次（patch 静态清单运行期不变）。
+ */
+let effortTables = null
+function effortWireFor(model) {
+  const level = Config({ ...readFileLayer() }).effortByModel[model]
+  if (!level) return undefined
+  if (!effortTables) {
+    effortTables = new Map()
+    for (const m of readStaticModels()) {
+      if (m.reasoningEfforts && typeof m.reasoningEfforts === 'object') effortTables.set(m.id, m.reasoningEfforts)
+    }
+  }
+  const wire = effortTables.get(model)?.[level]
+  return typeof wire === 'string' && wire ? wire : undefined
 }
 
 /**
@@ -484,7 +508,7 @@ function syncModelsFromGateway(resolveNow) {
 const PROVIDER_PRESETS = [
   arkProvider, bailianProvider,
   deepseekProvider, bigmodelProvider, moonshotProvider, openrouterProvider,
-  iflowProvider, qwenProvider,
+  qwenProvider,
 ]
 
 function readManagedProviders() {
@@ -672,6 +696,7 @@ const provider = createCodeBuddyProvider({
   envKey,
   withKeyRotation: (settings, attempt) => withKeyRotation(settings, attempt),
   resolveCredential: (settings) => resolveCredential(settings),
+  effortWireFor: (model) => effortWireFor(model),
   dshHome: DSH_HOME,
 })
 

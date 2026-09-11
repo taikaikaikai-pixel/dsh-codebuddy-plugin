@@ -101,7 +101,7 @@ flowchart LR
         CB["codebuddy/<br/>headers · errors · oauth<br/>catalog · agenttool · images"]
         TR["trae/<br/>oauth · catalog<br/>gateway · remote · errors"]
         OC["openai-compat.js"]
-        PRE["ark · bailian · deepseek · bigmodel · moonshot · openrouter · iflow · qwen"]
+        PRE["ark · bailian · deepseek · bigmodel · moonshot · openrouter · qwen"]
     end
     SCRIPT["scripts/trae-model-catalog.mjs<br/>（纯函数，import.meta 守卫可作库）"]
     CLIENT["lib/client.js（浏览器半）"]
