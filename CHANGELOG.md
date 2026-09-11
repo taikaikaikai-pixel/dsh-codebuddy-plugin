@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.9.5 (2026-09-11)
+
+- **服务商页重构 + dsh 0.1.5 适配**：
+
+  - **多服务商扩容 4 → 8 preset**：新增 DeepSeek 官方（`api.deepseek.com/v1`）、智谱 BigModel（`open.bigmodel.cn/api/paas/v4`）、Moonshot AI（`api.moonshot.cn/v1`）、OpenRouter（`openrouter.ai/api/v1`）；存量 4 家（ark/百炼/iflow/qwen）2026-09-11 假 key 复测全部健在、按保守原则保留（证据矩阵追加到 docs/rules/extra-providers.md）
+
+  - **openai-compat 骨架新增 `staticCatalog`**：OpenRouter 的 /models 是公开目录（任意/无 key 都 200、全量 437 条）——既不能验 key 也不宜全量进选择器；`staticCatalog: true` 的 preset 不调 /models，走 chat 探针验 key + `fallbackModels` 内置精选清单（10 个各厂旗舰，按当日目录实况选取），规则 E-P7；`refreshExtraProviderModels` 同步透传
+
+  - **设置卡文案同步**：空态提示改"从下拉选预设或自定义添加"（不再硬编码两家），底部 hint 补"无目录/公开目录走聊天探针"
+
+  - **dsh 0.1.5 适配**（踩坑 #30）：设置卡注册改经 `slots.inject("settings.plugin.item", …)` 等槽位运行时声明——直接 register 抢跑导致卡片静默消失；UI 回归 harness 支持 `DSH_WEB_TOKEN`（0.1.5 新增 web 入口 token 闸，`_helpers.js` ENTRY）；step29 的 `llm.providers` → `llm/listProviders`（payload 须 `{args:{}}`，返回 `[{id,name}]` 仅 active）
+
+  - 回归：verify-providers 17 断言（8d/9a-c 新增）、verify-core-generic、verify-models --list、step29 10 断言、step20 22 断言、step22 22 断言全绿
+
+- **深度审计一轮（四路并行只读审计，发现清单 .audit-28.md 本地留存不入库）——9 项必须修复全部落地 + 前端精简去重**：
+
+  - 后端：codebuddy OAuth 轮询 `poll().catch` 落地（`writeAuth` 同步抛曾穿透成 unhandledRejection 直接崩宿主进程，踩坑 #33）；**全部状态文件改原子写**（json-store 新增 `writeTextAtomic` tmp+rename——截断的 settings.yaml 往往仍是合法 YAML，静默丢配置比炸更糟；0600 随新 inode 天然生效，踩坑 #31）；桥/Trae 网关停-起竞态 wedge 自愈（"已在目标态"早退条件计入 `lastError` 失败态，listen 失败后下一次 apply 自动重试，踩坑 #33）
+
+  - 前端：toggleModel 局部 setData 补回 `profiles`/`ceilings`（勾选模型后行内上限输入框显示曾退化回目录原值）；checkbox 同值去重表 4 个失败分支销账（失败后该模型同向操作曾被永久吞掉，踩坑 #32）；收起卡片不再多打一趟 GET（mount + 展开边沿才拉取）；四处 POST 补 `.catch`（oauth-logout / apiKeysRemove / apiKeysAdd / trae-oauth-logout，踩坑 #7 纪律补齐）
+
+  - 精简去重：TextField/NumberField 逐行拷贝合并为 numeric 变体委托（-20 行）；CodeBuddy/Trae 两处 OAuth 启动流程复制粘贴提取共享 `startOAuthFlow`（-25 行）；面板顶部与标签栏活动页重复的 h4 标题删除（测试 harness `_helpers.js` 同步改 `data-tab` 定位，BASE 支持 `DSH_WEB_BASE` 环境变量）；`.cbc-chip` 属性双写改 `:where()` 零特异性；GET /settings 视图删客户端从不消费的 `fields`
+
+  - 文档：README 服务商清单补到 8 家（含 OpenRouter staticCatalog 形态）、wiki/01/02/06/07 失同步补齐、踩坑 #31-#33 入档、.gitignore 泛化 `.audit-*.md`
+
+  - 回归：六个离线套件全绿（verify-models --list / verify-bridge / verify-rotation / verify-core-generic / verify-providers 17 断言 / verify-trae-provider 89 断言）；浏览器 step22 22/22 全过（思考档位徽标 / 严格 1 POST+1 GET / 组件不卸载 / Key 排序），step20 17/19（2 项失败为本机环境态——无 OAuth 登录态、动态目录同步无可用凭据，与代码无关）
+
 ## 0.9.4 (2026-09-04)
 
 - **安全审计 30 项确认发现全闭环**（0.9.3 修 3 项，本轮 3 子代理并行修复 25 项 + 2 项记录性接受；发现清单 .audit-27.md 本地留存，不入库）：
