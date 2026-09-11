@@ -4,6 +4,10 @@
 
 - **移除 iFlow preset**（2026-09 停服）：providers/iflow/、PROVIDER_PRESETS、local-scan 探测器、verify-providers 断言同步移除；openai-compat 骨架的 status:434 认证方言识别保留（历史 iFlow 形态，对任何同形态上游仍有效）；docs/rules/extra-providers.md 矩阵删行、E-P6 转历史留存。用户 settings.yaml 里已存在的 iflow 块不动
 
+- **逐模型思考强度设置（G8）**：模型行对声明了 `reasoningEfforts` 的静态模型出档位 select（off 线值为 null = 省略参数，不进选项）；选定值存新字段 `effortByModel`（文件层，dict），桥出站经 codebuddy 适配器 `transformChatPayload` 对**未显式携带** `reasoning_effort` 的请求注入线值（调用方自带档位不覆盖；无表模型/非法档位不注入；表 Map 懒构建一次）。回归锁：verify-bridge §14 四断言（注入/不覆盖/off 不注入/无表不注入）+ step22 B 段七断言（select 选项表/设档持久化往返）
+
+- **服务商标签页交互重设计**：全局单 busy 改为行级 `busyId`（忙碌行的按钮显示"验证中…/刷新中…/删除中…"）；添加/刷新/删除成功给行内反馈（"已添加 X（N 个模型）"等 `p.cbc-status`，失败仍走全局横幅）；删除改**二次确认**（第一次点击按钮变"确认删除"，4 秒不确认自动复位——删除连同凭据一起清、不可逆）。step29 扩到 13 断言覆盖新交互
+
 ## 0.9.5 (2026-09-11)
 
 - **服务商页重构 + dsh 0.1.5 适配**：

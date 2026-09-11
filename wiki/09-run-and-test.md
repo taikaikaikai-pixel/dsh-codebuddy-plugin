@@ -79,7 +79,7 @@ CODEBUDDY_BRIDGE_DUMP=/tmp/dump dsh web           # 叠加请求体明文（仅�
 脚本位于**仓库外**本地目录 `dsh-ui-test/`（puppeteer-core + 系统 Chrome，不进仓库）：
 
 - `_helpers.js`：共享驱动（打开卡片、请求计数、Key 清理、模式切换、`normalizeField`——基线一律从 GET /settings 实况读取并收尾复原）；
-- step20（设置卡 22 断言，含 7 标签顺序与折叠态芯片）、step22（流畅度 22 断言：DOM 标记证明保存不卸载/严格 1 POST+1 GET/草稿跨标签保留/思考档位/Key 排序）、step24（生图 7 断言）、step25（额度与用量 13 断言：可见才轮询/切走即停）、step26/27/28/29/31-trae 等；
+- step20（设置卡 22 断言，含 7 标签顺序与折叠态芯片）、step22（流畅度 25 断言：DOM 标记证明保存不卸载/严格 1 POST+1 GET/草稿跨标签保留/思考强度 select 设档与持久化/Key 排序）、step24（生图 7 断言）、step25（额度与用量 13 断言：可见才轮询/切走即停）、step26/27/28/29（13 断言）/31-trae 等；
 - 跑前 `dsh web`（建议 `--disable-http-cache` 对抗浏览器缓存），跑后杀 3080；
 - 选择器一律按 `.cbc-*` 类与行内单元格精确匹配（step20 曾因模糊匹配误删 Key）。
 
