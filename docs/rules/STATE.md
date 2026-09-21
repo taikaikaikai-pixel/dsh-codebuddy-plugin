@@ -3,6 +3,31 @@
 > 更新纪律：每次会话结束必须更新本表。状态取值：未开始 / 探测中 / 规则成立 / 未解。
 > 长期目标与完成标准见会话目标；课题按序进行，架构重构（core/ + providers/）在课题 1 完成后才允许开始。
 
+## 分支拓扑（2026-09-17 梳理，改动分支/tag 前先读这节）
+
+三条分支**不是同一条线的三个版本**：`main` 与 `v0.8.3` / `open-source` 之间 `git merge-base` 为空——历史线互不相干（两个独立根提交）。`git branch -vv` 里 `main` 与 `open-source` 的 ahead/behind 数字跨线比较，无意义。
+
+| 分支 | HEAD | 提交数 | 性质 |
+|---|---|---|---|
+| `main` | 93b24c8 2026-08-19 | 17 | **私有线，已遗弃**。根提交 8bc7e3b「Initial import: CodeBuddy provider bundle migrated from Windows copy」，0.2.0→0.7.4，含 `code-review-report.md`、`docs/probes/*.jsonl` 等私有材料，从未推送 origin |
+| `open-source` | da8254c 2026-08-20 | 6 | 开流线的一段。根提交 8cfa542「v0.7.4 initial open-source release」= origin/main 历史起点（仓库首提交 f3385d3 的 amend）；本地多做 0.8.1/0.8.2 两提交未推。**upstream 误设为 origin/main**（远端无此分支） |
+| `v0.8.3` | b2b5c8e 2026-09-11 | 37 | **实际开发线，当前 HEAD**。名字只是历史遗留——内容一路做到 0.9.6 |
+
+开流动作 = 从私有线 0.7.4 快照重建干净历史（8cfa542 vs 8bc7e3b 实测删 30 文件 / -6152 行，去掉探测证据与 code-review-report 等私有材料）。**开流之后只有一条连续线**：
+
+```
+8cfa542(0.7.4 公开基线) → fc52657(0.8.0) → 50e19a1/e70f5bc(0.8.1) → da8254c(0.8.2)   [open-source]
+  → 4639e44/521e74b/6fee4a9(Trae 通道 0.8.3 起) → … → 60d3e71(0.9.0 改名 dsh-tap)
+  → b5ea3eb(0.9.1) … 680cd59(0.9.4) → 98b203d(0.9.4 收尾 = origin/v0.8.3 最新)
+  → 9cc5d80(0.9.5) … 0c4ed27(0.9.6) → fffc4d7/47a5544/e022ada/0dc1509/b2b5c8e(5 个未发版提交)
+```
+
+远端与本地差额：`origin/main` 停在 27e4736（3 提交：8cfa542 + 文档 + `Create node.js.yml` CI）；`origin/v0.8.3` 停在 98b203d；本地 v0.8.3 领先远端 10 个提交，其中 HEAD 前 5 个未进 CHANGELOG（`git log 0c4ed27..HEAD`）。
+
+其它遗留：本地 tag/分支 `v0.8.0` = fc52657（open-source 链起点，陈旧）；`stash@{0}` 为 "On main: mode-only drift 755->644"（换分支时文件权限漂移，无内容）。
+
+工作区：Windows 侧 `C:\Users\21613\dev\dsh-tap` 是 WSL 工作树在 b2b5c8e 的**逐字节拷贝（无 .git）**——两边文件内容 md5 一致，改哪边都要手工同步另一边。
+
 ## v0.8 Goal 进展（docs/goals/v0.8-额度可见-模型动态化-多服务商.md）
 
 | G 项 | 状态 | 进展记录 |
@@ -41,7 +66,7 @@
 - 网关：`https://copilot.tencent.com`；UA 门只认 `/codebuddy\/[^a-z\s]*\./i`（含点即可，版本数值不查）。
 - `/v2/chat/completions` 必须 `stream:true`（否则 11101），无 UA 门；`/agenttool/*` 当前无 UA 门。
 - 探测纪律：1.5s+ 间隔、单账号、只读优先；证据落 `docs/probes/<课题>-<日期>.jsonl`，预测须预注册（脚本内 expect 字段）。
-- 工作区注意：仓库在 `\\wsl.localhost\Ubuntu-22.04\root\dev\dsh-tap\`（`code/` 子目录为空，工件都在仓库根）。
+- 工作区注意：**带 git 的正本在 WSL** `\\wsl.localhost\Ubuntu-22.04\root\dev\dsh-tap\`（`code/` 子目录为空，工件都在仓库根）；**Windows 侧** `C:\Users\21613\dev\dsh-tap` 是同一提交的逐字节拷贝但**无 .git**——两边文件内容一致，改任一侧都要手工同步另一侧（见上「分支拓扑」节）。
 
 ## 上次会话（2026-08-19）干了什么
 
