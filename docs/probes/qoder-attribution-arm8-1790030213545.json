@@ -1,0 +1,86 @@
+{
+  "at": "2026-09-21T22:35:18.323Z",
+  "model": "qmodel_38max",
+  "modelConfig": {
+    "key": "qmodel_38max",
+    "display_name": "Qwen3.8-Max",
+    "model": "",
+    "format": "openai",
+    "is_vl": true,
+    "is_reasoning": true,
+    "api_key": "",
+    "url": "",
+    "source": "system",
+    "max_input_tokens": 180000,
+    "is_default": false,
+    "is_new": true,
+    "is_free": true,
+    "price_factor": 0.2,
+    "promotion": {
+      "active": true,
+      "badge": {
+        "en": "Off-Peak 60% off",
+        "zh": "错峰 4 折"
+      },
+      "description": {
+        "en": "Off-Peak 60% off (10 PM-8 AM UTC+8)",
+        "zh": "错峰时段4折优惠（10 PM-8 AM UTC+8）"
+      },
+      "timezone": "Asia/Shanghai",
+      "rule_id": "idle_time_model_credit_discount",
+      "discount_factor": 0.4,
+      "before_promotion_price_factor": 0.5,
+      "link_url": {
+        "zh": "https://docs.qoder.cn/product-overview/qwen-3-7-series-model-staggering-discount"
+      },
+      "window_start": "22:00",
+      "window_end": "08:00"
+    },
+    "context_config": {
+      "1M": {
+        "token_count": 1000000
+      },
+      "200K": {
+        "token_count": 200000,
+        "is_default": true
+      },
+      "400K": {
+        "token_count": 400000
+      }
+    },
+    "thinking_config": {
+      "disabled": {},
+      "enabled": {
+        "efforts": {
+          "xhigh": {},
+          "low": {},
+          "medium": {
+            "is_default": true
+          }
+        },
+        "is_default": true
+      }
+    }
+  },
+  "chat": {
+    "status": 200,
+    "usage": {
+      "billable": true,
+      "completion_tokens": 23,
+      "completion_tokens_details": {
+        "reasoning_tokens": 20
+      },
+      "credits": 0.01439856,
+      "original_credits": 0.0359964,
+      "prompt_tokens": 66,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "total_tokens": 89
+    },
+    "text": "收到",
+    "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求只回复两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"：“\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到”。需要严格遵守\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。直接输出两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"即可，不加其他\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"内容。\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790030121,\\\"id\\\":\\\"chatcmpl-039d203b-8625-9cd0-9aae-95bc0c6e40fb\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":23,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":20},\\\"credits\\\":0.01439856,\\\"original_credits\\\":0.0359964,\\\"prompt_tokens\\\":66,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":89}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":2110,\"totalDuration\":2482,\"serverDuration\":1154}\n\n"
+  },
+  "before": 197,
+  "after": 197
+}

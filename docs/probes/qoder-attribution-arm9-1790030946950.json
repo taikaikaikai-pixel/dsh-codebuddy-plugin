@@ -1,0 +1,43 @@
+{
+  "at": "2026-09-21T22:41:01.330Z",
+  "model": "qmodel_38max",
+  "arms": [
+    {
+      "arm": "A-bare",
+      "withEnvelope": false,
+      "before": 197,
+      "after": 199,
+      "runs": [
+        {
+          "status": 200,
+          "credits": 0.9099889919999999,
+          "tokens": 2902
+        },
+        {
+          "status": 200,
+          "credits": 0.813358656,
+          "tokens": 2600
+        }
+      ]
+    },
+    {
+      "arm": "B-envelope",
+      "withEnvelope": true,
+      "before": 199,
+      "after": 202,
+      "runs": [
+        {
+          "status": 200,
+          "credits": 0.8648735040000001,
+          "tokens": 2761
+        },
+        {
+          "status": 200,
+          "credits": 2.427597216,
+          "tokens": 7645
+        }
+      ]
+    }
+  ],
+  "verdict": "A-bare:计数 B-envelope:计数"
+}

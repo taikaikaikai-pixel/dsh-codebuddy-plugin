@@ -57,7 +57,7 @@ Qoder CN 通道：
 
 - **聊天签名入口是 `QoderContext.prepareInferRequest(endpoint, bodyJson, modelKey, modelSource)`**——URL 恒映射到 infer 节点（region 发现：CN = `gateway.qoder.com.cn`）的 `/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`，body 加密、SSE 信封回标准 OpenAI chunk；**`prepareRequest`（/algo 重写）只用于目录等管理面**；api2-v2 OpenAI 面裸 Bearer 恒 401（废弃勿用）→ 设计文档 §5e
 
-- **裸 OpenAI body 不落入官方用量统计**（"能聊天"≠"被记账"）：归因 = 聊天 body 归因信封字段 + business 块 + 收尾双上报（business/finish mode auth、/api/v1/tracking mode sign，均 prepareRequest 直通 `cosy.prepareSigned`），插件网关已对齐官方客户端（verify-qoder [19] 锁定案）→ docs/rules/gateway-facts.md Qoder 节
+- **用量记账两链路分离**（臂 9 定论）：配额扣减（quota/usage 的 addOnQuota.used）对裸 OpenAI body 也**实时入账**（整数读数，小额探测会被取整吞掉）；统计视图（heatmap/summary/明细）是延迟批处理、由官方归因链驱动——网关已对齐（聊天归因信封+business 块+business/finish mode auth +/api/v1/tracking mode sign，verify-qoder [19] 锁定案）→ docs/rules/gateway-facts.md Qoder 节
 
 ## 踩坑速查（全本含代价与修复：docs/pitfalls.md；改代码前按编号查相关条）
 
@@ -100,7 +100,7 @@ Qoder CN 通道：
 37. 未知模型 key 被上游**静默改派 auto**——响应 model 字段 + billable:false 是哨兵，探测必须用真实目录 key
 38. 测试 fixture 禁写绝对日期（"未来时间"到期即必红）；"昨天绿今天红"先查 fixture 时钟
 39. pi-ai 丢弃 `stopReason=error/aborted` 的 assistant **但保留其 toolResult** → 出站孤儿 `role:"tool"` → 严格上游 400（Qoder `provider_error` 根因）；翻译网关出站前必须做消息配对体检（`sanitizeToolPairing`，verify-qoder [18] 锁定案）
-40. 客户端 transcript 里的 usage 是 enrich 后的记录不是线缆帧；计费归因判别靠梯度臂 + 高精度计数器差分（totalCredits 11 位小数），裸推理请求可能完全不被记账
+40. 客户端 transcript 里的 usage 是 enrich 后的记录不是线缆帧；计费判别要让"实验量级 × 计数器分辨率"匹配——整数读数吞小额探测曾致"裸 body 不记账"假阴性（臂 9 大额复测推翻：配额实时入账）；能聊天/被记账/进统计视图是三条独立链路
 
 ## 常用命令
 
