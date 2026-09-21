@@ -41,6 +41,7 @@ TraeWork CN 分区：启用通道 → 登录（自持设备密钥的浏览器授
 | `node scripts/verify-rotation.mjs` | 多 Key 轮询（mock 网关按 Key 行为表；`?case=provider/bridge` 双实例隔离） | 25 项断言 |
 | `node scripts/verify-providers.mjs` | 多服务商骨架：/models 404 兜底 + 认证方言 | — |
 | `node scripts/verify-trae-provider.mjs` | Trae 通道：mock OAuth 全流程（**用我们注册的公钥验 DeviceProof 签名**）/ 目录映射 / 翻译网关 | 81 项断言 |
+| `node scripts/verify-qoder-provider.mjs` | Qoder CN 通道：mock 设备流全流程（PKCE/404 轮询/drt- 刷新/门禁/代际守卫）+ 翻译网关信封 + 目录投影 | 83 项断言 |
 | `node scripts/verify-models.mjs` | 模型解析离线自检 / 在线探测可用性 / 目录漂移对比 | — |
 | `node scripts/verify-trae-model-catalog.mjs` | 目录提取器回归 | — |
 
@@ -63,6 +64,7 @@ TraeWork CN 分区：启用通道 → 登录（自持设备密钥的浏览器授
 | `capture-traffic.mjs` | 受控主聊天流量（多轮/重发/子代理，经 3080 RPC） |
 | `measure-latency.mjs --mock\|--real` | 识图/搜索端到端延迟分布（JSONL 落盘） |
 | `probe-trae-live.mjs --login` / `--chat "文本"` | Trae 真实登录（一次性）与对话联调（证据落 docs/probes/ 校准信封） |
+| `probe-qoder-live.mjs --login` / `--chat "文本"` | Qoder CN 真实设备流登录 / 真实对话（cosy 签名路径，证据落 docs/probes/） |
 | `probe-trae-model-routing.mjs --round 2\|evidence\|3\|4` / `probe-trae-3003-diagnosis.mjs` | Trae 模型改派矩阵（四轮合并，轮次对应原 model-routing/routing-evidence/routing3/routing4） / 3003 故障定位取证 |
 | `trae-model-catalog.mjs` | Trae 目录提取 CLI（纯函数可作库导入，import.meta 守卫） |
 | `hermes-probe-dev-role.mjs --round 1\|2\|3` | developer 角色事件取证（三轮合并，轮次对应原 -role/-role2/-role3） |
@@ -100,6 +102,7 @@ flowchart LR
     subgraph PROV["providers/"]
         CB["codebuddy/<br/>headers · errors · oauth<br/>catalog · agenttool · images"]
         TR["trae/<br/>oauth · catalog<br/>gateway · remote · errors"]
+        QO["qoder/<br/>oauth · cosy（WASM 签名）<br/>catalog · gateway"]
         OC["openai-compat.js"]
         PRE["ark · bailian · deepseek · bigmodel · moonshot · openrouter · qwen"]
     end
@@ -112,11 +115,13 @@ flowchart LR
     INDEX --> BRIDGE
     INDEX --> CB
     INDEX --> TR
+    INDEX --> QO
     INDEX --> OC
     INDEX --> PRE
     INDEX --> LOCAL
     METER --> JS
     TR --> BRIDGE
+    QO --> BRIDGE
     TR --> SCRIPT
     PRE --> OC
     INDEX -.->|"宿主模块加载器（无直接 import）"| CLIENT
@@ -131,6 +136,7 @@ flowchart LR
 | 主聊天 503 "credential unavailable" | 设置卡登录区（apiKeys 空 / OAuth 过期） |
 | 主聊天全挂 content_filter | 桥的 developer→system 重写是否被绕过（verify-bridge §9） |
 | 主聊天连接失败 | bridgePort 与 patch baseURL 是否一致；`bridgeRuntime.lastError`（设置卡桥分区） |
-| 设置卡模型勾了但选择器没有 | CodeBuddy：settings.yaml 镜像是否写入（`syncModelsToDshSettings`）；Trae：`providers.trae` 整块是否存在（禁用/未同步 = 删块属正常语义） |
+| 设置卡模型勾了但选择器没有 | CodeBuddy：settings.yaml 镜像是否写入（`syncModelsToDshSettings`）；Trae/Qoder：`providers.trae`/`providers.qoder` 整块是否存在（禁用/未同步 = 删块属正常语义） |
 | trae 3003 | 服务端 inline 面故障（非凭据问题）——切 remote 传输或等自愈 |
+| qoder 聊天 503 `qoder_credential_unavailable` | 设置卡 Qoder CN 区先完成浏览器授权（令牌临期自动刷新；refresh 失败会置"需重新登录"） |
 | 添加服务商后整个用户层 provider 消失 | settings.yaml 坏块连坐（踩坑 #21）——检查手动写入的块 |

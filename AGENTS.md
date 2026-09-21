@@ -21,7 +21,7 @@
 
 设置数据流：设置卡 → `POST /dsh-tap/settings`（自有路由）→ `~/.dsh/codebuddy-plugin.json`（文件层）→ `Config({entry, file})` 活解析。OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json`，**永不回传浏览器**（key 也只回脱敏 `ck_a…5678`）。
 
-各层细节叙述见 wiki/01-architecture.md \~ 09-run-and-test.md。表中"踩坑 #N"指 docs/pitfalls.md。
+各层细节叙述见 wiki/01-architecture.md \~ 10-provider-qoder.md。表中"踩坑 #N"指 docs/pitfalls.md。
 
 ## 关键网关事实速查（全表：docs/rules/gateway-facts.md）
 
@@ -139,7 +139,7 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 - 要原始实测证据 → docs/probes/（历次探测 JSON/JSONL 落盘）
 
-- 要架构与模块叙述 → wiki/01-architecture.md \~ 09-run-and-test.md
+- 要架构与模块叙述 → wiki/01-architecture.md \~ 10-provider-qoder.md
 
 - 要某版本改了什么 → CHANGELOG.md；要课题交接状态 → docs/rules/STATE.md
 

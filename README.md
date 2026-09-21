@@ -1,6 +1,6 @@
 # dsh-tap
 
-CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**模型清单跟随网关目录动态同步**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），**`image_generate` 生图工具**（混元生图后端），以及 **key 型 OpenAI 兼容上游注册表**（火山引擎 Ark、阿里云百炼等，模型统一进选择器）；v0.8.3 起内置 **TraeWork CN 订阅额度通道**（自持设备密钥的 OAuth + 本地 OpenAI↔Trae 翻译网关 + 本机目录同步，详见下节）。
+CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**模型清单跟随网关目录动态同步**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），**`image_generate` 生图工具**（混元生图后端），以及 **key 型 OpenAI 兼容上游注册表**（火山引擎 Ark、阿里云百炼等，模型统一进选择器）；v0.8.3 起内置第二上游 **TraeWork CN 订阅额度通道**（自持设备密钥的 OAuth + 本地 OpenAI↔Trae 翻译网关 + 本机目录同步，详见下节）；v0.9.7/0.9.8 起内置第三上游 **Qoder CN 通道**（PKCE 设备流 OAuth + COSY WASM 签名 + OpenAI↔加密信封翻译网关 :3903 + 网关目录同步，详见下节）。
 
 ## 特性
 
@@ -51,6 +51,17 @@ CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提
 - **首次联调**：聊天信封/SSE 语法来自二进制逆向（置信度中），换机器或协议变动后跑一次 `node scripts/probe-trae-live.mjs --login` 再 `--chat "你好"` 校准（证据与依据见 `docs/reverse/trae-cloud-api.md`）
 - 回归：`npm run verify:trae-provider`（43 断言，mock 全链路）+ 浏览器 step31（12 断言）
 
+## Qoder CN 订阅额度通道（v0.9.7/v0.9.8）
+
+把阿里 Qoder CN（qoder.cn）的订阅额度接成 dsh 的第三上游（provider id `qoder`）：
+
+- **凭据**：PKCE S256 设备流 OAuth（授权页浏览器完成，插件只轮询——poll 404=未完成；refresh 强制 `drt-` 前缀）；machine_id 自持持久化，令牌只存 `~/.dsh/qoder-plugin-auth.json`，永不回传浏览器
+- **聊天签名**：官方 `api2-v2` OpenAI 兼容面裸 Bearer 恒 401（已废弃）——真实聊天面走 `QoderContext.prepareInferRequest` 签名 + WASM 加密 body，POST 到 region 发现给出的 infer 节点（CN = `gateway.qoder.com.cn`）的 `agent_chat_generation`；签名器 = `qoder_auth.wasm` 官方原字节 + 手写 wasm-bindgen 胶水
+- **翻译网关**：`127.0.0.1:3903`（`qoderBridgePort` 可调）把 OpenAI Chat Completions 翻译成 COSY 加密信封、SSE 信封拆封回标准 OpenAI chunk（单轮/多轮/模型切换/tools 全通）；`usage.credits` 进同一张用量计量表
+- **模型目录**：签名 `GET /algo/api/v2/model/list`（14 个 openai 条目，Qwen3.8-Max/Flash、DeepSeek-V4、GLM-5.3、Kimi-K3、auto 等），启用通道自动同步进选择器；逐模型启停
+- **使用**：设置卡 → 插件配置 → CodeBuddy → `Qoder CN` 分区：登录（浏览器授权）→ 启用通道 → 模型自动出现在选择器
+- 回归：`node scripts/verify-qoder-provider.mjs`（83 断言，mock 设备流全流程 + 网关翻译 + 目录投影）；换机器或协议变动后 `node scripts/probe-qoder-live.mjs --login` 再 `--chat "你好"` 校准（证据落 `docs/probes/`，依据 `docs/goals/qoder-cn-provider-design.md`）
+
 ## 网络搜索与网页抓取
 
 dsh 原生的 `web_search` / `web_fetch` 工具会被本插件接到 CodeBuddy 网关的 `/agenttool` 端点上（与官方 CLI 同源，索引较新），凭据复用 `CODEBUDDY_API_KEY`。安装后无需额外配置——补丁已在 `web` 行钉选 codebuddy 后端；如需临时切回，设置环境变量 `DSH_WEB_SEARCH_PROVIDER` / `DSH_WEB_FETCH_PROVIDER` 为其他 provider id。
@@ -74,7 +85,7 @@ describe-image:
 
 ## 可选设置（Settings → 插件配置 → CodeBuddy）
 
-设置卡按插件功能分九区，顶部有功能概览行，修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
+设置卡按插件功能分八区（登录 / 模型 / 额度与用量 / 工具 / 服务商 / TraeWork CN / Qoder CN / 桥与高级），顶部有功能概览行，修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
 
 ### 模型
 

@@ -1,0 +1,185 @@
+# 10 — providers/qoder/（Qoder CN 订阅额度通道）
+
+> 目录：[providers/qoder](../providers/qoder)。与 `providers/trae/` 同构：本目录收敛全部 Qoder 上游事实，core/ 与组合根经结构钩子消费。证据档案：`docs/goals/qoder-cn-provider-design.md`（§2 逆向事实、§5b/§5d/§5e 联调实录——聊天面定论以 §5e 为准）。
+
+## 通道总览
+
+| 维度 | 事实 |
+|------|------|
+| 域名分工 | 授权页 = `qoder.cn`；设备流/用户面 = `openapi.qoder.com.cn`；infer 节点（聊天 + 目录）= `gateway.qoder.com.cn`（region 发现服务给出，CN 实测恒为 gateway） |
+| 凭据 | **只有 OAuth**（订阅额度跟账号走，无多 Key 轮换）；PKCE S256 设备流，machine_id 自持持久化 |
+| 聊天签名 | COSY WASM：`qoder_auth.wasm`（官方 CLI bundle 内嵌 base64 原字节，298KB）+ 手写 wasm-bindgen 胶水；**签名入口 = `QoderContext.prepareInferRequest`**（签名绑定改写后 URL，不可手改） |
+| 聊天端点 | `POST {infer}/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`——body 由 WASM 加密 |
+| 出站头组 | 全由 WASM 产出：`Bearer COSY.*` + `Cosy-*` 全家 + `X-Model-Key`/`X-Model-Source` |
+| 入站形态 | SSE 信封 `data:{headers,body,statusCodeValue}`——`body` 是**字符串**，内容为标准 OpenAI `chat.completion.chunk` JSON（增量/tool_calls/finish_reason 全标准）或 `"[DONE]"` |
+| 模型目录 | 签名 `GET /algo/api/v2/model/list?Encode=1`（`.chat[]` 14 个 openai 条目全 enable，2026-09-20 实测） |
+| 计量 | usage 帧 `usage.credits` → 归一为 `usage.credit` 进 usage-meter |
+| 反面事实（勿走） | `api2-v2.qoder.sh` 的 OpenAI 兼容面**裸 Bearer 恒 401**（疑似付费/BYOK 面）——废弃；`prepareRequest` 的 /algo 重写**只用于目录面**，聊天面走它必挂（§5e 实录） |
+
+## index.js — createQoderProvider(deps)
+
+```js
+export const QODER_PROVIDER_ID = 'qoder'
+
+const provider = createQoderProvider({
+  readAuth, writeAuth,          // ~/.dsh/qoder-plugin-auth.json IO
+  settings: () => qoderSettingsFn(),   // 迟绑定本代 settings（apply 每代重设）
+  meter, runtime,               // 计量 + 网关运行态（lastError 降级）
+  forensics: { logPath: () => process.env.QODER_GATEWAY_LOG },
+})
+```
+
+返回 provider：`{ id, oauth, cosy, gateway, syncCatalog(), catalogView(), credentialView() }`。
+
+- `syncCatalog()`：签名拉一次网关目录，成功换新 `catalogState`（`{ profiles, sources, fetchedAt }`；未登录报 `ok:false` 且**不清旧目录**）；
+- `catalogView()`：`{ at, count, profiles } | null`；
+- `credentialView()`：OAuth 脱敏视图（设置卡；令牌与 machine_id 永不出宿主）；
+- 目录实例状态在工厂闭包内（踩坑 #20 纪律）。
+
+## oauth.js — PKCE S256 设备流（无回环回调）
+
+```js
+export function createQoderOAuth({ readAuth, writeAuth })
+// => { startOAuth, resolveQoderCredential, refreshOAuth, oauthStatus, logout, ensureMachineId }
+```
+
+**与 codebuddy/trae 的形态差异**：
+
+- **没有本地回环回调服务**（不像 Trae 的 `/authorize`）——授权在服务端完成，插件只轮询，故无回调页 XSS 面；
+- poll 的"未完成"是 **HTTP 404**（`{"errorCode":"NotFound"}`，Bao 风格信封）而非业务码——**404 绝不与失败混同**；
+- 没有多 Key 轮换，单账号。
+
+流程：
+
+1. **PKCE**：本地生成 verifier（43–128 字符，`A-Za-z0-9-._~`）+ `challenge=S256(verifier)`；`nonce=UUID`、machine_id（48 位 hex 自持）均客户端生成；
+2. **授权页**：`GET <loginHost>/device/selectAccounts?challenge=&challenge_method=S256&nonce=&machine_id=&client_id=<prod uuid>`（无 cookie → 302 登录页；`qoder.cn` 与 `qoder.com.cn` 双域同构）；
+3. **轮询**：`GET <openapi>/api/v1/deviceToken/poll?nonce=&verifier=&challenge_method=S256`——间隔 1s、上限 5 分钟（bundle 常量）；404=未完成继续等，缺参=400 精确业务码，200 出令牌；
+4. **令牌形态**：access `dt-`（30 天）、refresh `drt-`（约 1 年，**前缀强制**——bogus 实测 `DeviceRefreshTokenPrefixInvalid`）；`expires_at`/`refresh_token_expires_at` 是 **ISO 字符串**（按数字解会退化成 epoch 0，normalizeExpiry 三形态归一：相对秒/绝对秒/绝对毫秒，verify [2] 锁）；
+5. **刷新**：`POST <openapi>/api/v1/deviceToken/refresh {refresh_token, machine_id}`（单飞锁）；响应常只换 access 不带 refresh_token——**缺字段沿用旧值**（写 null 会断掉续期）；失败置 `reloginNeeded` 粘性信号；
+6. **凭据分支**（`resolveQoderCredential(s)`）：临期（<60s）自动刷新，返回 `{authorization: 'Bearer <dt->', machineId, uid}`；
+7. **logout**：只清令牌与账号，**machine_id 保留**（跨登录复用）；`pollGeneration` 代际守卫使 logout 后才完成的迟到授权不落盘；
+8. **出宿主双门禁**：`assertLoginBase`（基址前置校验，非法设置不产生任何写入）+ `assertSafeAuthUrl`（scheme=https + host ∈ 官方站点族 `qoder.cn`/`qoder.com.cn` 或回环——host 来自用户设置，"与 base 同域"判据形同虚设，不采用；verify [5] 锁）。
+
+### 设备流时序（无回环回调，纯轮询）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant P as 插件（oauth.js）
+    participant U as 用户浏览器
+    participant A as openapi.qoder.com.cn
+    participant F as qoder-plugin-auth.json
+
+    Note over P,F: 前置：ensureMachineId() 幂等自持 machine_id（48 位 hex）
+    P->>U: 授权页 URL（selectAccounts + PKCE challenge + nonce + machine_id + client_id）
+    U->>A: 登录并授权（服务端完成，无回环回调）
+    loop 1s × 5min（bundle 常量）
+        P->>A: GET /api/v1/deviceToken/poll
+        A-->>P: 404 {"errorCode":"NotFound"} = 未完成（继续等）
+    end
+    A-->>P: 200 {token(dt-), refresh_token(drt-), expires_at(ISO)…}
+    P->>A: GET /api/v1/userinfo（Bearer，best-effort 取账号）
+    P->>F: 写 auth + account（0600，tmp+rename 原子写）
+    Note over P,F: 刷新：deviceToken/refresh（drt- 前缀强制）<br/>两令牌齐轮换；失败置 needsRelogin
+```
+
+## cosy.js — COSY WASM 签名运行时
+
+```js
+export function createCosyRuntime({ wasmPath })
+// => { ensureContext(cred), prepareChat(cred, {endpoint,body,modelKey,modelSource}),
+//      prepareGet(cred, {endpoint,path}), decrypt(text) }
+```
+
+- **版权边界**：wasm = 官方 CLI（`@qodercn-ai/qoderclicn` 1.1.57）bundle 内嵌 base64 解出的**原字节**，未修改，随官方包分发；胶水按 wasm-bindgen ABI 惯例**手写**（heap 表/passString/栈指针返回槽/handleError），不复制 bundle 文本；
+- **两个签名入口的分工**（2026-09-20 实测，勿混淆）：
+  - `prepareInferRequest(endpoint, bodyJson, modelKey, modelSource)` = **聊天面**：URL 恒映射到 infer 节点的 `agent_chat_generation`，body 由 WASM 加密；
+  - `prepareRequest(...)` = **目录等管理面**：把任意路径重写为 `/algo` 前缀 + `?Encode=1`，签名绑定改写后 URL——聊天面走它必 401/404；
+- **infer 节点由 region 发现服务给出**：`GET /api/v3/service/region/endpoints`（sign 匿名模式可取，响应 Encode=1 密文需 decrypt）——CN = `gateway.qoder.com.cn`；
+- **胶水两个实测坑**（踩坑 #36）：`RequestResult.headers` 是 **JS Map**——`{...map}` 展开得空头组、服务器直接断连无报错，必须 `Object.fromEntries`；手写胶水位运算永远加括号（`ptr >>> 0 + len` ≡ `ptr >>> len`）；
+- **线程/并发**：WASM 实例单例（模块级 promise 缓存，失败不缓存下次重试）；QoderContext 持不可变凭据快照，`machineId:accessToken` 键变化（refresh 轮换）即重建上下文（构造便宜，WASM 不重载）；
+- `decrypt(text)`：`decrypt_server_response` 解 Encode=1 密文，**失败原样返回**（部分端点本就回明文）。
+
+## catalog.js — 签名目录（明文/密文两态）
+
+```js
+export function projectQoderModel(entry)              // 目录条目 → dsh profile
+export async function fetchQoderCatalog(cosy, cred, inferBaseURL)  // { profiles, sources, raw }
+```
+
+- 签名 GET `/algo/api/v2/model/list?Encode=1`（`cosy.prepareGet`，auth 模式）；2026-09-20 实测该端点**回明文 JSON**（服务端不加密）——JSON.parse 失败才走 `cosy.decrypt` 兜底（两态自适应）；
+- 只收 `.chat[]` 里 `format==='openai'` 且 `enable!==false` 的条目（实测 14 个全满足：Qwen3.8-Max/Flash **is_free**、Qwen3.7 系、DeepSeek-V4-Pro/Flash、GLM-5.3/5.3-Flash/5.2、Kimi-K3、auto）；
+- 映射：`contextWindow` 取 `context_config` 默认档（无则 `max_input_tokens`）；目录不发布输出上限——`maxTokens` 取 **32768 保守默认**（镜像后可在 settings.yaml 手调）；`is_vl → input:[text,image]`；
+- `sources`：逐条目记 `source`（实测全 `system`）供出站 `X-Model-Source` 头取数。
+
+## gateway.js — OpenAI↔COSY 翻译网关（:3903）
+
+> 与 core 桥的分工同 trae 网关：core 桥是**透传代理**（上游说 OpenAI 方言）；本网关是**协议翻译器**——Qoder 聊天面的线缆形态是 COSY 签名 + WASM 加密 body + SSE 信封，必须拆封/重封。复用 core 原语：`SessionLimiter`、`extractSessionId`、usage-meter。
+
+```js
+export function createQoderGateway(deps)  // => { listen(port), handleChat(req, res, rawBody) }
+export function createQoderEnvelopeParser()  // SSE 信封解析器（单测可导入）
+```
+
+路由：`POST /v1/chat/completions`（或 `/chat/completions`）→ `handleChat`；`GET /v1/models` → 目录 id 清单；其余 404。listen 失败降级 `runtime.lastError` 不崩（踩坑 #17 纪律）；入站 Host 门（非回环先 `req.resume()` 丢体再 403，同 trae 网关审计面）；请求体 `Buffer.concat` 一次解码（踩坑 #28 纪律），上限 32MB。
+
+### handleChat 主流程
+
+1. **payload 校验**：messages 非空数组，否则 400 `invalid chat payload`；model 缺省回落 `'auto'`；
+2. **并发闸**：`SessionLimiter.acquire(sessionId, maxConcurrentPerSession ?? 4)`（会话 id 提取同 core 桥，无则随机 UUID）；
+3. **凭据**：`resolveCredential(s)` 为空 → 503 `qoder_credential_unavailable`（文案引导设置卡授权）；
+4. **出站构造**：OpenAI 字段**白名单**透传（messages/tools/tool_choice/temperature/top_p/max_tokens/stop/reasoning_effort…，`CHAT_FIELDS`，pi-ai 私有扩展不透传）+ 强制 `stream:true` + `stream_options.include_usage`；
+5. **签名**：`cosy.prepareChat(cred, {endpoint, body, modelKey, modelSource})` 产出 URL/头组/密文 body（**签名绑定 URL，不可手改**）；
+6. **首字节护栏**：`upstreamFirstByteTimeoutMs`（默认 45s，复用 trae 同名设置）——fetch 响应头到达即清定时器，只约束"连上却不出头"的死态；
+7. **上游非 2xx**：401/429 原状态透传，其余归 502，错误体带上游正文前 200 字符；
+8. **SSE 拆封**：`createQoderEnvelopeParser` 吃 `(eventName, dataText)`——`event:error` → 错误帧；`body==="[DONE]"` → done；尾帧（计时统计，无 body）忽略；其余 `JSON.parse(body)` 得**标准 OpenAI chunk**，流式入站原样下发、非流式入站聚合（content/reasoning_content/tool_calls 按 index 累积/finish_reason）；
+9. **usage/计量**：usage 帧（`choices:[]`）的 `usage.credits` 归一为 `usage.credit` → `meter.record`（kind=chat）；取证日志 `QODER_GATEWAY_LOG`。
+
+### handleChat 流程图
+
+```mermaid
+flowchart TB
+    IN(["POST /v1/chat/completions"]) --> VALID{"payload 有效?（messages 非空）"}
+    VALID -->|否| E400["400 invalid chat payload"]
+    VALID -->|是| ACQ["SessionLimiter.acquire（会话并发闸）"]
+    ACQ --> CRED{"resolveCredential"}
+    CRED -->|空| E503["503 qoder_credential_unavailable"]
+    CRED -->|有| OUT["OpenAI 白名单字段 + 强制 stream:true<br/>cosy.prepareChat 签名（URL/头/密文 body）"]
+    OUT --> FB["首字节护栏（默认 45s）<br/>POST agent_chat_generation?Encode=1"]
+    FB --> OK{"上游 2xx?"}
+    OK -->|否| EUP["401/429 透传，其余 502<br/>带上游正文摘要"]
+    OK -->|是| PARSE["SSE 信封解析 createQoderEnvelopeParser"]
+    PARSE --> EV{"帧类型"}
+    EV -->|"event:error"| EERR["流内 error chunk + [DONE]"]
+    EV -->|"[DONE]" / 尾帧| DONE
+    EV -->|inner chunk| EMIT["标准 OpenAI chunk：流式原样下发<br/>非流式聚合（tool_calls 按 index 累积）"]
+    EMIT --> METER["usage.credits → usage.credit<br/>meter.record（kind=chat）"]
+    METER --> DONE(["done"])
+```
+
+## 错误处理（无独立 errors.js——归网关内联映射）
+
+| 场景 | 映射 |
+|------|------|
+| 入站 payload 非法 | 400 `invalid chat payload` |
+| 未登录/凭据不可用 | 503 `qoder_credential_unavailable`（引导设置卡授权） |
+| 上游 401 / 429 | 原状态透传（其余非 2xx 归 502，带上游正文前 200 字符） |
+| SSE `event:error` 帧 / inner chunk 非法 JSON | 流内 error chunk + `[DONE]`（流式）/ 聚合已收内容 |
+| 首字节超时 | AbortController 中止 → 500 `qoder gateway error: …首字节超时` |
+| listen 失败（EADDRINUSE 等） | 降级 `runtime.lastError` + stderr 告警，不崩宿主 |
+
+## 验证与探测
+
+| 命令 | 覆盖 |
+|------|------|
+| `node scripts/verify-qoder-provider.mjs` | 离线 83 断言：PKCE 形态/normalizeExpiry 三态/设备流快乐路径/授权 URL 门禁/刷新回写与 needsRelogin/临期自动刷新/logout 代际守卫/machine_id 自持/视图脱敏 + mock 上游的网关翻译 13 断言（流式逐帧/聚合/计量归一/错误帧/401 透传/Host 门//v1/models）+ 目录投影 5 断言 |
+| `node scripts/probe-qoder-live.mjs --login` | 真实设备流登录（浏览器授权；令牌只打掩码，存 `~/.dsh/qoder-plugin-auth.json`） |
+| `node scripts/probe-qoder-live.mjs --chat "文本"` | 真实对话（cosy 签名路径；证据落 docs/probes/） |
+
+## 已知边界（诚实标注）
+
+- 单账号 OAuth，无多 Key 轮换（与 Trae 一致）；logout 保留 machine_id。
+- `maxTokens` 目录不发布，投影取 32768 保守默认——需要更大输出上限在 settings.yaml 镜像里手调。
+- 上游错误正文只回显前 200 字符；Qoder 错误信封不像 Trae 有稳定码表，不做码表回填。
+- 通道实证账号为 `PLAN_TIER_FREE`（quota:0）——FREE 账号实测可对话（目录含 `is_free` 条目），但**付费墙策略随时可变**（api2-v2 面已实证对裸 Bearer 关死）。
+- 翻译网关只做**只读对话**用途：不触碰 agent 面其他能力（设计文档 §8 纪律）。

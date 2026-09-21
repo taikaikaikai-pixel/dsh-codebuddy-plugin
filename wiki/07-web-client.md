@@ -17,13 +17,13 @@ window.__ModuleLoader__.load({
 - 包声明：`dsh.client.inject = ['@deepseek-ai/dsh-client-runtime', '@deepseek-ai/dsh-client-ui-slots']`，platform web。
 - 注册卡：dsh 0.1.5 起 `settings.plugin.item` 槽位改为设置页运行时声明——卡片经 `slots.inject("settings.plugin.item", () => slots.register({ name, key, inject }, Card))` 等声明落地再注册（直接 register 抢跑会**静默不出现**，踩坑 #30；带 rc.7 keyed 槽位回退写法）——卡片渲染前提是宿主半 `settings.register('dsh-tap', Config)` 命名空间声明已落地（见 [02](02-composition-root.md)）。
 
-## 卡片结构（状态芯片 + 7 标签页，2026-09 重设计）
+## 卡片结构（状态芯片 + 8 标签页，2026-09 重设计）
 
 卡片外壳仍是折叠卡（PluginCard 形态），信息分三层：
 
 1. **折叠态**：头部右侧常显 3 枚状态芯片（登录 / 模型数 / 流式桥）——数据来自组件挂载即拉的 GET 视图（展开时再刷一次），不展开也能读卡。
-2. **展开态顶部 = 状态条**：6 枚可点击芯片（登录/模型/桥/搜索/生图/Trae），点击直跳所属标签。
-3. **标签栏**：7 个分区，懒挂载（首次访问才 mount），此后**隐藏不卸载**（display:none）——草稿/滚动/已拉目录跨标签切换与保存保留；usage 轮询仅在分区可见期间运行（切走即停）。
+2. **展开态顶部 = 状态条**：7 枚可点击芯片（登录/模型/桥/搜索/生图/Trae/Qoder），点击直跳所属标签。
+3. **标签栏**：8 个分区，懒挂载（首次访问才 mount），此后**隐藏不卸载**（display:none）——草稿/滚动/已拉目录跨标签切换与保存保留；usage 轮询仅在分区可见期间运行（切走即停）。
 
 | 标签 | 内容 |
 |------|------|
@@ -33,6 +33,7 @@ window.__ModuleLoader__.load({
 | `ToolsSection`（工具） | 网络搜索与抓取（searchEnabled / searchMaxResults / fetchBodyCap）+ 图像生成（imageGenEnabled / imageGenModel） |
 | `ProvidersSection`（服务商） | preset/自定义添加、刷新模型、删除、本机凭据扫描导入（G7） |
 | `TraeSection`（TraeWork CN） | 启用开关、OAuth 登录（同步开窗再导航）、目录同步、**逐模型启停**（traeModelSetEnabled）、聊天传输、端口、首字节超时、连接域名折叠组 |
+| `QoderSection`（Qoder CN） | 启用开关、设备流 OAuth 登录/退出（二次确认，pending 3s 轮询收敛、needsRelogin 引导重登）、网关目录同步、**逐模型启停**（qoderModelSetEnabled）、网关端口、连接域名折叠组（登录域/OpenAPI/infer/client_id） |
 | `BridgeAdvancedSection`（桥与高级） | 流式桥（bridgeEnabled / bridgePort / 会话归因 / 并发上限）+ 网关地址 baseURL |
 
 除上表外每个 schema 字段都有落点：`keyCooldownMs` 在登录（Key 轮换语境）、`quotaTotalManual` 在额度（api-key 估算语境）。
@@ -41,13 +42,14 @@ window.__ModuleLoader__.load({
 
 ```text
 GET  /dsh-tap/settings
-     → { value（脱敏）, user, fields, oauth, bridge, trae, models }
+     → { value（脱敏）, user, oauth, bridge, trae, qoder, models }
 POST { patch: {...} }            → 保存（合并 + 校验 + 热生效）
 POST { action: 'oauth-start' | 'oauth-status' | 'oauth-logout'
        | 'model-list' | 'model-sync'
        | 'provider-list' | 'provider-add' | 'provider-remove' | 'provider-refresh'
        | 'credential-scan' | 'credential-import'
        | 'trae-oauth-*' | 'trae-model-sync' | 'trae-model-list'
+       | 'qoder-oauth-*' | 'qoder-model-sync' | 'qoder-model-list'
        | 'usage' }
 ```
 

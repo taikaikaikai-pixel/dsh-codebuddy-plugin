@@ -4,11 +4,12 @@
 
 | 文件 | 读写方 | 内容 | 权限/安全 |
 |------|--------|------|-----------|
-| `codebuddy-plugin.json` | 插件读写 | 设置文件层：全部用户设置 + `modelState`（disabled/extra/overrides）+ `traeModelState` + `managedProviders` 登记册 | 无 secret（apiKeys 有 key 明文，仅本机） |
+| `codebuddy-plugin.json` | 插件读写 | 设置文件层：全部用户设置 + `modelState`（disabled/extra/overrides）+ `traeModelState` + `qoderModelState` + `managedProviders` 登记册 | 无 secret（apiKeys 有 key 明文，仅本机） |
 | `codebuddy-plugin-auth.json` | oauth.js 读写 | CodeBuddy OAuth 令牌 + 账号信息 | **永不回传浏览器** |
 | `trae-plugin-auth.json` | trae/oauth.js 读写 | Trae OAuth 令牌 + 账号 + **设备身份（P-256 私钥 PKCS#8）** | 私钥永不出存储；视图只出 `signatureFormat` |
-| `codebuddy-plugin-usage.json` | usage-meter | 用量累计（totalCredit/days/recent） | 5s 去抖写盘 |
-| `settings.yaml` | dsh 宿主（插件代写） | `llm-pi-ai.providers.codebuddy.models` 镜像 / `providers.trae` **整块** / `providers.<extraId>` 块——chokidar 热加载，**免重启** | 注释保留的文档编辑（yaml 库 parseDocument/setIn/deleteIn） |
+| `qoder-plugin-auth.json` | qoder/oauth.js 读写 | Qoder OAuth 令牌（`dt-`/`drt-`）+ 账号 + **machine_id** | 令牌与 machine_id 永不回传浏览器；0600 + tmp+rename 原子写 |
+| `codebuddy-plugin-usage.json` | usage-meter | 用量累计（totalCredit/days/recent，三通道共用一张表） | 5s 去抖写盘 |
+| `settings.yaml` | dsh 宿主（插件代写） | `llm-pi-ai.providers.codebuddy.models` 镜像 / `providers.trae` **整块** / `providers.qoder` **整块** / `providers.<extraId>` 块——chokidar 热加载，**免重启** | 注释保留的文档编辑（yaml 库 parseDocument/setIn/deleteIn） |
 | `.credentials.yaml` | 插件代写（dsh 约定） | 多服务商 key（`<ID>_API_KEY`）、`CODEBUDDY_API_KEY` 兜底 | **必须 0600**，写后 chmod |
 | `generated-images/` | images.js | 无会话工作区时的生图落盘 | — |
 
@@ -20,7 +21,7 @@
 
 每次读取活解析：`resolveNow = () => Config({ ...config, ...readFileLayer() })`——设置卡保存后**下一次读取即生效**，配合 `applyLive()`（起停桥/网关/注册表）实现免重启。
 
-## 模型可见性数据流（三条镜像规则）
+## 模型可见性数据流（四条镜像规则）
 
 ### 1. CodeBuddy（纯净态纪律）
 
@@ -58,7 +59,11 @@ flowchart TB
 
 升级注意：≤0.8.5 写入的旧 trae 块只带 models 路径（缺 baseURL 等字段），dsh 升到 0.1.1-rc.2 后首次启动前须手动清理，否则 llm-pi-ai 先于插件报错（详见 [CHANGELOG](../CHANGELOG.md) 0.8.7 迁移说明）。
 
-### 3. 多服务商（整块代写）
+### 3. Qoder（路由存在性管理，同 Trae 纪律，v0.9.8）
+
+`syncQoderModelsToDshSettings()` 与 Trae 完全同构：patch **不带** qoder 静态基线，`providers.qoder` 路由完整定义由镜像独占——启用 + 目录已同步 + 非全部禁用 → 铺完整块（displayName `Qoder CN` / api / baseURL 跟随 `qoderBridgePort` / headers 哨兵 `Bearer dsh-qoder-bridge` / models 剔除 disabled）；禁用 / 未同步 / 全禁用 → 删整块。改端口重铺即热生效。
+
+### 4. 多服务商（整块代写）
 
 ```mermaid
 flowchart LR
@@ -88,6 +93,7 @@ flowchart LR
 |------|------|------|------|
 | 3901（bridgePort） | core 桥 | `/v2/*` 透传；`/chat/completions` 特化 | CodeBuddy 主聊天 + agenttool 透传；仅 127.0.0.1 |
 | 3902（traeBridgePort） | Trae 翻译网关 | `POST /v1/chat/completions`；`GET /v1/models` | OpenAI↔Trae 协议翻译；仅 127.0.0.1 |
+| 3903（qoderBridgePort） | Qoder 翻译网关 | `POST /v1/chat/completions`；`GET /v1/models` | OpenAI↔COSY 加密信封翻译；仅 127.0.0.1；Host 门 |
 | 3080 | dsh web | `/dsh-tap/settings` | 设置卡自有路由（ctx.webServer） |
 
 改 3901 端口必须同时改 `cordis.patch.yml` 的 baseURL（或反之），否则主聊天断（设置卡有明示）。
@@ -101,4 +107,5 @@ flowchart LR
 | `CODEBUDDY_BRIDGE_LOG` | 桥取证日志 JSONL 路径（不落明文） |
 | `CODEBUDDY_BRIDGE_DUMP` | 请求体明文落盘目录（仅本地诊断，慎开） |
 | `TRAE_BRIDGE_LOG` | Trae 网关取证日志路径 |
+| `QODER_GATEWAY_LOG` | Qoder 网关取证日志路径 |
 | `DSH_WEB_SEARCH_PROVIDER` / `DSH_WEB_FETCH_PROVIDER` | 临时切回其他 web 后端（覆盖 patch 钉选） |

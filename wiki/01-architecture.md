@@ -13,8 +13,9 @@
 | 凭据边缘层 | `core/` | **provider 无关**：json-store（文件层/env 解析）、rotation（KeyRotator 轮询/冷却/failover）、usage-meter（计量存储）、bridge（流式桥：会话归因/并发闸/SSE 聚合/取证；上游特化全走 provider 钩子） | 重启 dsh |
 | 上游适配器 | `providers/codebuddy/` | 全部 CodeBuddy 网关事实：headers、错误码表、OAuth 设备流、catalog（/v3/config + 额度方言）、agenttool（search/webfetch）、images（生图） | 重启 dsh |
 | 上游适配器（v0.8.x） | `providers/trae/` | 全部 TraeWork CN 事实：自持设备密钥 OAuth、state.vscdb 目录、OpenAI↔Trae 翻译网关 :3902、remote 会话传输、错误信封 | 网关端口/域名/路由块全部热生效（settings.yaml 镜像整块铺/删） |
+| 上游适配器（v0.9.7+） | `providers/qoder/` | 全部 Qoder CN 事实：PKCE S256 设备流 OAuth、COSY WASM 签名运行时、签名目录、OpenAI↔COSY 加密信封翻译网关 :3903 | 网关端口/域名热生效；patch 路由改动重启 dsh |
 | 多服务商 | `providers/openai-compat.js` + presets | key 型 OpenAI 兼容上游注册表（共享骨架 + 每上游 preset） | 免重启（settings.yaml 热加载） |
-| 浏览器半 | `lib/client.js` | Settings → 插件配置 的设置卡（状态芯片 + 7 标签页，懒挂载隐藏不卸载） | 刷新页面 |
+| 浏览器半 | `lib/client.js` | Settings → 插件配置 的设置卡（状态芯片 + 8 标签页，懒挂载隐藏不卸载） | 刷新页面 |
 
 ### 架构总览图
 
@@ -29,7 +30,7 @@ flowchart TB
     end
 
     subgraph BROWSER["浏览器"]
-        CARD["lib/client.js 设置卡（状态芯片 + 7 标签页）"]
+        CARD["lib/client.js 设置卡（状态芯片 + 8 标签页）"]
     end
 
     subgraph PLUGIN["dsh-tap"]
@@ -39,6 +40,7 @@ flowchart TB
         L3["③ core/ 凭据边缘层（provider 无关）<br/>bridge 流式桥 · rotation 轮转<br/>usage-meter 计量 · json-store"]
         L41["④ providers/codebuddy/<br/>headers · errors · oauth · catalog · agenttool · images"]
         L42["④ providers/trae/（翻译网关 :3902）"]
+        L44["④ providers/qoder/（翻译网关 :3903，v0.9.7+）"]
         L43["⑤ providers/openai-compat + presets<br/>（settings.yaml 热加载，免重启）"]
     end
 
@@ -46,11 +48,13 @@ flowchart TB
         direction LR
         G1["copilot.tencent.com"]
         G2["trae-api-cn.mchost.guru（聊天）<br/>api.trae.cn（OAuth / 额度）"]
+        G4["qoder.cn（授权页）· openapi.qoder.com.cn（设备流）<br/>gateway.qoder.com.cn（COSY infer 节点）"]
         G3["7 家 preset（Ark/百炼/DeepSeek/智谱/Moonshot/OpenRouter/Qwen）· 自定义"]
     end
 
     H1 -->|"OpenAI 方言 + 哨兵 Authorization（:3901）"| L3
     H1 -.->|"选 trae 模型（:3902）"| L42
+    H1 -.->|"选 qoder 模型（:3903）"| L44
     H2 --> L41
     H3 --> L41
     H4 --> L2
@@ -59,16 +63,18 @@ flowchart TB
     L2 --> L3
     L2 --> L41
     L2 --> L42
+    L2 --> L44
     L2 --> L43
     L3 --> L41
     L41 --> G1
     L42 --> G2
+    L44 --> G4
     L43 --> G3
 ```
 
 ### 为什么 core/ 与 providers/ 分开
 
-`core/` 是可复用的"凭据边缘层"，不含任何具体上游名字（静态扫描证伪测试 `scripts/verify-core-generic.mjs` 锁定）。接入第二个 OpenAI 兼容上游时，只需按 `providers/<name>/` 形态另写一个适配器，core/ **零改动**——该测试就是用内联 mock 适配器完整跑通 core 桥/轮转/计量来证明这一点的。
+`core/` 是可复用的"凭据边缘层"，不含任何具体上游名字（静态扫描证伪测试 `scripts/verify-core-generic.mjs` 锁定）。再接入其他 OpenAI 兼容上游时，只需按 `providers/<name>/` 形态另写一个适配器，core/ **零改动**——该测试就是用内联 mock 适配器完整跑通 core 桥/轮转/计量来证明这一点的。
 
 ## 主聊天请求路径（最重要的一条链）
 
@@ -113,7 +119,7 @@ sequenceDiagram
 
 ### 哨兵 Authorization 机制（为什么 patch 不写 apiKeyEnv）
 
-pi-ai 在无 `apiKeyEnv` 时本会拒绝发请求，但它只检查"有没有 key **或** Authorization 头"；OpenAI SDK 的 `defaultHeaders` 合并顺序在 `authHeaders` 之后，patch 里的静态哨兵头因此真正上线。桥再逐请求把哨兵替换为真实凭据（OAuth 或活跃 Key）——**文件里没有任何密钥，OAuth 登录即覆盖主聊天路径**。Trae 路由同理（哨兵 `Bearer dsh-trae-bridge`）。
+pi-ai 在无 `apiKeyEnv` 时本会拒绝发请求，但它只检查"有没有 key **或** Authorization 头"；OpenAI SDK 的 `defaultHeaders` 合并顺序在 `authHeaders` 之后，patch 里的静态哨兵头因此真正上线。桥再逐请求把哨兵替换为真实凭据（OAuth 或活跃 Key）——**文件里没有任何密钥，OAuth 登录即覆盖主聊天路径**。Trae/Qoder 路由同理（哨兵 `Bearer dsh-trae-bridge` / `Bearer dsh-qoder-bridge`）。
 
 注意：dsh-llm-pi-ai 出站会剥掉与 attribution 冲突的头（静态 User-Agent 到不了网关），`/v2` 端点不校验 UA 所以无感；桥的出站头是**重建**的。
 
@@ -139,16 +145,35 @@ flowchart TB
     PARSE --> M["token_usage → meter 计量<br/>改派披露（SSE 注释行 / message.note）"]
 ```
 
+## Qoder 通道路径（第三上游，v0.9.7/0.9.8）
+
+与 Trae 同构（OAuth 边缘 + 本地翻译网关 + 目录整块镜像，路由存在性管理同踩坑 #25 纪律），差异四点（细节见 [10-provider-qoder.md](10-provider-qoder.md)）：
+
+1. **设备流无回环回调**：PKCE S256 参数客户端生成，授权在服务端完成，插件只轮询 `openapi.qoder.com.cn/api/v1/deviceToken/poll`（**404=未完成**，1s×5min）；refresh 强制 `drt-` 前缀；
+2. **聊天面必须 COSY 签名**：官方 `api2-v2` OpenAI 兼容面裸 Bearer 恒 401——真实形态是 `QoderContext.prepareInferRequest` 签名 + WASM 加密 body，POST 到 region 发现给出的 infer 节点（CN = `gateway.qoder.com.cn`）的 `agent_chat_generation`；签名器 = `qoder_auth.wasm` 官方原字节 + 手写 wasm-bindgen 胶水；
+3. **入站是信封不是裸 chunk**：SSE `data:{headers,body,statusCodeValue}`，`body` 字符串内是**标准 OpenAI chunk**——拆封原样下发（比 Trae 的累计快照差分简单）；
+4. **目录来自网关不是本机**：签名 `GET /algo/api/v2/model/list`（明文/密文两态，14 个 openai 条目），`usage.credits` 归一为 `usage.credit` 计量。
+
+```mermaid
+flowchart TB
+    A["dsh 主聊天（选 qoder 模型）"] --> B["llm-pi-ai qoder 路由<br/>http://127.0.0.1:3903/v1<br/>哨兵 Authorization: Bearer dsh-qoder-bridge"]
+    B --> G["OpenAI 字段白名单 + 强制 stream:true<br/>cosy.prepareChat 签名（URL/头组/密文 body）"]
+    G --> UP["POST gateway.qoder.com.cn<br/>/algo/api/v2/service/pro/sse/agent_chat_generation?Encode=1"]
+    UP --> ENV["SSE 信封 data:{headers,body,statusCodeValue}<br/>body = 标准 OpenAI chunk 字符串 / [DONE]"]
+    ENV --> OUT["拆封原样下发（流式）<br/>或聚合 chat.completion（非流式）"]
+    OUT --> M["usage.credits → usage.credit → meter<br/>首字节护栏（默认 45s）· Host 门 · SessionLimiter"]
+```
+
 ## 设置数据流
 
 设置卡不依赖 dsh 官方 settings 服务数据面（历史上两侧实例不通，踩坑 #2；rc.7 起注册命名空间仅作**派发声明**），走自有 HTTP 路由：
 
 ```mermaid
 flowchart TB
-    CARD["设置卡 lib/client.js（状态芯片 + 7 标签页）"]
+    CARD["设置卡 lib/client.js（状态芯片 + 8 标签页）"]
     CARD -->|"GET /dsh-tap/settings"| VIEW["settingsView()（脱敏视图）"]
     CARD -->|"POST patch（保存）"| MERGE["SETTINGS_FIELDS 白名单过滤<br/>+ Config schema 校验"]
-    CARD -->|"POST action（动作）"| ACT["oauth-* / model-list / model-sync /<br/>provider-* / credential-* / trae-* / usage"]
+    CARD -->|"POST action（动作）"| ACT["oauth-* / model-list / model-sync /<br/>provider-* / credential-* / trae-* / qoder-* / usage"]
     MERGE --> FILE["写 ~/.dsh/codebuddy-plugin.json（文件层）"]
     FILE -.->|"每读活解析（entry + file 合并）"| VIEW
     MERGE --> LIVE["applyLive() 热生效"]
@@ -156,9 +181,10 @@ flowchart TB
     LIVE --> S2["syncImageTool() → ctx.tools image_generate"]
     LIVE --> S3["syncBridge() → core 桥 :3901"]
     LIVE --> S4["syncTraeBridge() → Trae 网关 :3902 + 目录同步"]
+    LIVE --> S5["syncQoderBridge() → Qoder 网关 :3903 + 目录同步"]
 ```
 
-OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json` / `~/.dsh/trae-plugin-auth.json`，**永不回传浏览器**；key 只回脱敏形式（`ck_a…5678`）。
+OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json` / `~/.dsh/trae-plugin-auth.json` / `~/.dsh/qoder-plugin-auth.json`，**永不回传浏览器**；key 只回脱敏形式（`ck_a…5678`）。
 
 ## 模型镜像机制（设置卡 ↔ 选择器）
 
@@ -166,6 +192,7 @@ OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json` / `~/.dsh/trae-plugin-
 
 - **CodeBuddy**：`llm-pi-ai.providers.codebuddy.models` = `computeEffectiveModels()`。基清单 = 静态 18 个 ∪ 动态目录（`/v3/config` 启动同步），再减 disabled、加 extra、应用 overrides（contextWindow/maxTokens 覆盖）。纯净态（无 disabled/extra/overrides 且无动态目录）时**删除**覆盖层，避免陈旧清单遮蔽 patch 更新。
 - **Trae**：**整块铺/删**（路由存在性管理）——启用+已同步铺完整 `providers.trae` 块（剔除 disabled 的模型清单，baseURL 跟随 traeBridgePort）；禁用/未同步/全禁用删整块。patch 不带基线，删块即干净、无回落。
+- **Qoder**：**整块铺/删**（同 trae 纪律）——启用+已同步铺完整 `providers.qoder` 块（displayName `Qoder CN`/api/baseURL 跟随 qoderBridgePort/哨兵 headers/剔除 disabled 的 models）；禁用/未同步/全禁用删整块。
 - **多服务商**（G6）：`llm-pi-ai.providers.<id>` 整块由插件写（先本地校验 + 实测 GET /models 才落盘——坏块会令整个用户层连坐，踩坑 #21），key 写 `~/.dsh/.credentials.yaml` 的 `<ID>_API_KEY`（0600）。
 
 ## dsh 宿主缝（插件如何挂进 dsh）

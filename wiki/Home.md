@@ -1,10 +1,10 @@
 # dsh-tap — Code Wiki 首页
 
-> 当前版本：**0.9.0**（dsh-codebuddy-plugin → dsh-tap 更名版，见 [CHANGELOG.md](../CHANGELOG.md)；注意 [package.json](../package.json) 的 `version` 字段未随更名提交同步，仍为 0.8.7）
+> 当前版本：**0.9.8**（Qoder CN 通道全量落地，见 [CHANGELOG.md](../CHANGELOG.md)；本 wiki 随 0.9.7/0.9.8 补齐 Qoder 叙事）
 
 ## 项目是什么
 
-把腾讯 **CodeBuddy 网关**（`copilot.tencent.com`）接入 **DeepSeek Harness（dsh）** 的插件包，同时内置第二条上游 **TraeWork CN 订阅额度通道**。纯 ESM，Node ≥ 22，运行时仅两个依赖（`@deepseek-ai/schemastery`、`yaml`）。
+把腾讯 **CodeBuddy 网关**（`copilot.tencent.com`）接入 **DeepSeek Harness（dsh）** 的插件包，同时内置第二上游 **TraeWork CN 订阅额度通道**（v0.8.x 起）与第三上游 **Qoder CN 通道**（v0.9.7/0.9.8 起，设备流 OAuth + COSY WASM 签名 + OpenAI↔加密信封翻译网关 :3903）。纯 ESM，Node ≥ 22，运行时仅两个依赖（`@deepseek-ai/schemastery`、`yaml`）。
 
 核心能力一览：
 
@@ -15,8 +15,9 @@
 | `web_search` / `web_fetch` 后端 | `providers/codebuddy/agenttool.js` | dsh 原生工具的 CodeBuddy `/agenttool` 实现 |
 | `image_generate` 生图工具 | `providers/codebuddy/images.js` | 混元生图 `/v2/images/generations` |
 | TraeWork CN 通道 | `providers/trae/`（翻译网关 `:3902`） | OAuth 订阅额度 + OpenAI↔Trae 协议翻译 + state.vscdb 目录 |
+| Qoder CN 通道 | `providers/qoder/`（翻译网关 `:3903`） | PKCE 设备流 OAuth + COSY WASM 签名 + 签名目录 + 加密信封翻译（0.9.7/0.9.8） |
 | 多服务商注册表 | `providers/openai-compat.js` + presets | key 型 OpenAI 兼容上游（Ark/百炼/DeepSeek/智谱/Moonshot/OpenRouter/Qwen/自定义），免重启热加载 |
-| Web UI 设置卡 | `lib/client.js` | 设置 → 插件配置 → CodeBuddy（九个功能分区） |
+| Web UI 设置卡 | `lib/client.js` | 设置 → 插件配置 → CodeBuddy（八个功能分区） |
 
 ## 文档导航
 
@@ -27,10 +28,11 @@
 | [03-core-layer.md](03-core-layer.md) | `core/` 凭据边缘层：bridge / rotation / json-store / usage-meter 逐模块 API |
 | [04-provider-codebuddy.md](04-provider-codebuddy.md) | CodeBuddy 适配器：headers / errors / oauth / catalog / agenttool / images |
 | [05-provider-trae.md](05-provider-trae.md) | Trae 通道：自持设备密钥 OAuth、目录提取、翻译网关、remote 传输、错误码表 |
-| [06-provider-openai-compat.md](06-provider-openai-compat.md) | 多服务商骨架、四个 preset、本机凭据扫描导入 |
+| [06-provider-openai-compat.md](06-provider-openai-compat.md) | 多服务商骨架、七个 preset、本机凭据扫描导入 |
 | [07-web-client.md](07-web-client.md) | 浏览器半设置卡：模块格式、分区结构、UI 资源复用 |
 | [08-config-and-files.md](08-config-and-files.md) | 配置面、磁盘文件落点、优先级、密钥安全边界 |
 | [09-run-and-test.md](09-run-and-test.md) | 运行方式、验证/探测脚本全集、环境变量、浏览器回归 |
+| [10-provider-qoder.md](10-provider-qoder.md) | Qoder CN 通道：PKCE 设备流、COSY WASM 签名、签名目录、翻译网关 :3903 |
 
 ## 仓库目录树
 
@@ -47,6 +49,7 @@ dsh-tap/
 ├── providers/
 │   ├── codebuddy/            # CodeBuddy 上游适配器（headers/errors/oauth/catalog/agenttool/images）
 │   ├── trae/                 # TraeWork CN 适配器（oauth/catalog/gateway/remote/errors）
+│   ├── qoder/                # Qoder CN 适配器（oauth/cosy/catalog/gateway + qoder_auth.wasm）
 │   ├── openai-compat.js      # key 型 OpenAI 兼容上游共享骨架
 │   ├── ark/ bailian/ deepseek/ bigmodel/ moonshot/ openrouter/ qwen/   # 七个 preset
 ├── lib/client.js             # 浏览器半：设置卡（React.createElement，无构建步骤）
@@ -66,6 +69,7 @@ node scripts/verify-core-generic.mjs    # core/ 通用性证伪（静态扫描 +
 node scripts/verify-rotation.mjs        # 多 Key 轮询回归
 node scripts/verify-providers.mjs       # 多服务商骨架回归
 node scripts/verify-trae-provider.mjs   # Trae 通道回归（81 断言）
+node scripts/verify-qoder-provider.mjs  # Qoder CN 通道回归（83 断言）
 
 # 3. 登录（设置卡 → 插件配置 → CodeBuddy，或 CLI 探测脚本）
 node scripts/verify-models.mjs --list   # 离线自检模型解析
@@ -75,7 +79,7 @@ node scripts/verify-models.mjs --list   # 离线自检模型解析
 
 ## 关键工程纪律（改代码前必读）
 
-1. **core/ 禁止出现任何 CodeBuddy/Trae 特化**——`verify-core-generic.mjs` 静态扫描锁；上游事实只能放 `providers/`。
+1. **core/ 禁止出现任何 CodeBuddy/Trae/Qoder 特化**——`verify-core-generic.mjs` 静态扫描锁；上游事实只能放 `providers/`。
 2. **共享层的运行状态必须是实例状态**——core/ 与 providers/ 一律导出工厂/类（`new KeyRotator()`、`createBridge()`），实例在 `index.js` 模块作用域创建（隔离语义见 [docs/pitfalls.md](../docs/pitfalls.md) #20）。
 3. **listen 失败绝不崩宿主**——桥/网关绑端口前必须挂 `server.on('error')` 降级为 `runtime.lastError`（踩坑 #17）。
 4. **令牌与 key 永不回传浏览器**——设置卡 GET 只回脱敏视图；OAuth 令牌单独存文件。

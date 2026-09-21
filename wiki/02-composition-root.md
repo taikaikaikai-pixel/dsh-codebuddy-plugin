@@ -1,7 +1,7 @@
 # 02 — 组合根 index.js
 
-> 文件：[index.js](../index.js)（~1380 行，插件入口与导出契约所在）。
-> 上游无关的机制在 [03-core-layer.md](03-core-layer.md)；上游事实在 [04](04-provider-codebuddy.md)/[05](05-provider-trae.md)。
+> 文件：[index.js](../index.js)（~1740 行，插件入口与导出契约所在）。
+> 上游无关的机制在 [03-core-layer.md](03-core-layer.md)；上游事实在 [04](04-provider-codebuddy.md)/[05](05-provider-trae.md)/[10](10-provider-qoder.md)。
 
 ## 模块导出契约
 
@@ -47,6 +47,12 @@
 | `traeBridgePort` | 1–65535（3902） | 翻译网关端口 |
 | `traeChatTransport` | `'inline'` \| `'remote'`（inline） | 聊天传输（remote = 真实模型选择） |
 | `upstreamFirstByteTimeoutMs` | 1000–300000（45000） | inline 上游首字节护栏 |
+| `qoderLoginHost` | string（`https://qoder.cn`） | Qoder 授权页域 |
+| `qoderOpenapiBaseURL` | string（`https://openapi.qoder.com.cn`） | Qoder 设备流/用户面域 |
+| `qoderClientId` | string（官方 prod 值 `e883ade2-…`） | 设备流 client_id，一般无需改 |
+| `qoderEnabled` | bool（false） | Qoder CN 通道总开关（默认关闭） |
+| `qoderBridgePort` | 1–65535（3903） | Qoder 翻译网关端口 |
+| `qoderInferBaseURL` | string（`https://gateway.qoder.com.cn`） | Qoder infer 节点（region 发现实测 CN 值；不是 api2-v2——那个 OpenAI 面裸 Bearer 恒 401，已废弃） |
 
 ## apply(ctx, config) 生命周期
 
@@ -65,10 +71,11 @@ apply 内创建**本代**资源（每 apply 一次新实例，捕获本代 `reso
 3. **settings 命名空间声明**（rc.7+）——`ctx.inject(['settings'])` 内 `sctx.settings.register('dsh-tap', Config)`，仅为设置页派发卡片的声明；数据面仍走自有路由。
 4. **core 桥** `createBridge({ settings: resolveNow, provider, withCredentials, meter, forensics, runtime: bridgeRuntime })`——`syncBridge()` 按开关/端口起停。`bridgeRuntime` 是模块级共享（生产单实例 last-apply-wins 正确；verify-bridge §10 钉语义）。
 5. **Trae 通道**——`traeSettingsFn = resolveNow`（迟绑定，网关每次读"本代" settings）；`syncTraeBridge()` 起停 :3902 网关 + 尝试目录同步（静默失败）。
-6. **设置路由** `registerSettingsRoute(ctx, config, resolveNow, applyLive)`。
-7. **启动同步**——`modelState` 有残留则重铺镜像；`syncModelsFromGateway()` 从 `/v3/config` 拉动态目录（失败无感回落静态清单）。
+6. **Qoder 通道**——`qoderSettingsFn = resolveNow` 迟绑定；`syncQoderBridge()` 起停 :3903 翻译网关 + 目录同步（失败静默——未登录时 Qoder 分区只是空转）；禁用时停网关并撤 `providers.qoder` 整块镜像。
+7. **设置路由** `registerSettingsRoute(ctx, config, resolveNow, applyLive)`。
+8. **启动同步**——`modelState` 有残留则重铺镜像；`syncModelsFromGateway()` 从 `/v3/config` 拉动态目录（失败无感回落静态清单）。
 
-`applyLive()` = `syncProviders() + syncImageTool() + syncBridge() + syncTraeBridge()`，设置卡每次保存成功后调用——**这就是设置免重启生效的机制**。
+`applyLive()` = `syncProviders() + syncImageTool() + syncBridge() + syncTraeBridge() + syncQoderBridge()`，设置卡每次保存成功后调用——**这就是设置免重启生效的机制**。
 
 ### apply 生命周期图
 
@@ -77,11 +84,13 @@ flowchart TB
     START(["dsh 启动 · patch insert 触发加载 index.js"]) --> APPLY["apply(ctx, config)"]
     APPLY --> ROUTE["注册设置路由 /dsh-tap/settings"]
     APPLY --> TSN["traeSettingsFn = resolveNow<br/>（迟绑定本代 settings）"]
+    APPLY --> QSN["qoderSettingsFn = resolveNow<br/>（迟绑定本代 settings）"]
     APPLY --> LIVE["applyLive() 首次执行"]
     LIVE --> F1["syncProviders() → ctx.web 搜索/抓取"]
     LIVE --> F2["syncImageTool() → ctx.tools 生图"]
     LIVE --> F3["syncBridge() → core 桥 :3901"]
     LIVE --> F4["syncTraeBridge() → Trae 网关 :3902 + 目录同步"]
+    LIVE --> F5["syncQoderBridge() → Qoder 网关 :3903 + 目录同步"]
     APPLY --> BOOT["启动期收尾"]
     BOOT --> B1["modelState 有残留 → 重铺镜像"]
     BOOT --> B2["syncModelsFromGateway() 拉动态目录"]
@@ -89,7 +98,7 @@ flowchart TB
     B3 -->|是| B4["重铺镜像（选择器跟网关走）"]
     B3 -->|否| B5["沿用旧目录 / 回落静态清单（选择器不变空）"]
     APPLY --> DISP["注册 ctx.on('dispose')"]
-    DISP --> D["停桥 + 停 Trae 网关<br/>+ 注销 web / tools 资源 + meter.dispose()"]
+    DISP --> D["停桥 + 停 Trae/Qoder 网关<br/>+ 注销 web / tools 资源 + meter.dispose()"]
 ```
 
 ## 模型管理（CodeBuddy 侧）
@@ -144,13 +153,24 @@ presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, deepseekProv
 
 `traeProvider = createTraeProvider({ readAuth, writeAuth, settings, withCredentials, meter, runtime: traeRuntime, forensics: { logPath: () => process.env.TRAE_BRIDGE_LOG } })`。
 
+## Qoder 通道接线（v0.9.7/0.9.8）
+
+| 函数/变量 | 职责 |
+|------|------|
+| `qoderSettingsFn` | 迟绑定模块变量——apply 每代重设为 `resolveNow`；`createQoderProvider({ settings: () => qoderSettingsFn(), ... })` |
+| `syncQoderModelsToDshSettings()` | **整块铺/删** `llm-pi-ai.providers.qoder`（路由存在性管理，同 trae 踩坑 #25 纪律）：启用+已同步铺完整块（displayName `Qoder CN`/api/baseURL 跟随 qoderBridgePort/哨兵 `Bearer dsh-qoder-bridge`/剔除 disabled 的 models）；禁用/未同步/全禁用删整块 |
+| `setQoderModelEnabled({id, enabled})` | Qoder 模型启停（要求先同步目录；id 必须命中目录） |
+| `readQoderModelState()` | 文件层 `qoderModelState.disabled` |
+
+`qoderProvider = createQoderProvider({ readAuth, writeAuth, settings, meter, runtime: qoderRuntime, forensics: { logPath: () => process.env.QODER_GATEWAY_LOG } })`——凭据经 `qoderProvider.oauth.resolveQoderCredential`（临期自动刷新，无 core 轮转——单候选 OAuth）。
+
 ## 设置路由契约
 
 路由：`/dsh-tap/settings`（经 `ctx.inject(['webServer'])` 注册）。
 
-- **GET** → `settingsView(resolveNow)`：`{ value（脱敏）, user（文件层原文，不含 secret 字段之外的内容）, fields, oauth, bridge, trae, models }`
+- **GET** → `settingsView(resolveNow)`：`{ value（脱敏）, user（文件层原文，maskedUserLayer 统一脱敏——0.9.3 补丁），oauth, bridge, trae, qoder, models }`（0.9.5 起删去客户端从不消费的 `fields`）
 - **POST**（同源校验 `sameOrigin`，否则 403/405）：
-  - `{patch: {...}}` —— merge & apply。特殊 patch 键：`apiKeysAdd`/`apiKeysRemove`（卡只见脱敏 key，增删必须在此对原始列表操作）、`modelSetEnabled`/`modelSetLimits`/`traeModelSetEnabled`（内部自写 modelState，事后重读文件层合回本请求的 apiKeys 改动——层叠纪律）。其余键走 `SETTINGS_FIELDS` 白名单（**不是** `Config({})` 的键集——无默认值字段如 `activeApiKey` 不会出现在解析产物里，踩坑 #12），`null` 删键。落盘前过 `Config` 全量校验 + `validateBaseURL`（主/trae 各 baseURL）+ `activeApiKey` 一致性。
+  - `{patch: {...}}` —— merge & apply。特殊 patch 键：`apiKeysAdd`/`apiKeysRemove`（卡只见脱敏 key，增删必须在此对原始列表操作）、`modelSetEnabled`/`modelSetLimits`/`traeModelSetEnabled`/`qoderModelSetEnabled`（内部自写 modelState，事后重读文件层合回本请求的 apiKeys 改动——层叠纪律）。其余键走 `SETTINGS_FIELDS` 白名单（**不是** `Config({})` 的键集——无默认值字段如 `activeApiKey` 不会出现在解析产物里，踩坑 #12），`null` 删键。落盘前过 `Config` 全量校验 + `validateBaseURL`（主/trae/qoder 各 baseURL）+ `activeApiKey` 一致性。
   - `{action: ...}` —— 动作表：
 
 | action | 行为 |
@@ -162,6 +182,8 @@ presets 常量：`PROVIDER_PRESETS = [arkProvider, bailianProvider, deepseekProv
 | `credential-scan` / `credential-import` | G7 本机登录态扫描 / 确认后导入（命中同名 preset 走 preset 通道拿 fallbackModels） |
 | `trae-oauth-start` / `trae-oauth-status` / `trae-oauth-logout` | Trae OAuth 三件套 |
 | `trae-model-sync` / `trae-model-list` | Trae 目录同步（可带 dbPath）/ 列表 |
+| `qoder-oauth-start` / `qoder-oauth-status` / `qoder-oauth-logout` | Qoder 设备流三件套 |
+| `qoder-model-sync` / `qoder-model-list` | Qoder 签名目录同步 / 列表 |
 | `usage` | `meter.view()` + 桥状态 + `quotaSnapshot`（60s 缓存） |
 
 ### POST 处理决策图
@@ -174,7 +196,7 @@ flowchart TB
     BODY -->|action 动作| ACT["动作分发（见上方 action 表）"]
     BODY -->|patch 保存| KEYS{"特殊 patch 键"}
     KEYS -->|"apiKeysAdd / apiKeysRemove"| K1["对存储的原始 key 列表操作<br/>（设置卡只见脱敏 key）"]
-    KEYS -->|"modelSetEnabled / modelSetLimits / traeModelSetEnabled"| K2["modelState 自写<br/>（事后重读文件层，合回 apiKeys 改动）"]
+    KEYS -->|"modelSetEnabled / modelSetLimits / traeModelSetEnabled / qoderModelSetEnabled"| K2["modelState 自写<br/>（事后重读文件层，合回 apiKeys 改动）"]
     KEYS -->|普通字段| K3["SETTINGS_FIELDS 白名单过滤<br/>（null 删键）"]
     VAL{"Config 全量校验 + validateBaseURL<br/>+ activeApiKey 一致性"}
     K1 --> VAL
