@@ -63,7 +63,7 @@ export function createQoderProvider(deps) {
       try {
         const accessToken = String(cred.authorization).replace(/^Bearer\s+/, '')
         const result = await fetchQoderCatalog(cosy, { accessToken, machineId: cred.machineId, uid: cred.uid }, s.qoderInferBaseURL)
-        catalogState = { profiles: result.profiles, sources: result.sources, variants: result.variants, fetchedAt: Date.now() }
+        catalogState = { profiles: result.profiles, sources: result.sources, variants: result.variants, entries: result.entries, fetchedAt: Date.now() }
         return { ok: true, count: result.profiles.length, fetchedAt: catalogState.fetchedAt }
       } catch (err) {
         return { ok: false, error: err?.message ?? String(err), kept: catalogState != null }
@@ -90,6 +90,7 @@ export function createQoderProvider(deps) {
     runtime: deps.runtime,
     forensics: deps.forensics,
     getCatalogProfiles: () => catalogState?.profiles ?? null,
+    getCatalogEntry: (id) => catalogState?.entries?.[id] ?? null,
     getModelSource: (id) => catalogState?.sources?.[id] ?? 'system',
     getModelPrefs: deps.getModelPrefs ?? (() => ({})),
   })

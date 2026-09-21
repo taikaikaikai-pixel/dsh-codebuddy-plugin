@@ -95,6 +95,7 @@ export function createCosyRuntime({ wasmPath })
 - **两个签名入口的分工**（2026-09-20 实测，勿混淆）：
   - `prepareInferRequest(endpoint, bodyJson, modelKey, modelSource)` = **聊天面**：URL 恒映射到 infer 节点的 `agent_chat_generation`，body 由 WASM 加密；
   - `prepareRequest(...)` = **目录等管理面**：把任意路径重写为 `/algo` 前缀 + `?Encode=1`，签名绑定改写后 URL——聊天面走它必 401/404；
+- **第三入口 `prepareSigned(cred, {endpoint, path, method, mode, body})`**（2026-09-22 用量归因课题新增）：`prepareRequest` 直通——`mode:"auth"`（/algo 重写+加密，business/finish 用）、`mode:"sign"`（仅签名，/api/v1/tracking 用；实测 wasm 对 sign 模式也重写为 `/algo` 前缀 + Encode=1，与官方线缆一致）；
 - **infer 节点由 region 发现服务给出**：`GET /api/v3/service/region/endpoints`（sign 匿名模式可取，响应 Encode=1 密文需 decrypt）——CN = `gateway.qoder.com.cn`；
 - **胶水两个实测坑**（踩坑 #36）：`RequestResult.headers` 是 **JS Map**——`{...map}` 展开得空头组、服务器直接断连无报错，必须 `Object.fromEntries`；手写胶水位运算永远加括号（`ptr >>> 0 + len` ≡ `ptr >>> len`）；
 - **线程/并发**：WASM 实例单例（模块级 promise 缓存，失败不缓存下次重试）；QoderContext 持不可变凭据快照，`machineId:accessToken` 键变化（refresh 轮换）即重建上下文（构造便宜，WASM 不重载）；
@@ -130,11 +131,13 @@ export function createQoderEnvelopeParser()  // SSE 信封解析器（单测可�
 3. **凭据**：`resolveCredential(s)` 为空 → 503 `qoder_credential_unavailable`（文案引导设置卡授权）；
 4. **出站构造**：OpenAI 字段**白名单**透传（messages/tools/tool_choice/temperature/top_p/max_tokens/stop/reasoning_effort…，`CHAT_FIELDS`，pi-ai 私有扩展不透传）+ 强制 `stream:true` + `stream_options.include_usage`；**messages 过 `sanitizeToolPairing()`**（见下节"出站 tool 配对修复"）；
 5. **逐模型 prefs 补默认**（2026-09-22）：payload 未带 `reasoning_effort` 且 `getModelPrefs(model).effort` 已设（≠off）→ 注入；`effort=off` = 省略参数（与 cordis.patch.yml verified 语义一致）；payload 未带 max_tokens/max_completion_tokens 且目录 profile 存在 → 注入 `max_completion_tokens=profile.maxTokens`；**客户端带值绝不覆盖**；
-6. **签名**：`cosy.prepareChat(cred, {endpoint, body, modelKey, modelSource})` 产出 URL/头组/密文 body（**签名绑定 URL，不可手改**）；
-7. **首字节护栏**：`upstreamFirstByteTimeoutMs`（默认 45s，复用 trae 同名设置）——fetch 响应头到达即清定时器，只约束"连上却不出头"的死态；
-8. **上游非 2xx**：401/429 原状态透传，其余归 502，错误体带上游正文前 200 字符；
-9. **SSE 拆封**：`createQoderEnvelopeParser` 吃 `(eventName, dataText)`——`event:error` → 错误帧；`body==="[DONE]"` → done；尾帧（计时统计，无 body）忽略；inner chunk 解析后**无 choices/usage 且有 code/message = 带内失败帧**（2026-09-22 新增识别，实测形态 `{"code":"400","message":"[FAIL]node:…"}`——传输层 200 的业务失败，旧实现静默吞，见错误处理表）；其余得**标准 OpenAI chunk**，流式入站原样下发、非流式入站聚合（content/reasoning_content/tool_calls 按 index 累积/finish_reason）；
-10. **usage/计量**：usage 帧（`choices:[]`）的 `usage.credits` 归一为 `usage.credit` → `meter.record`（kind=chat）；取证日志 `QODER_GATEWAY_LOG`。
+6. **用量归因信封**（2026-09-22 逆向定案：裸 OpenAI body 不落入官方用量统计——quota/heatmap/summary 计数器对裸请求纹丝不动，高精度哨兵 `creditsSummary.totalCredits` 实证）：出站 body 补官方 `A6e` 信封的归因字段——`request_id`/`request_set_id`/`chat_record_id`（=request_id）/`session_id`（dsh 会话→UUID 实例级映射，跨请求稳定）/`chat_task:"FREE_INPUT"`/`chat_context`（text=最后 user 文本）/`is_reply:true`/`is_retry:false`/`source:1`/`version:"3"`/`agent_id:"agent_common"`/`task_id:"common"`/`session_type:"qoderclicn"`/`aliyun_user_type:""`/`model_config`（取目录原始条目 `getCatalogEntry`）+ `business` 块（`id`=request_set_id、`stage:"processing"`、`name`=prompt 前 10 字）；
+7. **签名**：`cosy.prepareChat(cred, {endpoint, body, modelKey, modelSource})` 产出 URL/头组/密文 body（**签名绑定 URL，不可手改**）；
+8. **首字节护栏**：`upstreamFirstByteTimeoutMs`（默认 45s，复用 trae 同名设置）——fetch 响应头到达即清定时器，只约束"连上却不出头"的死态；
+9. **上游非 2xx**：401/429 原状态透传，其余归 502，错误体带上游正文前 200 字符；
+10. **SSE 拆封**：`createQoderEnvelopeParser` 吃 `(eventName, dataText)`——`event:error` → 错误帧；`body==="[DONE]"` → done；尾帧（计时统计，无 body）忽略；inner chunk 解析后**无 choices/usage 且有 code/message = 带内失败帧**（2026-09-22 新增识别，实测形态 `{"code":"400","message":"[FAIL]node:…"}`——传输层 200 的业务失败，旧实现静默吞，见错误处理表）；其余得**标准 OpenAI chunk**，流式入站原样下发、非流式入站聚合（content/reasoning_content/tool_calls 按 index 累积/finish_reason）；
+11. **usage/计量**：usage 帧（`choices:[]`）的 `usage.credits` 归一为 `usage.credit` → `meter.record`（kind=chat）；取证日志 `QODER_GATEWAY_LOG`；
+12. **收尾上报**（2026-09-22，与官方客户端同构、fire-and-forget `.catch` 落地不阻塞主链路）：每轮结束发两条 COSY 签名上报——`POST /api/v2/service/business/finish?Encode=1`（`prepareSigned` mode `"auth"`；`BUSINESS_FINISH` 事件，`business.id`=请求侧 request_set_id、`session_id` 同源，stage complete/error）+ `POST /api/v1/tracking`（mode `"sign"`；`qodercli-back-flow-agent-query-finish` 事件，聚合 `total_credits`/`total_*_tokens`）。aid/yx_uid 暂无来源置空串（服务端仍 success 接收）。
 
 ### handleChat 流程图
 
@@ -145,7 +148,7 @@ flowchart TB
     VALID -->|是| ACQ["SessionLimiter.acquire（会话并发闸）"]
     ACQ --> CRED{"resolveCredential"}
     CRED -->|空| E503["503 qoder_credential_unavailable"]
-    CRED -->|有| OUT["OpenAI 白名单字段 + prefs 补默认<br/>（reasoning_effort / max_completion_tokens）<br/>cosy.prepareChat 签名（URL/头/密文 body）"]
+    CRED -->|有| OUT["OpenAI 白名单字段 + prefs 补默认<br/>+ 用量归因信封（session_id/business 块等）<br/>cosy.prepareChat 签名（URL/头/密文 body）"]
     OUT --> FB["首字节护栏（默认 45s）<br/>POST agent_chat_generation?Encode=1"]
     FB --> OK{"上游 2xx?"}
     OK -->|否| EUP["401/429 透传，其余 502<br/>带上游正文摘要"]
@@ -155,7 +158,8 @@ flowchart TB
     EV -->|"[DONE]" / 尾帧| DONE
     EV -->|inner chunk| EMIT["标准 OpenAI chunk：流式原样下发<br/>非流式聚合（tool_calls 按 index 累积）"]
     EMIT --> METER["usage.credits → usage.credit<br/>meter.record（kind=chat）"]
-    METER --> DONE(["done"])
+    METER --> REPORT["收尾上报（fire-and-forget）<br/>business/finish + tracking"]
+    REPORT --> DONE(["done"])
 ```
 
 ## 出站 tool 配对修复（sanitizeToolPairing，2026-09-22）

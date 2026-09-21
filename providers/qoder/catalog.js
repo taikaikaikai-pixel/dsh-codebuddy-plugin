@@ -83,5 +83,9 @@ export async function fetchQoderCatalog(cosy, cred, inferBaseURL) {
   // 上下文变体清单逐模型保留（不进 profiles——镜像块形状不变，见 index.js 镜像纪律）
   const variants = {}
   for (const e of entries) variants[e.key] = projectQoderVariants(e)
-  return { profiles, sources, variants, raw: body }
+  // 原始条目按键索引（网关出站信封的 model_config 需要 is_vl/is_reasoning/
+  // max_input_tokens 等未投影字段，2026-09-22 用量归因信封对齐官方客户端）
+  const byKey = {}
+  for (const e of entries) byKey[e.key] = e
+  return { profiles, sources, variants, entries: byKey, raw: body }
 }

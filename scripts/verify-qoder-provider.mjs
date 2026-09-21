@@ -845,6 +845,93 @@ console.log('\n[17] qoderModelSetPrefs 全链路：apply() 起真组合根，moc
   cat.close()
 }
 
+// ── [19] 用量归因：出站信封归因字段 + 收尾 business/finish 与 tracking 上报 ──
+// （2026-09-22 逆向：裸 OpenAI body 不落入官方用量统计；官方客户端每轮结束
+// 补两条 COSY 签名上报。证据 docs/probes/qoder-attribution-*.json）
+console.log('\n[19] 用量归因信封与收尾上报（官方客户端同构）')
+{
+  const { createQoderGateway } = await import('../providers/qoder/gateway.js')
+  const isUuid = (v) => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v)
+  const upstreamBodies = []
+  const reportCalls = [] // { path, mode, body }
+  const infer19 = createServer((req, res) => {
+    const chunks = []
+    req.on('data', (c) => chunks.push(c))
+    req.on('end', () => {
+      const path = req.url.split('?')[0]
+      if (path.endsWith('/agent_chat_generation')) {
+        upstreamBodies.length // no-op
+        const env = (body) => `data:${JSON.stringify({ headers: {}, body, statusCodeValue: 200, statusCode: 'OK' })}\n\n`
+        const chunk = JSON.stringify({ choices: [{ delta: { content: 'ok' }, index: 0, finish_reason: 'stop' }], created: 1, id: 'c1', model: 'qmodel_38max', object: 'chat.completion.chunk' })
+        const usageFrame = JSON.stringify({ choices: [], created: 1, id: 'c1', model: 'qmodel_38max', object: 'chat.completion.chunk', usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15, credits: 0.001 } })
+        res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+        res.end(env(chunk) + env(usageFrame) + env('[DONE]'))
+        return
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end('success')
+    })
+  })
+  await new Promise((r) => infer19.listen(0, '127.0.0.1', r))
+  const origin19 = `http://127.0.0.1:${infer19.address().port}`
+  const stubCosy19 = {
+    prepareChat: async (_cred, { endpoint, body }) => {
+      upstreamBodies.push(JSON.parse(body)) // 签名前明文
+      return { url: `${endpoint}/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`, headers: {}, body }
+    },
+    prepareSigned: async (_cred, { path, mode, body }) => {
+      reportCalls.push({ path, mode, body })
+      return { url: `${origin19}${path}`, headers: {}, body }
+    },
+  }
+  const runtime19 = { running: false, port: null, lastError: null }
+  const gw19 = createQoderGateway({
+    settings: () => ({ qoderInferBaseURL: origin19, maxConcurrentPerSession: 4, upstreamFirstByteTimeoutMs: 5000 }),
+    resolveCredential: async () => ({ authorization: 'Bearer dt-test', machineId: 'a'.repeat(48), uid: 'u-1' }),
+    cosy: stubCosy19,
+    meter: { record: () => {} },
+    runtime: runtime19,
+    forensics: { logPath: () => undefined },
+    getCatalogProfiles: () => [{ id: 'qmodel_38max', name: 'Qwen3.8-Max', contextWindow: 200000, maxTokens: 32768, input: ['text', 'image'] }],
+    getCatalogEntry: (id) => (id === 'qmodel_38max' ? { key: 'qmodel_38max', display_name: 'Qwen3.8-Max', is_vl: true, is_reasoning: false, max_input_tokens: 262144, source: 'system' } : null),
+    getModelSource: () => 'system',
+  })
+  const stopGw19 = gw19.listen(0)
+  for (let i = 0; i < 50 && !runtime19.running; i++) await sleep(50)
+  const call19 = (sid) => fetch(`http://127.0.0.1:${runtime19.port}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json', 'x-session-id': sid },
+    body: JSON.stringify({ model: 'qmodel_38max', stream: true, messages: [{ role: 'user', content: '归因信封测试 prompt' }] }),
+  }).then((r) => r.text())
+  await call19('sess-a')
+  await call19('sess-a')
+  await call19('sess-b')
+  // 上报是 fire-and-forget，等它们落地
+  for (let i = 0; i < 40 && reportCalls.length < 6; i++) await sleep(50)
+
+  const env1 = upstreamBodies[0]
+  ok(isUuid(env1?.session_id) && isUuid(env1?.request_id) && isUuid(env1?.request_set_id), '信封携带 UUID 形态 session_id/request_id/request_set_id')
+  ok(env1?.chat_record_id === env1?.request_id, 'chat_record_id = request_id')
+  ok(env1?.chat_task === 'FREE_INPUT' && env1?.source === 1 && env1?.version === '3' && env1?.is_reply === true && env1?.is_retry === false, 'chat_task/source:1/version:"3"/is_reply 恒值对齐')
+  ok(env1?.agent_id === 'agent_common' && env1?.task_id === 'common' && env1?.session_type === 'qoderclicn', 'agent_id/task_id/session_type 对齐官方 CLI')
+  ok(env1?.model_config?.key === 'qmodel_38max' && env1?.model_config?.display_name === 'Qwen3.8-Max' && env1?.model_config?.max_input_tokens === 262144 && env1?.model_config?.is_vl === true, 'model_config 取自目录原始条目')
+  ok(env1?.business?.id === env1?.request_set_id && env1?.business?.stage === 'processing' && env1?.business?.product === 'cli', 'business 块 id=request_set_id、stage=processing')
+  ok(env1?.chat_context?.text === '归因信封测试 prompt', 'chat_context.text = 最后一条 user 文本')
+  ok(upstreamBodies[1]?.session_id === env1.session_id && upstreamBodies[2]?.session_id !== env1.session_id, 'session_id 按 dsh 会话稳定、跨会话区分')
+
+  const finish = reportCalls.filter((c) => c.path.includes('business/finish'))
+  const track = reportCalls.filter((c) => c.path.includes('/api/v1/tracking'))
+  ok(finish.length === 3 && finish.every((c) => c.mode === 'auth'), '每次完成发 business/finish（prepareRequest mode auth）')
+  ok(track.length === 3 && track.every((c) => c.mode === 'sign'), '每次完成发 tracking（mode sign）')
+  const f0 = JSON.parse(JSON.parse(finish[0].body).payload)
+  ok(f0.event_type === 'BUSINESS_FINISH' && f0.event_data.business.id === env1.request_set_id && f0.event_data.session_id === env1.session_id && f0.event_data.business.stage === 'complete', 'BUSINESS_FINISH join key 与信封同源、stage=complete')
+  const t0 = JSON.parse(track[0].body)[0]
+  const item0 = t0?.event_data?.items?.[0] ?? {}
+  ok(t0?.event_type === 'qodercli-back-flow-agent-query-finish' && t0.business_id === env1.request_set_id && item0.total_credits === 0.001 && item0.total_input_tokens === 10 && item0.actual_model === 'qmodel_38max', 'tracking 聚合 usage.credits/tokens，business_id 同源')
+
+  await stopGw19()
+  infer19.close()
+}
+
 server.close()
 console.log(`\n=== verify-qoder-provider: ${pass} 通过 / ${fail} 失败 ===`)
 process.exit(fail ? 1 : 0)

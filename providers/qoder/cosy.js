@@ -300,7 +300,8 @@ let wasmPromise = null
  * @param {{ wasmPath: string }} opts
  * @returns 单例运行时 {
  *   ensureContext(cred), prepareChat({endpoint,body,modelKey,modelSource}),
- *   prepareGet({endpoint,path}), decrypt(text)
+ *   prepareGet({endpoint,path}), prepareSigned({endpoint,path,method,mode,body}),
+ *   decrypt(text)
  * }；cred = { accessToken, machineId, uid }。
  */
 export function createCosyRuntime({ wasmPath }) {
@@ -326,7 +327,7 @@ export function createCosyRuntime({ wasmPath }) {
   /** 凭据快照变化（refresh 轮换）时重建上下文；同快照复用。 */
   async function ensureContext(cred) {
     if (!cred?.accessToken || !cred?.machineId) throw new Error('qoder 凭据不完整（需登录）')
-    const key = `${cred.machineId}:${cred.accessToken}`
+    const key = `${cred.machineId}:${cred.accessToken}:${JSON.stringify(cred.extraUser ?? null)}`
     if (context && contextKey === key) return context
     await ensureWasm()
     const baseUser = {
@@ -335,6 +336,10 @@ export function createCosyRuntime({ wasmPath }) {
       organization_id: '',
       organization_tags: [],
       data_policy_agreed: true,
+      // 2026-09-22 归因课题：官方 cachedUserInfo 比最小形态多 login_method/
+      // user_type/plan/aid/yx_uid 等字段（bundle 实证），经 encrypt_user_info
+      // 进服务端计费归因上下文；调用方可经 cred.extraUser 注入。
+      ...(cred.extraUser && typeof cred.extraUser === 'object' ? cred.extraUser : {}),
     }
     const rf = JSON.parse(runtimeFields(JSON.stringify(baseUser)))
     context = new QoderContext(cred.machineId, QODER_COSY_VERSION, JSON.stringify({
@@ -362,6 +367,17 @@ export function createCosyRuntime({ wasmPath }) {
       const req = ctx.prepareRequest(endpoint, path, 'GET', 'auth', undefined, undefined)
       const headers = req.headers instanceof Map ? Object.fromEntries(req.headers) : req.headers
       return { url: req.url, headers }
+    },
+    /**
+     * prepareRequest 直通（上报/管理面 POST）：mode 'auth'（/algo 重写 + 加密）
+     * 或 'sign'（仅签名）。官方客户端 business/finish 用 auth、/api/v1/tracking
+     * 用 sign（bundle g4i/aPl 调用点实证）。
+     */
+    async prepareSigned(cred, { endpoint, path, method = 'POST', mode = 'auth', body }) {
+      const ctx = await ensureContext(cred)
+      const req = ctx.prepareRequest(endpoint, path, method, mode, body ?? undefined, undefined)
+      const headers = req.headers instanceof Map ? Object.fromEntries(req.headers) : req.headers
+      return { url: req.url, headers, body: req.body }
     },
     decrypt,
   }

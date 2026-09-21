@@ -8,7 +8,13 @@
  *
  *   出站：POST {inferBaseURL}/algo/api/v2/service/pro/sse/agent_chat_generation
  *         ?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1
- *         （URL/头/body 全由 cosy.prepareChat 产出，签名绑定 URL 不可手改）
+ *         （URL/头/body 全由 cosy.prepareChat 产出，签名绑定 URL 不可手改）；
+ *         body 明文 = OpenAI 白名单字段 + 官方客户端用量归因信封（request_id/
+ *         request_set_id/session_id/chat_task/version:"3"/source:1/agent_id/
+ *         task_id/session_type/model_config/business 块——2026-09-22 逆向实证
+ *         裸 body 不落入官方用量统计，对齐后逐字段同构）；
+ *         每轮结束补 business/finish + /api/v1/tracking 两条 COSY 签名上报
+ *         （best-effort，官方客户端同语义，证据 docs/probes/qoder-attribution-*.json）
  *   入站 SSE：data:{headers, body, statusCodeValue} 信封——body 是**字符串**，
  *         内容为标准 OpenAI chat.completion.chunk 的 JSON 或 "[DONE]"；
  *         尾帧 {firstTokenDuration,totalDuration,serverDuration} 无 body 忽略；
@@ -29,6 +35,7 @@ import { appendFileSync } from 'node:fs'
 
 import { SessionLimiter, extractSessionId } from '../../core/bridge.js'
 import { sanitizeToolPairing, describeRepair } from '../tool-pairing.js'
+import { QODER_COSY_VERSION } from './cosy.js'
 import { randomUUID } from 'node:crypto'
 
 /** 上游接受的 OpenAI 字段白名单（dsh/pi-ai 可能附带私有扩展，不透传）。 */
@@ -115,6 +122,7 @@ export function createQoderEnvelopeParser() {
  *   runtime: { running, port, lastError },
  *   forensics?: { logPath: () => string|undefined },
  *   getCatalogProfiles: () => Array|null,  // /v1/models 端点
+ *   getCatalogEntry?: (id: string) => object|null, // 目录原始条目（model_config 取数）
  *   getModelSource: (id: string) => string, // X-Model-Source（目录 sources 映射）
  *   getModelPrefs?: () => object, // { [id]: { effort?, contextVariant? } } 出站补默认
  * }} deps
@@ -122,6 +130,19 @@ export function createQoderEnvelopeParser() {
 export function createQoderGateway(deps) {
   const limiter = new SessionLimiter()
   const logPrefix = '[dsh-tap/qoder]'
+  // dsh 会话标识 → 官方形态 session_id（UUID）：映射为实例状态（踩坑 #20），
+  // 同一 dsh 会话跨请求稳定，与官方 CLI 会话语义对齐。
+  const sessionUuids = new Map()
+  function qoderSessionId(dshSessionId) {
+    const key = String(dshSessionId)
+    let v = sessionUuids.get(key)
+    if (!v) {
+      v = randomUUID()
+      if (sessionUuids.size >= 5000) sessionUuids.clear()
+      sessionUuids.set(key, v)
+    }
+    return v
+  }
 
   function gwLog(record) {
     const path = deps.forensics?.logPath?.()
@@ -133,6 +154,74 @@ export function createQoderGateway(deps) {
 
   function modelSourceOf(model) {
     return deps.getModelSource?.(model) ?? 'system'
+  }
+
+  /** 最后一条 user 消息的纯文本（content 字符串或多模态 parts 拼接）。 */
+  function lastUserTextOf(messages) {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i]
+      if (m?.role !== 'user') continue
+      if (typeof m.content === 'string') return m.content
+      if (Array.isArray(m.content)) {
+        return m.content.filter((p) => p?.type === 'text' && typeof p.text === 'string').map((p) => p.text).join('\n')
+      }
+      return ''
+    }
+    return ''
+  }
+
+  /**
+   * 用量归因上报（2026-09-22 逆向定案后接入，与官方客户端逐字段同构）：
+   * 裸 OpenAI body 的请求不落入官方用量统计（quota/usage、heatmap、summary
+   * 全不动，证据 docs/probes/qoder-quota-1790026311843.json）；官方客户端
+   * 每轮业务结束后补两条 COSY 签名上报（bundle g4i/aPl 原文）：
+   *   1. POST {infer}/api/v2/service/business/finish?Encode=1（mode auth）
+   *      —— BUSINESS_FINISH 事件，business.id = request_set_id 为 join key；
+   *   2. POST {infer}/api/v1/tracking（mode sign）—— back-flow 事件，
+   *      聚合 total_credits/tokens（best-effort 语义，官方同样 fire-and-forget）。
+   * best-effort：任何失败都不影响主链路（调用侧 .catch 落地，踩坑 #33）。
+   */
+  async function reportUsage({ cred, endpoint, sessionId, requestSetId, stage, promptName, usage, model, ms }) {
+    const now = Date.now()
+    const uid = cred.uid ?? ''
+    const mid = cred.machineId ?? ''
+    const inner = {
+      event_time: now, event_type: 'BUSINESS_FINISH',
+      mid, aid: '', rid: randomUUID(), oid: '', yid: '', uid,
+      event_data: {
+        session_id: sessionId,
+        business: { product: 'cli', version: QODER_COSY_VERSION, type: 'agent', id: requestSetId, end_at: now, stage, name: promptName },
+      },
+    }
+    const finishBody = JSON.stringify({ payload: JSON.stringify(inner), encodeVersion: '1' })
+    const finish = await deps.cosy.prepareSigned(cred, { endpoint, path: '/api/v2/service/business/finish?Encode=1', method: 'POST', mode: 'auth', body: finishBody })
+    await fetch(finish.url, { method: 'POST', headers: { ...finish.headers, 'Content-Type': 'application/json' }, body: finish.body })
+    if (!usage) return
+    const envelope = [{
+      uuid: randomUUID(),
+      event_type: 'qodercli-back-flow-agent-query-finish',
+      event_time: now,
+      uid, oid: '', mid, aid: '',
+      os_arch: process.arch, os_version: '',
+      ide_type: 'CLI', ide_version: QODER_COSY_VERSION, cluster_env: '',
+      business_id: requestSetId, git_remote: '',
+      event_data: {
+        items: [{
+          schema_version: 2, session_id: sessionId, task_id: requestSetId,
+          request_set_id: requestSetId, prompt_id: randomUUID(),
+          entry: 'cli', product: 'cli', client_type: '5', cli_version: QODER_COSY_VERSION, os_type: process.platform,
+          query_callback: 'end', terminal_reason: stage, business_state_final: stage,
+          duration_ms: ms, loop_iteration_count: 1,
+          model_request_count: 1, model_request_success_count: stage === 'complete' ? 1 : 0, actual_model: model,
+          total_input_tokens: usage.prompt_tokens ?? 0, total_output_tokens: usage.completion_tokens ?? 0,
+          total_cache_read_tokens: 0, total_cache_write_tokens: 0, total_thinking_tokens: 0,
+          total_credits: usage.credit ?? 0, total_original_credits: usage.credit ?? 0,
+          average_ttft_ms: 0, delivery_mode: 'best_effort_background',
+        }],
+      },
+    }]
+    const track = await deps.cosy.prepareSigned(cred, { endpoint, path: '/api/v1/tracking', method: 'POST', mode: 'sign', body: JSON.stringify(envelope) })
+    await fetch(track.url, { method: 'POST', headers: { ...track.headers, 'Content-Type': 'application/json' }, body: track.body })
   }
 
   async function handleChat(req, res, rawBody) {
@@ -184,9 +273,51 @@ export function createQoderGateway(deps) {
         const profile = (deps.getCatalogProfiles() ?? []).find((p) => p.id === model)
         if (Number.isFinite(profile?.maxTokens)) upstream.max_completion_tokens = profile.maxTokens
       }
+      const endpoint = String(s.qoderInferBaseURL ?? '').replace(/\/+$/, '')
+      // ── 官方客户端用量归因信封（2026-09-22 逆向：裸 OpenAI body 不落入
+      // 官方用量统计；官方 A6e 信封的归因字段 + business 块逐字段对齐——
+      // business.id = request_set_id 与收尾 business/finish 上报同源）──
+      const promptText = lastUserTextOf(upstream.messages)
+      const requestId = randomUUID()
+      const requestSetId = randomUUID()
+      const qSessionId = qoderSessionId(sessionId)
+      const catEntry = deps.getCatalogEntry?.(model) ?? null
+      upstream.request_id = requestId
+      upstream.request_set_id = requestSetId
+      upstream.chat_record_id = requestId
+      upstream.session_id = qSessionId
+      upstream.chat_task = 'FREE_INPUT'
+      upstream.chat_context = {
+        text: promptText, features: [],
+        extra: { context: [], modelConfig: { key: model, is_reasoning: catEntry?.is_reasoning === true }, originalContent: promptText },
+        chatPrompt: '', imageUrls: null,
+      }
+      upstream.is_reply = true
+      upstream.is_retry = false
+      upstream.source = 1
+      upstream.version = '3'
+      upstream.agent_id = 'agent_common'
+      upstream.task_id = 'common'
+      upstream.session_type = 'qoderclicn'
+      upstream.aliyun_user_type = ''
+      upstream.model_config = {
+        key: model, display_name: typeof catEntry?.display_name === 'string' ? catEntry.display_name : model,
+        model: '', format: 'openai',
+        is_vl: catEntry?.is_vl === true, is_reasoning: catEntry?.is_reasoning === true,
+        api_key: '', url: '', source: modelSourceOf(model),
+        max_input_tokens: Number.isFinite(catEntry?.max_input_tokens) ? catEntry.max_input_tokens : 128000,
+      }
+      upstream.business = {
+        product: 'cli', version: QODER_COSY_VERSION, type: 'agent',
+        id: requestSetId, name: promptText.slice(0, 10), begin_at: t0, stage: 'processing',
+      }
+      const report = (stage, usage) => reportUsage({
+        cred: { accessToken, machineId: cred.machineId, uid: cred.uid },
+        endpoint, sessionId: qSessionId, requestSetId, stage,
+        promptName: upstream.business.name, usage, model, ms: Date.now() - t0,
+      }).catch(() => { /* best-effort：上报失败不影响主链路（官方同语义） */ })
       const bodyJson = JSON.stringify(upstream)
 
-      const endpoint = String(s.qoderInferBaseURL ?? '').replace(/\/+$/, '')
       const signed = await deps.cosy.prepareChat(
         { accessToken, machineId: cred.machineId, uid: cred.uid },
         { endpoint, body: bodyJson, modelKey: model, modelSource: modelSourceOf(model) },
@@ -212,6 +343,7 @@ export function createQoderGateway(deps) {
         res.writeHead(status, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: { message: `qoder upstream HTTP ${upstreamResp.status}: ${text.slice(0, 200)}`, code: `qoder_${upstreamResp.status}` } }))
         gwLog({ dir: 'err', status: upstreamResp.status, model, ms: Date.now() - t0 })
+        report('error', null)
         return
       }
 
@@ -255,6 +387,7 @@ export function createQoderGateway(deps) {
           const ev = parser.handle(lastEvent, line.slice(5).trim())
           if (ev.error) {
             gwLog({ dir: 'err', model, ms: Date.now() - t0, note: 'stream-error-frame', repaired: repairedNote })
+            report('error', null)
             if (wantStream) {
               emitError(`qoder upstream error: ${ev.error}`)
             } else {
@@ -307,6 +440,7 @@ export function createQoderGateway(deps) {
       }
       if (usage) deps.meter.record({ ts: t0, kind: 'chat', model, usage })
       gwLog({ dir: 'out', model, ms: Date.now() - t0, bytes: content.length, usage, finishReason, repaired: repairedNote })
+      report('complete', usage ?? null)
     } catch (err) {
       if (!res.headersSent) {
         res.writeHead(500, { 'Content-Type': 'application/json' })
