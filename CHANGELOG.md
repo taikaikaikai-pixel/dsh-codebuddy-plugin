@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.9.8 (2026-09-20)
+
+- **Qoder CN 通道聊天面全线打通（设计文档 §5e）**：推翻"OpenAI 面裸 Bearer"设想——真实形态是 `QoderContext.prepareInferRequest(endpoint, bodyJson, modelKey, modelSource)` 签名 + WASM 加密 body，POST 到 region 发现服务给出的 infer 节点（CN = `gateway.qoder.com.cn`）的 `/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`；响应为 SSE 信封（`data:{body:"<标准 OpenAI chunk JSON>"}`、body="[DONE]"、尾帧计时、event:error 异常帧）。矩阵实测：单轮/多轮/模型切换（auto/qmodel_38max）/OpenAI tools 流式全通，usage 带 credits 计量
+- **WASM 签名运行时入插件**：`providers/qoder/qoder_auth.wasm`（官方 CLI bundle 内嵌 base64 原字节，298KB）+ `providers/qoder/cosy.js`（手写 wasm-bindgen ABI 胶水——heap 表/字符串传递/栈指针返回槽，不复制 bundle 文本；运行时实例单例 + 凭据快照变化重建上下文）
+- **`providers/qoder/{catalog,gateway,index}.js`**：签名目录（明文/密文两态，`.chat[]` 投影 profile，contextWindow 取 context_config 默认档）+ 翻译网关（:3903，信封拆转 + 非流式聚合 + 首字节护栏 + Host 门 + usage.credits→credit 计量）+ 工厂组装
+- **组合根接线**：Config `qoderEnabled`/`qoderBridgePort`/`qoderInferBaseURL`；`providers.qoder` 镜像整块铺/删（路由存在性管理，同 trae 踩坑 #25）；路由 `qoder-model-sync`/`qoder-model-list`/patch `qoderModelSetEnabled`；启用自动同步目录；设置卡 Qoder CN 区升级为完整通道面板（登录/启用/目录同步/模型启停/端口/连接域名）
+- **验证**：verify-qoder-provider 65 → **83 断言**（新增 [14] 网关翻译：流式逐帧/聚合/计量归一/错误帧/401 透传/Host 门//v1/models；[15] 目录投影五断言）全绿，verify-providers/rotation/bridge 回归绿；dsh 0.1.6-alpha.2 真实实例端到端：选择器出 Qoder CN 组 → 选 Qwen3.8-Max → 哨兵词回显（网关计量日志坐实）；probe-qoder-live --chat 改走 cosy 签名路径（旧 api2-v2 裸 Bearer 形态废弃）
+
+## 0.9.7 (2026-09-19)
+
+- **Qoder CN 通道 Phase 1：设备流 OAuth 登录接入组合根**（providers/qoder/oauth.js 早入库，本批接线，功能对齐 CodeBuddy/Trae 登录区）：Config 新增 `qoderLoginHost` / `qoderOpenapiBaseURL` / `qoderClientId`（默认官方 prod 值）+ SETTINGS_FIELDS 白名单 + baseURL 校验（明文 http 仅回环）；`createQoderOAuth` 实例绑 `~/.dsh/qoder-plugin-auth.json`；路由 `qoder-oauth-start` / `-status` / `-logout`；GET 视图加 `qoder.oauth`（令牌与 machine_id 永不出宿主）。设置卡新增第 8 标签「Qoder CN」：登录（浏览器授权）/ 退出（二次确认）/ 状态行（pending 3s 轮询收敛、needsRelogin 引导重登）/ 高级连接折叠组；状态条与标签徽标加 Qoder 芯片。**仅登录**——聊天面与模型目录待 COSY WASM 签名打通（docs/goals/qoder-cn-provider-design.md §5b），不进选择器、不起桥
+
+- **dsh 0.1.6 设置卡迁移**（踩坑 #34）：0.1.6 拆除 `settings.plugin.item` 槽（插件配置 UI 迁入 Plugin Manager 的 `plugins.item`），旧槽名上 `slots.inject` 静默等待 → 升级后卡片"消失且零报错"（dshmarket 同受害）。修复：双槽注册（`plugins.item` 新槽 + 旧槽回退，哪个声明走哪个）；卡片按 owner props `view` 分形——`summary` 渲染一行简介、`page` 渲染完整表单（新增 `embedded` 模式：常开、不画自有折叠头部，页面自带标题/返回 crumb）；package.json `dsh.client.inject` 删掉 0.1.6 已不存在的 `@deepseek-ai/dsh-client-runtime`
+
+- **验证**：verify-qoder-provider 65 / verify-providers / verify-rotation / verify-bridge 离线全绿；dsh 0.1.6-alpha.2 真实实例端到端——GET /dsh-tap/settings 含 `qoder.oauth`（signedIn:true，脱敏）、`qoder-oauth-start` 出合法授权 URL（qoder.cn/device/selectAccounts，S256 参数齐）、pending 超时自愈且存量令牌不动；浏览器探针（dsh-ui-test/qoder-slot-check.js，Windows 侧 harness 重建）10/10——Plugin Manager 列卡 / summary 行 / 点开 page 视图标签栏 / Qoder CN 标签 / 已登录状态
+
 ## 0.9.6 (2026-09-11)
 
 - **移除 iFlow preset**（2026-09 停服）：providers/iflow/、PROVIDER_PRESETS、local-scan 探测器、verify-providers 断言同步移除；openai-compat 骨架的 status:434 认证方言识别保留（历史 iFlow 形态，对任何同形态上游仍有效）；docs/rules/extra-providers.md 矩阵删行、E-P6 转历史留存。用户 settings.yaml 里已存在的 iflow 块不动

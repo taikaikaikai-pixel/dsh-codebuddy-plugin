@@ -1,10 +1,10 @@
 # AGENTS.md — dsh-tap 开发指南
 
-面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#29）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
+面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#36）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
 
 ## 项目是什么
 
-把腾讯 CodeBuddy 网关（`copilot.tencent.com`）接入 DeepSeek Harness（dsh）的插件：18 个模型（可运行时增删）+ dsh 原生 `web_search`/`web_fetch` 的 CodeBuddy 后端 + `image_generate` 生图工具 + 本地流式桥 + Web UI 设置卡；v0.8.x 起增加第二上游 **TraeWork CN 通道**（OAuth 订阅额度 + OpenAI↔Trae 翻译网关 :3902 + 本机 state.vscdb 目录）。纯 ESM，Node ≥ 22。
+把腾讯 CodeBuddy 网关（`copilot.tencent.com`）接入 DeepSeek Harness（dsh）的插件：18 个模型（可运行时增删）+ dsh 原生 `web_search`/`web_fetch` 的 CodeBuddy 后端 + `image_generate` 生图工具 + 本地流式桥 + Web UI 设置卡；v0.8.x 起增加第二上游 **TraeWork CN 通道**（OAuth 订阅额度 + OpenAI↔Trae 翻译网关 :3902 + 本机 state.vscdb 目录）；v0.9.7/0.9.8 起第三上游 **Qoder CN 通道**（设备流 OAuth + COSY WASM 签名 + OpenAI↔加密信封翻译网关 :3903 + 网关目录镜像，设计文档 docs/goals/qoder-cn-provider-design.md）。纯 ESM，Node ≥ 22。
 
 ## 三层架构（改动时先想清楚落在哪层）
 
@@ -15,8 +15,9 @@
 | 凭据边缘层         | `core/`                                                                                               | **provider 无关**：json-store（文件层/env 解析）、rotation（KeyRotator 轮询/冷却/failover，实例状态）、usage-meter（计量存储）、bridge（流式桥：会话归因/并发闸/SSE 聚合/取证；上游特化全走 provider 钩子）。**禁止出现任何 CodeBuddy 特化**——verify-core-generic 静态扫描锁                                                                                                                                                                                                                       | 重启 dsh                                   |
 | 上游适配器         | `providers/codebuddy/`                                                                                | 全部 CodeBuddy 网关事实：headers（逐字段规则/迷信判定，ua-validation.md §3）、errors（错误码表）、oauth（设备流）、catalog（/v3/config+额度方言）、agenttool（search/webfetch）、images（生图）。裁判依据 docs/rules/                                                                                                                                                                                                                                                            | 重启 dsh                                   |
 | 上游适配器（v0.8.x） | `providers/trae/`                                                                                     | 全部 TraeWork CN 事实：oauth（**自持 ECDSA P-256 设备密钥**的设备流+DeviceProof 刷新，令牌存 `~/.dsh/trae-plugin-auth.json`）、catalog（本机 state.vscdb 目录→dsh profiles，复用 scripts/trae-model-catalog.mjs 纯函数——CLI 入口有 import.meta 守卫可安全当库导入）、gateway（OpenAI↔Trae 翻译网关 :3902：**不是 core 桥**——协议要改写不能透传，但复用 SessionLimiter/usage-meter 原语）、errors（mchost `{code}`/火山 ResponseMetadata/裸非 JSON 三态信封）。裁判依据 docs/reverse/traework-cn.md + trae-cloud-api.md | 网关端口/域名热生效；patch 路由改动重启 dsh              |
+| 上游适配器（v0.9.7+） | `providers/qoder/` | Qoder CN 事实：oauth（PKCE S256 设备流：授权页 qoder.cn/device/selectAccounts + openapi 面 poll（**404=未完成**）/refresh（`drt-` 前缀强制），令牌存 `~/.dsh/qoder-plugin-auth.json`）、cosy（COSY 签名运行时：`qoder_auth.wasm` 官方原字节 + 手写 wbindgen 胶水；**聊天签名走 `prepareInferRequest`，prepareRequest 的 /algo 重写是目录面专用**）、catalog（签名 GET /algo/api/v2/model/list，明文/密文两态）、gateway（OpenAI↔COSY 加密信封翻译 :3903，usage.credits 计量）。裁判依据 docs/goals/qoder-cn-provider-design.md（§5e = 聊天面打通实录） | 网关端口/域名热生效；patch 路由改动重启 dsh |
 | 多服务商（G6/G7）   | `providers/openai-compat.js` + `providers/ark`、`bailian`、`deepseek`、`bigmodel`、`moonshot`、`openrouter`、`qwen` | key 型 OpenAI 兼容上游注册表：共享骨架（GET /models 验目录 + provider 块组装；**/models 404 时 probeChatKey 探针验 key + fallbackModels 兜底清单**；公开目录型如 OpenRouter 走 `staticCatalog` 探针验 key + 内置精选表，裁判 docs/rules/extra-providers.md）+ 每上游 preset（baseURL/认证方言）。登记册在插件文件层 `managedProviders`，块写 settings.yaml、key 写 .credentials.yaml（踩坑 #21）                                                                                                                                                              | 免重启（热加载）                                 |
-| 浏览器半          | `lib/client.js`                                                                                       | Settings → 插件配置 的 dsh-tap 设置卡（`settings.plugin.item` slot；折叠态状态芯片 + 7 标签页懒挂载隐藏不卸载；复用宿主 `dsh-client-ui-primitives` 组件 + `--dsw-alias-*` tokens + 注入式 cbc- 样式，见踩坑 #15）                                                                                                                                                                                                                                                         | 刷新页面（注意浏览器缓存，测试加 `--disable-http-cache`） |
+| 浏览器半          | `lib/client.js`                                                                                       | dsh-tap 设置卡（dsh ≥ 0.1.6 = Plugin Manager `plugins.item` 槽，owner props `{view}` 分 summary 一行简介 / page 完整表单 embedded 常开；旧宿主回退 `settings.plugin.item`，踩坑 #34；折叠态状态芯片 + 8 标签页懒挂载隐藏不卸载；复用宿主 `dsh-client-ui-primitives` 组件 + `--dsw-alias-*` tokens + 注入式 cbc- 样式，见踩坑 #15）                                                                                                                                                                                                                                                         | 刷新页面（注意浏览器缓存，测试加 `--disable-http-cache`） |
 
 设置数据流：设置卡 → `POST /dsh-tap/settings`（自有路由）→ `~/.dsh/codebuddy-plugin.json`（文件层）→ `Config({entry, file})` 活解析。OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json`，**永不回传浏览器**（key 也只回脱敏 `ck_a…5678`）。
 
@@ -49,6 +50,12 @@ TraeWork CN 通道：
 - **inline\_chat 不做模型路由**（恒走账户默认模型）；唯一真实的模型选择 = **remote 会话协议**（chat\_sessions + manual 策略，耗 work 额度池、不支持 OpenAI tools）→ docs/reverse/trae-cloud-api.md §5.1
 
 - 额度双池：raw 耗 IDE 池、remote 耗 work 池；读数走 `ide_user_ent_usage` 按 `available_endpoint` 分池 → docs/reverse/trae-cloud-api.md
+
+Qoder CN 通道：
+
+- 设备流：授权页 `qoder.cn/device/selectAccounts`（PKCE S256，客户端生成 challenge/nonce/machine_id）→ 轮询 `openapi.qoder.com.cn/api/v1/deviceToken/poll`（**404=未完成**，1s×5min）→ 刷新 `deviceToken/refresh`（refresh_token 强制 `drt-` 前缀）；access `dt-` 30 天 / refresh 约 1 年，两令牌齐轮换 → docs/goals/qoder-cn-provider-design.md §2.2/§5b
+
+- **聊天签名入口是 `QoderContext.prepareInferRequest(endpoint, bodyJson, modelKey, modelSource)`**——URL 恒映射到 infer 节点（region 发现：CN = `gateway.qoder.com.cn`）的 `/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`，body 加密、SSE 信封回标准 OpenAI chunk；**`prepareRequest`（/algo 重写）只用于目录等管理面**；api2-v2 OpenAI 面裸 Bearer 恒 401（废弃勿用）→ 设计文档 §5e
 
 ## 踩坑速查（全本含代价与修复：docs/pitfalls.md；改代码前按编号查相关条）
 
@@ -85,6 +92,9 @@ TraeWork CN 通道：
 31. 状态文件落盘必须 tmp+rename 原子写——截断的 settings.yaml 往往仍是合法 YAML，静默丢配置比炸更糟（writeTextAtomic，0.9.5）
 32. 同值去重表（踩坑 #27）失败必须销账——POST 前记账、失败不回滚则该模型同向操作被永久吞掉
 33. fire-and-forget promise 必须 .catch 落地（unhandledRejection 崩宿主）；生命周期"已在目标态"早退条件必须计入 lastError 失败态，否则 listen 失败后永久 wedge
+34. dsh 0.1.6 拆除 `settings.plugin.item` 槽（迁入 Plugin Manager `plugins.item`，`{view:'summary'|'page'}` 契约）——旧槽上 `slots.inject` 静默等待，升级后卡片"消失且零报错"（dshmarket 同受害）；修复 = 双槽注册 + 卡片 embedded 分形；升级 dsh 后先 grep 新产物的槽名清单对账
+35. Windows Git Bash 的 `curl -d` 中文按 ANSI(GBK) 发字节——含非 ASCII 的 HTTP 测试用 Node fetch，"中文乱码"先怀疑测试工具链
+36. wasm-bindgen 的 RequestResult.headers 是 JS Map——`{...map}` 展开得空头组（服务器断连无报错），必须 Object.fromEntries；手写胶水位运算永远加括号（`ptr >>> 0 + len` ≡ `ptr >>> len`）
 
 ## 常用命令
 
@@ -99,6 +109,9 @@ node scripts/verify-rotation.mjs                # 离线多 Key 轮询回归（m
 node scripts/verify-core-generic.mjs            # core/ 通用性证伪（静态纯净扫描 + 第二上游全链路）
 node scripts/verify-providers.mjs               # 多服务商骨架离线回归（/models 404 兜底 + 认证方言）
 node scripts/verify-trae-provider.mjs           # Trae 通道离线回归（mock OAuth 全流程/目录映射/翻译网关）
+node scripts/verify-qoder-provider.mjs          # Qoder CN 离线回归（mock 设备流全流程 + 翻译网关信封 + 目录投影）
+node scripts/probe-qoder-live.mjs --login       # Qoder CN 真实设备流登录（浏览器授权；令牌存 ~/.dsh/qoder-plugin-auth.json）
+node scripts/probe-qoder-live.mjs --chat "文本" # Qoder CN 真实对话（cosy 签名路径，证据落 docs/probes/）
 node scripts/probe-trae-live.mjs --login        # Trae 真实登录（浏览器授权 + DeviceProof 刷新自证；一次性）
 node scripts/probe-trae-live.mjs --chat "文本"  # Trae 真实对话联调（原始证据落 docs/probes/ 校准信封）
 node scripts/measure-latency.mjs --mock|--real  # 识图/搜索端到端延迟分布（JSONL 落盘）
@@ -112,7 +125,7 @@ node scripts/probe-cache.mjs                    # 网关缓存对照探测（--m
 node scripts/probe-quota.mjs                    # 额度信号探测（accounts/dosage-notify/chat 响应头，证据落盘 docs/probes/）
 ```
 
-浏览器回归脚本（puppeteer-core + 系统 Chrome，位于仓库外本地目录 `dsh-ui-test/`，不进仓库；2026-08-18 从 `/tmp/dsh-ui-test/` 迁来——/tmp 被系统清空，step9/12/16b/17/18/23 随之丢失，现存为重建版；2026-09-03 随设置卡标签页重设计全套重建并换 `/dsh-tap/settings` 新路由）：`_helpers.js`（共享驱动：打开卡片并激活「模型」标签、`tab()` 标签激活、请求计数、Key 清理、模式切换、`normalizeField`）、step20（设置卡全套 22 断言：7 标签顺序/折叠态头部芯片/状态条/OAuth+Key 双视图/增删 Key/搜索开关与重置/模型分组移动）、step22（流畅度 25 断言：DOM 标记证明保存不卸载组件/严格 1 POST+1 GET/草稿跨标签保留/思考强度 select 设档与持久化/Key 排序）、step24（生图 7 断言）、step25（额度与用量 13 断言：未激活不轮询/文案/桥状态/经桥注入真实请求后轮询自动刷新/可见 21s 轮询 ≥2/切走即停）、step26（数值额度 8 断言：OAuth hero+资源包聚合展开 / api-key 估算档）、step27（目录同步 4）、step28（行内上限 9）、step29（服务商注册表 13，mock 上游端到端 + 行内反馈/删除二次确认）、step31-trae（Trae 通道 19：开启/目录同步/逐模型启停往返/连接域名折叠组/关闭删块）、shot9-redesign（明暗主题+逐标签截图）。跑前 `dsh web`，跑后杀 3080。选择器一律按 `.cbc-*` 类与行内单元格精确匹配（踩坑 #16 与 step20 误删 Key 的教训），改 UI 文案/结构后先 grep 旧脚本的选择器；脚本基线一律从 GET /settings 实况读取并收尾复原（含文件层擦除），不硬编码起始模式。
+浏览器回归脚本（puppeteer-core + 系统 Chrome，位于仓库外本地目录 `dsh-ui-test/`，不进仓库；2026-08-18 从 `/tmp/dsh-ui-test/` 迁来——/tmp 被系统清空，step9/12/16b/17/18/23 随之丢失，现存为重建版；2026-09-03 随设置卡标签页重设计全套重建并换 `/dsh-tap/settings` 新路由；2026-09-19 Windows 侧按 dsh 0.1.6 Plugin Manager 重建 `qoder-slot-check.js`——槽迁移 + Qoder CN 标签 10 断言，点击入口必须选卡片 `cardTitle` 按钮而非侧栏会话树同名行）：`_helpers.js`（共享驱动：打开卡片并激活「模型」标签、`tab()` 标签激活、请求计数、Key 清理、模式切换、`normalizeField`）、step20（设置卡全套 22 断言：7 标签顺序/折叠态头部芯片/状态条/OAuth+Key 双视图/增删 Key/搜索开关与重置/模型分组移动）、step22（流畅度 25 断言：DOM 标记证明保存不卸载组件/严格 1 POST+1 GET/草稿跨标签保留/思考强度 select 设档与持久化/Key 排序）、step24（生图 7 断言）、step25（额度与用量 13 断言：未激活不轮询/文案/桥状态/经桥注入真实请求后轮询自动刷新/可见 21s 轮询 ≥2/切走即停）、step26（数值额度 8 断言：OAuth hero+资源包聚合展开 / api-key 估算档）、step27（目录同步 4）、step28（行内上限 9）、step29（服务商注册表 13，mock 上游端到端 + 行内反馈/删除二次确认）、step31-trae（Trae 通道 19：开启/目录同步/逐模型启停往返/连接域名折叠组/关闭删块）、shot9-redesign（明暗主题+逐标签截图）。跑前 `dsh web`，跑后杀 3080。选择器一律按 `.cbc-*` 类与行内单元格精确匹配（踩坑 #16 与 step20 误删 Key 的教训），改 UI 文案/结构后先 grep 旧脚本的选择器；脚本基线一律从 GET /settings 实况读取并收尾复原（含文件层擦除），不硬编码起始模式。
 
 ## 文档地图（改哪类代码，先读哪份）
 

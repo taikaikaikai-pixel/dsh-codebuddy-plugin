@@ -66,7 +66,27 @@
 - 网关：`https://copilot.tencent.com`；UA 门只认 `/codebuddy\/[^a-z\s]*\./i`（含点即可，版本数值不查）。
 - `/v2/chat/completions` 必须 `stream:true`（否则 11101），无 UA 门；`/agenttool/*` 当前无 UA 门。
 - 探测纪律：1.5s+ 间隔、单账号、只读优先；证据落 `docs/probes/<课题>-<日期>.jsonl`，预测须预注册（脚本内 expect 字段）。
-- 工作区注意：**带 git 的正本在 WSL** `\\wsl.localhost\Ubuntu-22.04\root\dev\dsh-tap\`（`code/` 子目录为空，工件都在仓库根）；**Windows 侧** `C:\Users\21613\dev\dsh-tap` 是同一提交的逐字节拷贝但**无 .git**——两边文件内容一致，改任一侧都要手工同步另一侧（见上「分支拓扑」节）。
+- 工作区注意：**2026-09-21 起正本在 Windows** `C:\Users\21613\dev\dsh-tap`（git 历史已通过本地 fetch 从 WSL 并入，v0.8.3 分支连续）；WSL 侧 `/root/dev/dsh-tap` 已退役留作备份，别再往那边改（见上「分支拓扑」节与下「上次会话 2026-09-21」）。
+
+## 上次会话（2026-09-21，Windows 侧 dsh-tap）干了什么
+
+1. **版本控制合并**：Windows 副本（v0.9.8，Qoder 通道）此前无 .git；WSL 仓库（37+1 提交，分支 v0.8.3，领先 origin 10）为正。做法 = WSL 提交未落盘的「分支拓扑」节 → Windows `git fetch` WSL 本地远端（UNC，免代理）→ `git reset wsl/v0.8.3`（mixed，工作区不动）→ 恢复 Windows 缺失的 tracked 文件（`git ls-files -d`：wiki/×11 + .agents/ponytail）→ Windows 侧 v0.9.7/v0.9.8 工作作为新提交落到真实历史上。Windows STATE.md 经校验为 WSL 版严格超集（零 `<` 行）。
+2. **.gitattributes 新引入**：`* text=auto eol=lf` + `*.png/*.bin binary`——docs/probes 的抓包 .bin 按二进制保字节（踩坑 #19 教训）；.gitignore 采用 WSL 版全集（含 `.env*`/`*.key`/`*plugin-auth.json`/`.credentials*` 等凭据守卫）+ Thumbs.db。
+3. **待办**：origin（GitHub taikaikaikaikai-pixel/dsh-codebuddy-plugin）推送需代理 127.0.0.1:7890 在线（当前 refused）；推送目标分支 v0.8.3，main/open-source 线收敛与否见「分支拓扑」节再定。
+
+## 上次会话（2026-09-20，Windows 侧 dsh-tap）干了什么
+
+1. **Qoder CN 聊天面打通**（v0.9.8，设计文档 §5e）：昨天"聊天面被 COSY 签名卡住"的结论推翻——签名入口是 WASM 的 `prepareInferRequest`（URL 恒映射 infer 节点 `gateway.qoder.com.cn` 的 `agent_chat_generation`，body 加密，SSE 信封回标准 OpenAI chunk）；`prepareRequest` 的 /algo 重写只是目录面；api2-v2 OpenAI 面裸 Bearer 恒 401 废弃。wasm 抽成 `providers/qoder/qoder_auth.wasm`（官方原字节）+ 手写胶水 `cosy.js`（版权边界干净）。
+2. **通道全量落地**：`catalog.js`（签名目录 14 模型）+ `gateway.js`（翻译网关 :3903，usage.credits 计量）+ index.js 接线（qoderEnabled/qoderBridgePort/qoderInferBaseURL + 路由存在性管理镜像）+ 设置卡 Qoder CN 区完整化（登录/启用/目录/启停）。
+3. **验证**：verify-qoder-provider 83 断言全绿（新增 [14] 网关翻译/[15] 目录投影）；存量三套件绿；dsh 0.1.6 UI 端到端——选择器出 Qoder CN 组、选 Qwen3.8-Max、哨兵词回显（网关计量日志坐实）；probe-qoder-live --chat 改走 cosy 路径实测 "收到"。
+4. **注意**：headless profile 在本机是坏的（与 qoder 无关——旧 dsh-codebuddy-plugin 路由 + 死 key，裸跑也 400-no-body，别再拿它当对照）；两个 Windows 测试坑入档（pitfalls #35 curl -d 中文乱码假象、#36 Map headers 展开为空）。改动未同步 WSL 侧。
+
+## 上次会话（2026-09-19，Windows 侧 dsh-tap）干了什么
+
+1. **Qoder CN 通道 Phase 1 接线**（v0.9.7）：providers/qoder/oauth.js 接入组合根——Config 三字段（qoderLoginHost/qoderOpenapiBaseURL/qoderClientId）+ SETTINGS_FIELDS + `createQoderOAuth` 绑 `~/.dsh/qoder-plugin-auth.json` + 路由 `qoder-oauth-start/-status/-logout` + GET 视图 `qoder.oauth`；设置卡新增第 8 标签「Qoder CN」（登录/登出/状态/高级连接折叠组）。仅登录；聊天面与目录待 COSY WASM 签名（docs/goals/qoder-cn-provider-design.md §5b，Phase 2a 是唯一前置）。
+2. **dsh 0.1.6 设置卡迁移**（踩坑 #34）：0.1.5-rc.2 → 0.1.6-alpha.2 拆除了 `settings.plugin.item` 槽，卡片"消失且零报错"（dshmarket 同受害）。修复 = 双槽注册（Plugin Manager `plugins.item` + 旧槽回退）+ 卡片按 `{view}` 分形（summary 一行简介 / page embedded 常开）+ package.json 删掉已不存在的 `@deepseek-ai/dsh-client-runtime`。
+3. **验证**：四个离线套件全绿（verify-qoder-provider 65 / verify-providers / verify-rotation / verify-bridge）；dsh 0.1.6-alpha.2 真实实例（:3099）API 端到端（GET 含 qoder.oauth 脱敏、oauth-start 出合法 S256 授权 URL、pending 超时自愈令牌不动）；Windows 侧重建浏览器 harness（`C:\Users\21613\dev\dsh-ui-test\qoder-slot-check.js`）10/10。改动未同步 WSL 侧（两边手工同步纪律照旧）。
+4. 注意：`scripts/probe-qoder-live.mjs --login` 时代的真实令牌仍在 `~/.dsh/qoder-plugin-auth.json`，别在测试里调 `qoder-oauth-logout`（会清令牌；pending 超时无害可随便起）。
 
 ## 上次会话（2026-08-19）干了什么
 

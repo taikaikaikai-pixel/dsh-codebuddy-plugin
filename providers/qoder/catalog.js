@@ -1,0 +1,60 @@
+/**
+ * providers/qoder/catalog.js — Qoder CN 模型目录（/algo/api/v2/model/list）。
+ *
+ * 2026-09-20 实测：签名 GET 返回明文 JSON（即便带 Encode=1——服务端对该
+ * 端点不加密；密文时走 cosy.decrypt 兜底）。条目取 `.chat` 数组：
+ *   { key, display_name, format, source, enable, is_vl, is_reasoning,
+ *     max_input_tokens, context_config: { "<档>": { token_count, is_default } } }
+ * 只收 format==='openai' 且 enable!==false 的条目（实测 14 个全满足）。
+ * contextWindow 取 context_config 默认档（无则 max_input_tokens）；
+ * 目录不发布输出上限——maxTokens 取 32768 保守默认（可在 settings 镜像后手调）。
+ */
+
+/** 目录条目 → dsh profile。 */
+export function projectQoderModel(entry) {
+  if (!entry || typeof entry.key !== 'string' || !entry.key) return null
+  const ctxVariants = entry.context_config && typeof entry.context_config === 'object'
+    ? Object.values(entry.context_config)
+    : []
+  const defaultVariant = ctxVariants.find((v) => v?.is_default) ?? ctxVariants[0] ?? null
+  const contextWindow = Number.isFinite(defaultVariant?.token_count)
+    ? defaultVariant.token_count
+    : (Number.isFinite(entry.max_input_tokens) ? entry.max_input_tokens : 128000)
+  return {
+    id: entry.key,
+    name: typeof entry.display_name === 'string' && entry.display_name ? entry.display_name : entry.key,
+    contextWindow,
+    maxTokens: 32768,
+    input: entry.is_vl === true ? ['text', 'image'] : ['text'],
+  }
+}
+
+/**
+ * 拉取目录 → { profiles, raw }。明文/密文两态自适应。
+ * @param {object} cosy  createCosyRuntime 实例
+ * @param {object} cred  { accessToken, machineId, uid }
+ * @param {string} inferBaseURL  例 https://gateway.qoder.com.cn
+ */
+export async function fetchQoderCatalog(cosy, cred, inferBaseURL) {
+  const base = String(inferBaseURL ?? '').replace(/\/+$/, '')
+  const req = await cosy.prepareGet(cred, { endpoint: base, path: '/api/v2/model/list?Encode=1' })
+  const res = await fetch(req.url, { headers: req.headers })
+  const text = await res.text()
+  if (!res.ok) {
+    throw new Error(`qoder 目录 HTTP ${res.status}：${text.slice(0, 120)}`)
+  }
+  let body
+  try {
+    body = JSON.parse(text)
+  } catch {
+    body = JSON.parse(cosy.decrypt(text))
+  }
+  const chat = Array.isArray(body?.chat) ? body.chat : []
+  const entries = chat.filter((e) => e && e.format === 'openai' && e.enable !== false)
+  const profiles = entries.map(projectQoderModel).filter(Boolean)
+  if (!profiles.length) throw new Error('qoder 目录为空（chat 数组无可用 openai 条目）')
+  // X-Model-Source 头取数（全部实测条目为 "system"，但保留逐条目映射以防分化）
+  const sources = {}
+  for (const e of entries) sources[e.key] = typeof e.source === 'string' && e.source ? e.source : 'system'
+  return { profiles, sources, raw: body }
+}

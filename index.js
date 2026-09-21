@@ -60,6 +60,8 @@ import { CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/codebuddy/errors.js'
 import { createTraeProvider } from './providers/trae/index.js'
 import { TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/trae/errors.js'
 import { PROVIDER_ID_RE, createOpenAICompatProvider } from './providers/openai-compat.js'
+import { QODER_CLIENT_ID } from './providers/qoder/oauth.js'
+import { createQoderProvider } from './providers/qoder/index.js'
 import { scanLocalCredentials, readImportCredential } from './local-scan.js'
 import arkProvider from './providers/ark/index.js'
 import bailianProvider from './providers/bailian/index.js'
@@ -78,6 +80,7 @@ const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
 const SETTINGS_PATH = join(DSH_HOME, 'codebuddy-plugin.json')
 const AUTH_PATH = join(DSH_HOME, 'codebuddy-plugin-auth.json')
 const TRAE_AUTH_PATH = join(DSH_HOME, 'trae-plugin-auth.json')
+const QODER_AUTH_PATH = join(DSH_HOME, 'qoder-plugin-auth.json')
 const DSH_SETTINGS_PATH = join(DSH_HOME, 'settings.yaml')
 const DSH_CREDENTIALS_PATH = join(DSH_HOME, '.credentials.yaml')
 const PATCH_FILE = join(dirname(fileURLToPath(import.meta.url)), 'cordis.patch.yml')
@@ -132,6 +135,19 @@ export const Config = z.object({
   // 避免用户请求无限挂死（2026-08-24 故障取证 docs/diagnosis-trae-3003.md §8）。
   // 仅约束响应头到达前；SSE 长流在头到达后不受影响。
   upstreamFirstByteTimeoutMs: z.number().step(1).min(1000).max(300_000).default(45_000),
+  // ---- Qoder CN（第三上游）----
+  // 设备流事实见 providers/qoder/oauth.js 文件头与 docs/goals/qoder-cn-provider-design.md。
+  // 默认关闭：开启后同步网关模型目录到选择器（providers.qoder），并在
+  // qoderBridgePort 上起 OpenAI↔COSY 翻译网关；主聊天经镜像路由（哨兵
+  // Authorization）走该网关。qoderClientId 默认官方 prod 值，一般无需改。
+  qoderLoginHost: z.string().default('https://qoder.cn'),
+  qoderOpenapiBaseURL: z.string().default('https://openapi.qoder.com.cn'),
+  qoderClientId: z.string().default(QODER_CLIENT_ID),
+  qoderEnabled: z.boolean().default(false),
+  qoderBridgePort: z.number().step(1).min(1).max(65535).default(3903),
+  // infer 节点（region 发现服务实测 CN = gateway.qoder.com.cn；不是
+  // api2-v2.qoder.sh——那个 OpenAI 面对本通道 401，见设计文档 §5b 修订）。
+  qoderInferBaseURL: z.string().default('https://gateway.qoder.com.cn'),
 })
 
 /** Field metadata the settings card renders (labels live client-side). */
@@ -161,6 +177,12 @@ export const SETTINGS_FIELDS = [
   { key: 'traeBridgePort', kind: 'number' },
   { key: 'traeChatTransport', kind: 'select' },
   { key: 'upstreamFirstByteTimeoutMs', kind: 'number' },
+  { key: 'qoderLoginHost', kind: 'text' },
+  { key: 'qoderOpenapiBaseURL', kind: 'text' },
+  { key: 'qoderClientId', kind: 'text' },
+  { key: 'qoderEnabled', kind: 'boolean' },
+  { key: 'qoderBridgePort', kind: 'number' },
+  { key: 'qoderInferBaseURL', kind: 'text' },
 ]
 
 /**
@@ -808,6 +830,89 @@ const traeProvider = createTraeProvider({
   forensics: { logPath: () => process.env.TRAE_BRIDGE_LOG },
 })
 
+// ---------------------------------------------------------------------------
+// Qoder CN 通道（2026-09-19 Phase 1 登录；2026-09-20 Phase 2 聊天面打通）：
+// 设备流 OAuth（凭据存 ~/.dsh/qoder-plugin-auth.json）+ COSY WASM 签名
+// （providers/qoder/cosy.js）+ 翻译网关（OpenAI↔COSY SSE 信封）+ 网关目录
+// 镜像 providers.qoder 整块（路由存在性管理，同 trae 踩坑 #25 纪律）。
+// ---------------------------------------------------------------------------
+
+const readQoderAuth = () => readJson(QODER_AUTH_PATH)
+const writeQoderAuth = (v) => writeJson(QODER_AUTH_PATH, v)
+
+const qoderRuntime = { running: false, port: null, lastError: null }
+
+// 迟绑定：网关/目录需要"本代"的 settings 解析函数；apply() 每代重设。
+let qoderSettingsFn = () => ({ qoderEnabled: false })
+
+const qoderProvider = createQoderProvider({
+  readAuth: readQoderAuth,
+  writeAuth: writeQoderAuth,
+  settings: () => qoderSettingsFn(),
+  meter,
+  runtime: qoderRuntime,
+  forensics: { logPath: () => process.env.QODER_GATEWAY_LOG },
+})
+
+function readQoderModelState() {
+  const state = readFileLayer().qoderModelState
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return { disabled: {} }
+  return {
+    disabled: state.disabled && typeof state.disabled === 'object' && !Array.isArray(state.disabled)
+      ? state.disabled : {},
+  }
+}
+
+/** 镜像 providers.qoder **整块**（路由存在性管理，同 trae 镜像纪律）。 */
+function syncQoderModelsToDshSettings() {
+  let doc
+  try {
+    doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
+  } catch {
+    doc = new YAML.Document()
+  }
+  const s = Config({ ...readFileLayer() })
+  const view = qoderProvider.catalogView()
+  const disabled = readQoderModelState().disabled
+  const models = s.qoderEnabled === true && view
+    ? view.profiles.filter((p) => !disabled[p.id])
+    : null
+  const path = ['llm-pi-ai', 'providers', 'qoder']
+  if (!models || models.length === 0) {
+    if (!doc.getIn(path)) return false
+    doc.deleteIn(path)
+    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
+    return true
+  }
+  const block = {
+    displayName: 'Qoder CN',
+    api: 'openai-completions',
+    baseURL: `http://127.0.0.1:${s.qoderBridgePort}/v1`,
+    headers: { Authorization: 'Bearer dsh-qoder-bridge' },
+    models: YAML.parse(YAML.stringify(models)),
+  }
+  const current = doc.getIn(path)
+  if (YAML.stringify(current ?? null) === YAML.stringify(block)) return false
+  doc.setIn(path, YAML.parse(YAML.stringify(block)))
+  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
+  return true
+}
+
+function setQoderModelEnabled({ id, enabled }) {
+  if (typeof id !== 'string' || !id.trim()) throw new Error('qoderModelSetEnabled 需要 id')
+  assertSafeModelId(id)
+  const view = qoderProvider.catalogView()
+  if (!view || !view.profiles.some((p) => p.id === id)) throw new Error(`${id} 不在 Qoder 目录里（先同步目录）`)
+  const layer = readFileLayer()
+  const state = readQoderModelState()
+  if (enabled) delete state.disabled[id]
+  else state.disabled[id] = true
+  layer.qoderModelState = state
+  writeFileLayer(layer)
+  syncQoderModelsToDshSettings()
+  return state
+}
+
 function readTraeModelState() {
   const state = readFileLayer().traeModelState
   if (!state || typeof state !== 'object' || Array.isArray(state)) return { disabled: {} }
@@ -1018,6 +1123,20 @@ function settingsView(resolveNow) {
         ? { at: dynamicCatalog.fetchedAt, count: dynamicCatalog.count, source: 'gateway' }
         : null,
     },
+    qoder: {
+      oauth: qoderProvider.credentialView(),
+      bridge: {
+        running: qoderRuntime.running,
+        port: qoderRuntime.port,
+        lastError: qoderRuntime.lastError,
+      },
+      models: {
+        disabled: Object.keys(readQoderModelState().disabled),
+        sync: qoderProvider.catalogView()
+          ? { at: qoderProvider.catalogView().at, count: qoderProvider.catalogView().count }
+          : null,
+      },
+    },
   }
 }
 
@@ -1028,6 +1147,8 @@ function settingsView(resolveNow) {
  *   POST {action:'oauth-start'}                             → {authUrl}
  *   POST {action:'oauth-status'}                            → oauthStatus()
  *   POST {action:'oauth-logout'}                            → clears tokens
+ *   POST {action:'qoder-oauth-start'|'qoder-oauth-status'|'qoder-oauth-logout'}
+ *                                                           → Qoder CN 设备流（Phase 1 仅登录）
  *   POST {action:'model-list'}                              → gateway catalog
  *   POST {action:'model-sync'}                              → G4 resync /v3/config → mirror
  *   POST {action:'provider-list'|'provider-add'|'provider-remove'|'provider-refresh'}
@@ -1228,6 +1349,39 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               })
               return
             }
+            // ---- Qoder CN 通道 ----
+            if (body?.action === 'qoder-oauth-start') {
+              qoderProvider.oauth.startOAuth(resolveNow())
+                .then((r) => sendJSON(response, 200, { ok: true, authUrl: r.authUrl }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'qoder-oauth-status') {
+              sendJSON(response, 200, { ok: true, qoder: qoderProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'qoder-oauth-logout') {
+              qoderProvider.oauth.logout()
+              sendJSON(response, 200, { ok: true, qoder: qoderProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'qoder-model-sync') {
+              qoderProvider.syncCatalog()
+                .then((r) => {
+                  if (r.ok || qoderProvider.catalogView()) syncQoderModelsToDshSettings()
+                  sendJSON(response, 200, { ok: r.ok, sync: r, qoder: settingsView(resolveNow).qoder })
+                })
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'qoder-model-list') {
+              sendJSON(response, 200, {
+                ok: true,
+                view: qoderProvider.catalogView(),
+                disabled: Object.keys(readQoderModelState().disabled),
+              })
+              return
+            }
             if (body?.action === 'usage') {
               provider.catalog.quotaSnapshot(resolveNow)
                 .then((quota) => sendJSON(response, 200, {
@@ -1321,6 +1475,22 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               applyLive()
               return
             }
+            if (patch.qoderModelSetEnabled !== undefined) {
+              const withKeys = { ...nextUser }
+              setQoderModelEnabled(patch.qoderModelSetEnabled)
+              const after = readFileLayer()
+              delete withKeys.qoderModelState
+              Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
+              writeFileLayer(after)
+              sendJSON(response, 200, {
+                ok: true,
+                value: settingsView(resolveNow).value,
+                user: maskedUserLayer(after),
+                qoder: settingsView(resolveNow).qoder,
+              })
+              applyLive()
+              return
+            }
             for (const [key, value] of Object.entries(patch)) {
               if (key === 'apiKeysAdd' || key === 'apiKeysRemove') continue
               // Whitelist by SETTINGS_FIELDS, not Config({}) keys: fields
@@ -1333,7 +1503,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
             // Validate through the schema before persisting.
             const candidate = Config({ ...entryConfig, ...nextUser })
             validateBaseURL(candidate.baseURL)
-            for (const f of ['traeAuthBaseURL', 'traeChatBaseURL', 'traeLoginHost']) {
+            for (const f of ['traeAuthBaseURL', 'traeChatBaseURL', 'traeLoginHost', 'qoderLoginHost', 'qoderOpenapiBaseURL', 'qoderInferBaseURL']) {
               validateBaseURL(candidate[f])
             }
             const resolved = candidate
@@ -1466,6 +1636,7 @@ export function apply(ctx, config = {}) {
     syncImageTool()
     syncBridge()
     syncTraeBridge()
+    syncQoderBridge()
   }
 
   // TraeWork CN 通道生命周期：迟绑定本代 settings；启用时起翻译网关、
@@ -1507,6 +1678,43 @@ export function apply(ctx, config = {}) {
     })
   }
 
+  // Qoder CN 通道生命周期：启用时起翻译网关并同步网关目录（失败静默——
+  // 未登录/网络故障时 Qoder 分区只是空转）；禁用时停网关并撤 providers.qoder
+  // 镜像（路由存在性管理）。wedge 自愈同 syncBridge：lastError 置位不早退。
+  qoderSettingsFn = resolveNow
+  let stopQoderBridge = null
+  let qoderRunningPort = null
+  const syncQoderBridge = () => {
+    const s = resolveNow()
+    if (s.qoderEnabled !== true) {
+      if (stopQoderBridge) {
+        stopQoderBridge()
+        stopQoderBridge = null
+        qoderRunningPort = null
+      }
+      qoderRuntime.running = false
+      qoderRuntime.port = null
+      qoderRuntime.lastError = null
+      syncQoderModelsToDshSettings()
+      return
+    }
+    if (stopQoderBridge && qoderRunningPort === s.qoderBridgePort && !qoderRuntime.lastError) return
+    if (stopQoderBridge) stopQoderBridge()
+    qoderRunningPort = s.qoderBridgePort
+    qoderRuntime.running = false
+    qoderRuntime.port = s.qoderBridgePort
+    qoderRuntime.lastError = null
+    stopQoderBridge = qoderProvider.gateway.listen(qoderRunningPort)
+    qoderProvider.syncCatalog().then((r) => {
+      if (r.ok) {
+        syncQoderModelsToDshSettings()
+        process.stderr.write(`[dsh-tap] qoder catalog synced (${r.count} models)\n`)
+      } else if (qoderProvider.catalogView()) {
+        syncQoderModelsToDshSettings()
+      }
+    }).catch(() => {})
+  }
+
   applyLive()
   registerSettingsRoute(ctx, config, resolveNow, applyLive)
   // Keep the settings.yaml model mirror in step with modelState across
@@ -1525,6 +1733,7 @@ export function apply(ctx, config = {}) {
   ctx.on('dispose', () => {
     if (stopBridge) stopBridge()
     if (stopTraeBridge) stopTraeBridge()
+    if (stopQoderBridge) stopQoderBridge()
     if (disposeSearch) disposeSearch()
     if (disposeFetch) disposeFetch()
     if (disposeImageTool) disposeImageTool()

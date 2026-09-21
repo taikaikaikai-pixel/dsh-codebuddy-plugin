@@ -1,0 +1,27 @@
+{
+  "status": 200,
+  "body": {
+    "id": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+    "name": "aliyun1985984145",
+    "username": "7e6bc229-9b16-4539-a9ea-f8a15a200e18",
+    "avatar": "https://qoder.com.cn/users/019efdac-1bf3-792a-a63d-1b94c1ea9fb0/default/avatars",
+    "source": "sso.aliyun",
+    "current_sign_in_at": {
+      "seconds": 1789382095,
+      "nanos": 709668000
+    },
+    "created_at": "2026-06-25T07:26:15Z",
+    "register_ip": "183.217.27.0",
+    "organization_id": "",
+    "organization_name": "",
+    "is_privacy_policy_modifiable": false,
+    "is_highest_tier": false,
+    "third_party_identities": [
+      {
+        "provider": "aliyun_account_sso",
+        "open_id": "1211638837846315"
+      }
+    ],
+    "security_mobile": "18158907193"
+  }
+}

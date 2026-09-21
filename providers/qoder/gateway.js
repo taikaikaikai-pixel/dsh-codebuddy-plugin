@@ -1,0 +1,341 @@
+/**
+ * providers/qoder/gateway.js — OpenAI ↔ Qoder COSY 翻译网关（Qoder 聊天桥）。
+ *
+ * 定位同 providers/trae/gateway.js：core/bridge.js 是透传代理（上游说 OpenAI
+ * 方言），本网关是协议翻译器——Qoder 聊天面的线缆形态是 COSY 签名 + WASM 加密
+ * body + SSE 信封（证据与设计文档见 docs/goals/qoder-cn-provider-design.md
+ * §5b 与 2026-09-20 探测）：
+ *
+ *   出站：POST {inferBaseURL}/algo/api/v2/service/pro/sse/agent_chat_generation
+ *         ?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1
+ *         （URL/头/body 全由 cosy.prepareChat 产出，签名绑定 URL 不可手改）
+ *   入站 SSE：data:{headers, body, statusCodeValue} 信封——body 是**字符串**，
+ *         内容为标准 OpenAI chat.completion.chunk 的 JSON 或 "[DONE]"；
+ *         尾帧 {firstTokenDuration,totalDuration,serverDuration} 无 body 忽略；
+ *         event:error + data:{stackTrace…} 为服务端异常（如 body 非合法 JSON）。
+ *         翻译 = 拆信封把 inner chunk 原样下发（增量/tool_calls/finish/usage
+ *         全是标准 OpenAI 形态，2026-09-20 矩阵实测）；usage.credits →
+ *         usage.credit 进计量（usage-meter 契约）。
+ *
+ * 非流式入站：聚合成单个 chat.completion（内部仍走上游流式）。
+ * 生命周期纪律（踩坑 #17）：listen 失败降级 runtime.lastError，绝不抛出。
+ */
+
+import { createServer } from 'node:http'
+import { appendFileSync } from 'node:fs'
+
+import { SessionLimiter, extractSessionId } from '../../core/bridge.js'
+import { randomUUID } from 'node:crypto'
+
+/** 上游接受的 OpenAI 字段白名单（dsh/pi-ai 可能附带私有扩展，不透传）。 */
+const CHAT_FIELDS = [
+  'messages', 'tools', 'tool_choice', 'temperature', 'top_p', 'max_tokens',
+  'max_completion_tokens', 'stop', 'reasoning_effort', 'presence_penalty',
+  'frequency_penalty', 'response_format', 'seed', 'user', 'parallel_tool_calls',
+]
+
+/** Host 门（同 trae gateway）：回环端口是唯一防线，Host 必须回环。 */
+function isLoopbackHost(hostHeader) {
+  if (typeof hostHeader !== 'string' || !hostHeader) return false
+  let hostname
+  try {
+    hostname = new URL(`http://${hostHeader}`).hostname
+  } catch {
+    return false
+  }
+  return hostname === '127.0.0.1' || hostname === 'localhost' || hostname === '::1' || hostname === '[::1]'
+}
+
+/**
+ * Qoder SSE 信封解析器：吃原始 data 文本行，产出翻译事件
+ * { chunk?, usage?, done?, error? }。inner chunk 是标准 OpenAI 形态，
+ * 透传前只在需要计量时把 usage.credits 归一为 usage.credit。
+ */
+export function createQoderEnvelopeParser() {
+  const state = { usage: null, done: false }
+  return {
+    isDone: () => state.done,
+    usage: () => state.usage,
+    /**
+     * @param {string|null} eventName SSE event: 行值
+     * @param {string} dataText data: 行原文
+     */
+    handle(eventName, dataText) {
+      if (eventName === 'error') {
+        state.done = true
+        return { error: dataText.slice(0, 400) }
+      }
+      let frame
+      try { frame = JSON.parse(dataText) } catch { return {} }
+      if (!frame || typeof frame !== 'object') return {}
+      if (typeof frame.body !== 'string') return {} // 尾帧计时统计等
+      if (frame.body === '[DONE]') {
+        state.done = true
+        return { done: true }
+      }
+      let chunk
+      try { chunk = JSON.parse(frame.body) } catch {
+        state.done = true
+        return { error: frame.body.slice(0, 400) }
+      }
+      if (chunk.usage && typeof chunk.usage === 'object') {
+        const u = chunk.usage
+        state.usage = {
+          prompt_tokens: u.prompt_tokens ?? 0,
+          completion_tokens: u.completion_tokens ?? 0,
+          total_tokens: u.total_tokens ?? 0,
+          credit: typeof u.credits === 'number' ? u.credits : 0,
+        }
+      }
+      return { chunk }
+    },
+  }
+}
+
+/**
+ * @param {{
+ *   settings: () => object,      // qoderInferBaseURL / maxConcurrentPerSession / upstreamFirstByteTimeoutMs
+ *   resolveCredential: (s: object) => Promise<{authorization, machineId, uid}|null>,
+ *   cosy: object,                // createCosyRuntime 实例
+ *   meter: { record: Function },
+ *   runtime: { running, port, lastError },
+ *   forensics?: { logPath: () => string|undefined },
+ *   getCatalogProfiles: () => Array|null,  // /v1/models 端点
+ *   getModelSource: (id: string) => string, // X-Model-Source（目录 sources 映射）
+ * }} deps
+ */
+export function createQoderGateway(deps) {
+  const limiter = new SessionLimiter()
+  const logPrefix = '[dsh-tap/qoder]'
+
+  function gwLog(record) {
+    const path = deps.forensics?.logPath?.()
+    if (!path) return
+    try {
+      appendFileSync(path, JSON.stringify({ gw: 'qoder', ...record }) + '\n')
+    } catch { /* best-effort */ }
+  }
+
+  function modelSourceOf(model) {
+    return deps.getModelSource?.(model) ?? 'system'
+  }
+
+  async function handleChat(req, res, rawBody) {
+    const s = deps.settings()
+    let payload = null
+    try { payload = JSON.parse(rawBody) } catch { payload = null }
+    if (!payload || !Array.isArray(payload.messages) || !payload.messages.length) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: { message: 'invalid chat payload' } }))
+      return
+    }
+    const model = typeof payload.model === 'string' && payload.model ? payload.model : 'auto'
+    const wantStream = payload.stream === true
+    const sessionId = extractSessionId(req.headers, payload) ?? randomUUID()
+    const t0 = Date.now()
+
+    const release = await limiter.acquire(sessionId, s.maxConcurrentPerSession ?? 4)
+    try {
+      const cred = await deps.resolveCredential(s)
+      if (!cred) {
+        res.writeHead(503, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: { message: 'Qoder 未登录：请先在设置卡 Qoder CN 页完成浏览器授权', code: 'qoder_credential_unavailable' } }))
+        return
+      }
+      const accessToken = String(cred.authorization ?? '').replace(/^Bearer\s+/, '')
+
+      // 出站体：白名单透传 + 强制流式（usage 必带）
+      const upstream = { model, stream: true, stream_options: { include_usage: true } }
+      for (const f of CHAT_FIELDS) {
+        if (payload[f] !== undefined && payload[f] !== null) upstream[f] = payload[f]
+      }
+      const bodyJson = JSON.stringify(upstream)
+
+      const endpoint = String(s.qoderInferBaseURL ?? '').replace(/\/+$/, '')
+      const signed = await deps.cosy.prepareChat(
+        { accessToken, machineId: cred.machineId, uid: cred.uid },
+        { endpoint, body: bodyJson, modelKey: model, modelSource: modelSourceOf(model) },
+      )
+
+      // 首字节护栏（同 trae gateway：边缘"收下不回应"时快速失败）
+      const firstByteMs = Number(s.upstreamFirstByteTimeoutMs) > 0 ? Number(s.upstreamFirstByteTimeoutMs) : 45_000
+      const inbound = new AbortController()
+      const firstByteTimer = setTimeout(
+        () => inbound.abort(new Error(`qoder 上游 ${firstByteMs}ms 内无响应（首字节超时）`)),
+        firstByteMs,
+      )
+      const upstreamResp = await fetch(signed.url, {
+        method: 'POST',
+        headers: { ...signed.headers, 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        body: signed.body,
+        signal: inbound.signal,
+      }).finally(() => clearTimeout(firstByteTimer))
+
+      if (!upstreamResp.ok) {
+        const text = await upstreamResp.text().catch(() => '')
+        const status = upstreamResp.status === 401 || upstreamResp.status === 429 ? upstreamResp.status : 502
+        res.writeHead(status, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: { message: `qoder upstream HTTP ${upstreamResp.status}: ${text.slice(0, 200)}`, code: `qoder_${upstreamResp.status}` } }))
+        gwLog({ dir: 'err', status: upstreamResp.status, model, ms: Date.now() - t0 })
+        return
+      }
+
+      const id = `qoder-${randomUUID().slice(0, 8)}`
+      const parser = createQoderEnvelopeParser()
+      let content = ''
+      let reasoning = ''
+      let finishReason = null
+      const toolSlots = new Map()
+      const toolOrder = []
+
+      if (wantStream) {
+        res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })
+      }
+      const send = (chunk) => {
+        if (wantStream) res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+      }
+      const emitError = (message) => {
+        if (!wantStream) return
+        send({ error: { message } })
+        res.write('data: [DONE]\n\n')
+        res.end()
+      }
+
+      // 逐行扫描信封（Buffer 边界安全：TextDecoder stream 模式）
+      const reader = upstreamResp.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      let lastEvent = null
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        let nl
+        while ((nl = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, nl).trim()
+          buf = buf.slice(nl + 1)
+          if (!line) { lastEvent = null; continue }
+          if (line.startsWith('event:')) { lastEvent = line.slice(6).trim(); continue }
+          if (!line.startsWith('data:')) continue
+          const ev = parser.handle(lastEvent, line.slice(5).trim())
+          if (ev.error) {
+            emitError(`qoder upstream error: ${ev.error}`)
+            gwLog({ dir: 'err', model, ms: Date.now() - t0, note: 'stream-error-frame' })
+            release()
+            return
+          }
+          if (!ev.chunk) continue
+          const chunk = ev.chunk
+          const choice = chunk.choices?.[0]
+          if (choice?.delta?.content) content += choice.delta.content
+          if (choice?.delta?.reasoning_content) reasoning += choice.delta.reasoning_content
+          for (const tc of choice?.delta?.tool_calls ?? []) {
+            const idx = Number.isInteger(tc?.index) ? tc.index : 0
+            if (!toolOrder.includes(idx)) toolOrder.push(idx)
+            const slot = toolSlots.get(idx) ?? { id: '', name: '', arguments: '' }
+            if (tc.id) slot.id = tc.id
+            if (tc.function?.name) slot.name = tc.function.name
+            if (typeof tc.function?.arguments === 'string') slot.arguments += tc.function.arguments
+            toolSlots.set(idx, slot)
+          }
+          if (choice?.finish_reason) finishReason = choice.finish_reason
+          if (wantStream) res.write(`data: ${JSON.stringify(chunk)}\n\n`)
+        }
+      }
+
+      const usage = parser.usage()
+      if (wantStream) {
+        res.write('data: [DONE]\n\n')
+        res.end()
+      } else {
+        const message = { role: 'assistant', content }
+        if (reasoning) message.reasoning_content = reasoning
+        const calls = toolOrder.map((i) => {
+          const slot = toolSlots.get(i)
+          return { id: slot.id || `qoder-call-${i}`, type: 'function', function: { name: slot.name, arguments: slot.arguments } }
+        })
+        if (calls.length) message.tool_calls = calls
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({
+          id,
+          object: 'chat.completion',
+          created: Math.floor(Date.now() / 1000),
+          model,
+          choices: [{ index: 0, message, finish_reason: finishReason ?? 'stop' }],
+          usage: usage ?? {},
+        }))
+      }
+      if (usage) deps.meter.record({ ts: t0, kind: 'chat', model, usage })
+      gwLog({ dir: 'out', model, ms: Date.now() - t0, bytes: content.length, usage, finishReason })
+    } catch (err) {
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        try { res.end(JSON.stringify({ error: { message: `qoder gateway error: ${err?.message ?? err}` } })) } catch { res.end() }
+      } else {
+        try { res.end() } catch { /* already closed */ }
+      }
+    } finally {
+      release()
+    }
+  }
+
+  function listen(port) {
+    const server = createServer((req, res) => {
+      // Host 门（审计 [9]，同 trae gateway）：先 resume 丢体再 403。
+      if (!isLoopbackHost(req.headers.host)) {
+        req.resume()
+        res.writeHead(403, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: { message: 'forbidden: loopback host required' } }))
+        return
+      }
+      // Buffer 收集 + 一次解码（踩坑 #28）
+      const chunks = []
+      let received = 0
+      req.on('data', (c) => {
+        chunks.push(c)
+        received += c.length
+        if (received > 32 * 1024 * 1024) req.destroy()
+      })
+      req.on('end', () => {
+        const rawBody = Buffer.concat(chunks).toString('utf8')
+        const path = req.url?.split('?')[0] ?? ''
+        try {
+          if (req.method === 'POST' && (path === '/v1/chat/completions' || path === '/chat/completions')) {
+            handleChat(req, res, rawBody).catch(() => { if (!res.headersSent) { res.writeHead(500); res.end() } })
+            return
+          }
+          if (req.method === 'GET' && (path === '/v1/models' || path === '/models')) {
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({
+              object: 'list',
+              data: (deps.getCatalogProfiles() ?? []).map((p) => ({ id: p.id, object: 'model', created: Math.floor(Date.now() / 1000) })),
+            }))
+            return
+          }
+          res.writeHead(404, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: { message: `no route: ${req.method} ${path}` } }))
+        } catch (err) {
+          if (!res.headersSent) res.writeHead(500)
+          res.end(String(err?.message ?? err))
+        }
+      })
+    })
+    server.on('error', (err) => {
+      deps.runtime.running = false
+      deps.runtime.lastError = err?.code ?? String(err?.message ?? err)
+      process.stderr.write(`${logPrefix} gateway :${port} unavailable: ${deps.runtime.lastError}（Qoder 分区其余功能不受影响）\n`)
+    })
+    server.on('listening', () => {
+      deps.runtime.port = server.address()?.port ?? port
+      deps.runtime.running = true
+      deps.runtime.lastError = null
+    })
+    server.listen(port, '127.0.0.1')
+    return () => new Promise((resolve) => {
+      server.close(() => resolve())
+      server.closeAllConnections?.()
+    })
+  }
+
+  return { listen, handleChat }
+}
