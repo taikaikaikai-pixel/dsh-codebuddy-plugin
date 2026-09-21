@@ -2,12 +2,14 @@
 /**
  * Qoder CN — 用量统计归因梯度实验（真实网络、本人账号）。
  *
- * 前序（docs/probes/qoder-quota-1790026311843.json）：裸 OpenAI body 聊天后
- * quota/usage、me/usage、credits-heatmap、credits-summary 计数器全部不动
- * （高精度哨兵 creditsSummary.totalCredits 纹丝不动），尽管 SSE usage 帧
- * billable:true——服务端不按裸推理请求记账。
+ * 历史结论（2026-09-22 当日晚些时候被臂 9 推翻并修正，见踩坑 #40）：
+ * 本梯度臂 1-7 用 0.002 级小额聊天判"裸 body 不记账"是**假阴性**——
+ * `addOnQuota.used` 只显整数，小额被取整吞掉；臂 9（大额双臂，
+ * scripts/probe-qoder-attribution-arm9.mjs）证明配额扣减与形态无关、
+ * 实时入账。本脚本保留为归因形态回归/上报连通性探针（finish/tracking
+ * 均回 200 success），不要再用小额计数器差分下"是否记账"的结论。
  *
- * 官方客户端的记账候选（bundle 逆向实证，见 qoder-worker-runtime.obf.mjs）：
+ * 官方客户端的统计视图归因链（bundle 逆向实证，见 qoder-worker-runtime.obf.mjs）：
  *   a) 一轮 query 结束后 POST /algo/api/v2/service/business/finish?Encode=1
  *      （BUSINESS_FINISH 事件，prepareRequest mode "auth"）；
  *   b) 聊天 body 明文里的归因字段（request_id/request_set_id/chat_record_id/
@@ -15,12 +17,14 @@
  *   c) 聊天 body 的 business 块（id 与 request_set_id 同源）；
  *   d) POST /api/v1/tracking（mode "sign"，聚合 total_credits，best-effort 遥测）。
  *
- * 梯度（每臂 = 计数器快照 → 动作 → 静置 → 复拍，逐臂判定谁让计数器动）：
+ * 梯度（每臂 = 计数器快照 → 动作 → 静置 → 复拍）：
  *   1 finish-only   裸聊天 + business/finish
  *   2 envelope      聊天带归因字段（无 business 块），不上报
  *   3 env-business  聊天带归因字段 + business 块，不上报
  *   4 env-finish    归因字段 + business 块 + business/finish
  *   5 tracking      裸聊天 + /api/v1/tracking 回流上报
+ *   6 全保真信封    归因字段 + business 块 + system/parameters/tools
+ *   7 IDE 面        session_type=qoder_work + business.product=ide + finish
  *
  * 用法：node scripts/probe-qoder-attribution.mjs [--arm N] [--settle-ms 15000]
  */

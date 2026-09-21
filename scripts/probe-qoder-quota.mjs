@@ -1,18 +1,15 @@
 #!/usr/bin/env node
 /**
- * Qoder CN — 用量统计归因判别实验（真实网络、本人账号、幂等只读+1 次最小聊天）。
+ * Qoder CN — 用量计数器差分探针（真实网络、本人账号）。
  *
- * 课题（2026-09-22 用户报障）：经 dsh 插件使用 Qoder CN 通道后，Qoder 官方
- * 用量统计（quota/usage、sash me/usage、网页 account/usage）不显示/不增长；
- * 用官方客户端聊天则正常统计。官方客户端每轮 query 结束后额外上报
- * business/finish（BUSINESS_FINISH 事件）与 /api/v1/tracking（聚合 credits），
- * 且聊天 body 明文带 business/session_id/request_id 等归因字段——插件发的是
- * 裸 OpenAI body，两边都没有。
- *
- * 判别逻辑（一次定案）：
- *   聊天前后各拉一遍统计端点，对比 addOnQuota.used 等计数器——
- *   - 涨   = 服务端按请求自动记账，缺的只是展示层归因（business 块 + finish 上报）；
- *   - 不涨 = 服务端对缺归因信封的请求不计入配额，需把字段塞进聊天 body 明文。
+ * 用途：聊天前后各拉一遍统计端点做差分。读数语义（2026-09-22 臂 9 定论）：
+ *   - `quota/usage` 的 `addOnQuota.used` = **实时**配额计数器，但**只显整数**——
+ *     0.002 级小额聊天会被取整吞掉（"不计费"假阴性的来源）；判别须用大额
+ *     用量（单发 ≥0.5 credits）或与读数分辨率匹配的量级；
+ *   - `credits-heatmap` / `credits-summary` = **统计视图层**，延迟批处理
+ *     （官方客户端自己的聊天 20 分钟内也不动），由归因链（信封+business 块+
+ *     finish/tracking 上报）驱动——插件网关 0.9.9 起已对齐；
+ *   - 免费档模型（如 qfmodel，帧 billable:false）不耗 credits，任何计数器都不动。
  *
  * 用法：
  *   node scripts/probe-qoder-quota.mjs             # 基线 → 1 次聊天 → 5s/20s 后复拉

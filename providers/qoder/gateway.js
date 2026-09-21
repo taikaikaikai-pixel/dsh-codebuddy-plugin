@@ -11,8 +11,8 @@
  *         （URL/头/body 全由 cosy.prepareChat 产出，签名绑定 URL 不可手改）；
  *         body 明文 = OpenAI 白名单字段 + 官方客户端用量归因信封（request_id/
  *         request_set_id/session_id/chat_task/version:"3"/source:1/agent_id/
- *         task_id/session_type/model_config/business 块——2026-09-22 逆向实证
- *         裸 body 不落入官方用量统计，对齐后逐字段同构）；
+ *         task_id/session_type/model_config/business 块——2026-09-22 逆向：
+ *         配额扣减与形态无关（裸 body 也实时入账），统计视图由归因链驱动）；
  *         每轮结束补 business/finish + /api/v1/tracking 两条 COSY 签名上报
  *         （best-effort，官方客户端同语义，证据 docs/probes/qoder-attribution-*.json）
  *   入站 SSE：data:{headers, body, statusCodeValue} 信封——body 是**字符串**，
@@ -172,9 +172,10 @@ export function createQoderGateway(deps) {
 
   /**
    * 用量归因上报（2026-09-22 逆向定案后接入，与官方客户端逐字段同构）：
-   * 裸 OpenAI body 的请求不落入官方用量统计（quota/usage、heatmap、summary
-   * 全不动，证据 docs/probes/qoder-quota-1790026311843.json）；官方客户端
-   * 每轮业务结束后补两条 COSY 签名上报（bundle g4i/aPl 原文）：
+   * 配额扣减（quota/usage 的 addOnQuota.used）对裸 OpenAI body 也实时入账
+   * （臂 9 大额双臂实证）；但**统计视图**（credits-heatmap/credits-summary/
+   * 网页明细）是延迟批处理且由官方归因链驱动——官方客户端每轮业务结束
+   * 补两条 COSY 签名上报（bundle g4i/aPl 原文）：
    *   1. POST {infer}/api/v2/service/business/finish?Encode=1（mode auth）
    *      —— BUSINESS_FINISH 事件，business.id = request_set_id 为 join key；
    *   2. POST {infer}/api/v1/tracking（mode sign）—— back-flow 事件，
@@ -274,9 +275,10 @@ export function createQoderGateway(deps) {
         if (Number.isFinite(profile?.maxTokens)) upstream.max_completion_tokens = profile.maxTokens
       }
       const endpoint = String(s.qoderInferBaseURL ?? '').replace(/\/+$/, '')
-      // ── 官方客户端用量归因信封（2026-09-22 逆向：裸 OpenAI body 不落入
-      // 官方用量统计；官方 A6e 信封的归因字段 + business 块逐字段对齐——
-      // business.id = request_set_id 与收尾 business/finish 上报同源）──
+      // ── 官方客户端用量归因信封（2026-09-22 逆向：配额扣减对裸 body 也实时
+      // 入账，但统计视图——热力图/汇总/明细——由归因链驱动；官方 A6e 信封的
+      // 归因字段 + business 块逐字段对齐，business.id = request_set_id 与收尾
+      // business/finish 上报同源）──
       const promptText = lastUserTextOf(upstream.messages)
       const requestId = randomUUID()
       const requestSetId = randomUUID()
