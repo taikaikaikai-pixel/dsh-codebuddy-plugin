@@ -40,3 +40,9 @@
 
 - 官方本地 harness（:40005 axum，chat/start\_chat/subscribe\_events）**懒启动**且启动参数未知；其数据库加密；令牌不在 state.vscdb/凭据管理器任何可读位置——harness 驱动路线存档未采用（trae-cloud-api.md §3）
 
+### Qoder CN 通道事实（2026-09-22 实测，裁判 docs/goals/qoder-cn-provider-design.md + wiki/10-provider-qoder.md）
+
+- **聊天信封三种失败形态**（翻译网关 error taxonomy，证据 docs/probes/qoder-chat-live-\*.json）：a) 传输层非 2xx（401/429 透传、其余 502）；b) `event:error` 帧（stackTrace）；c) **带内失败帧**——HTTP 200 信封装业务错误对象：body 为 JSON 字符串、解析后**无 choices/usage、有 code/message**（实测形态 `{"code":"400","message":"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null"}`，statusCodeValue:400）。网关按 c 识别上抛：流式错误 chunk+[DONE]，非流式 502 `qoder_upstream_error`
+- **未知模型 key 静默改派 auto**：请求臆造 key（如 `qmodel_38flash`）→ HTTP 200 正常应答，但响应 chunk `model` 恒 `"auto"` 且 billable:false（Qwen3.8-Flash 真实 key = `qfmodel`）；响应 model 字段不可作路由证据，归因以请求侧 key + 计费旁证为准（踩坑 #37）
+- **目录 context_config = 官方客户端的上下文长度档位**：条目带 `context_config`（变体名 → {token_count, is_default}，实测 Qwen3.8-Max：200K 默认/400K/1M）；本插件逐模型"上下文长度"调节以变体为选项（选中写镜像 contextWindow，未选回落默认档）
+

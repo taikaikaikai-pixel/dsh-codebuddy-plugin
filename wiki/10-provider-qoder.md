@@ -129,11 +129,12 @@ export function createQoderEnvelopeParser()  // SSE 信封解析器（单测可�
 2. **并发闸**：`SessionLimiter.acquire(sessionId, maxConcurrentPerSession ?? 4)`（会话 id 提取同 core 桥，无则随机 UUID）；
 3. **凭据**：`resolveCredential(s)` 为空 → 503 `qoder_credential_unavailable`（文案引导设置卡授权）；
 4. **出站构造**：OpenAI 字段**白名单**透传（messages/tools/tool_choice/temperature/top_p/max_tokens/stop/reasoning_effort…，`CHAT_FIELDS`，pi-ai 私有扩展不透传）+ 强制 `stream:true` + `stream_options.include_usage`；
-5. **签名**：`cosy.prepareChat(cred, {endpoint, body, modelKey, modelSource})` 产出 URL/头组/密文 body（**签名绑定 URL，不可手改**）；
-6. **首字节护栏**：`upstreamFirstByteTimeoutMs`（默认 45s，复用 trae 同名设置）——fetch 响应头到达即清定时器，只约束"连上却不出头"的死态；
-7. **上游非 2xx**：401/429 原状态透传，其余归 502，错误体带上游正文前 200 字符；
-8. **SSE 拆封**：`createQoderEnvelopeParser` 吃 `(eventName, dataText)`——`event:error` → 错误帧；`body==="[DONE]"` → done；尾帧（计时统计，无 body）忽略；其余 `JSON.parse(body)` 得**标准 OpenAI chunk**，流式入站原样下发、非流式入站聚合（content/reasoning_content/tool_calls 按 index 累积/finish_reason）；
-9. **usage/计量**：usage 帧（`choices:[]`）的 `usage.credits` 归一为 `usage.credit` → `meter.record`（kind=chat）；取证日志 `QODER_GATEWAY_LOG`。
+5. **逐模型 prefs 补默认**（2026-09-22）：payload 未带 `reasoning_effort` 且 `getModelPrefs(model).effort` 已设（≠off）→ 注入；`effort=off` = 省略参数（与 cordis.patch.yml verified 语义一致）；payload 未带 max_tokens/max_completion_tokens 且目录 profile 存在 → 注入 `max_completion_tokens=profile.maxTokens`；**客户端带值绝不覆盖**；
+6. **签名**：`cosy.prepareChat(cred, {endpoint, body, modelKey, modelSource})` 产出 URL/头组/密文 body（**签名绑定 URL，不可手改**）；
+7. **首字节护栏**：`upstreamFirstByteTimeoutMs`（默认 45s，复用 trae 同名设置）——fetch 响应头到达即清定时器，只约束"连上却不出头"的死态；
+8. **上游非 2xx**：401/429 原状态透传，其余归 502，错误体带上游正文前 200 字符；
+9. **SSE 拆封**：`createQoderEnvelopeParser` 吃 `(eventName, dataText)`——`event:error` → 错误帧；`body==="[DONE]"` → done；尾帧（计时统计，无 body）忽略；inner chunk 解析后**无 choices/usage 且有 code/message = 带内失败帧**（2026-09-22 新增识别，实测形态 `{"code":"400","message":"[FAIL]node:…"}`——传输层 200 的业务失败，旧实现静默吞，见错误处理表）；其余得**标准 OpenAI chunk**，流式入站原样下发、非流式入站聚合（content/reasoning_content/tool_calls 按 index 累积/finish_reason）；
+10. **usage/计量**：usage 帧（`choices:[]`）的 `usage.credits` 归一为 `usage.credit` → `meter.record`（kind=chat）；取证日志 `QODER_GATEWAY_LOG`。
 
 ### handleChat 流程图
 
@@ -144,18 +145,28 @@ flowchart TB
     VALID -->|是| ACQ["SessionLimiter.acquire（会话并发闸）"]
     ACQ --> CRED{"resolveCredential"}
     CRED -->|空| E503["503 qoder_credential_unavailable"]
-    CRED -->|有| OUT["OpenAI 白名单字段 + 强制 stream:true<br/>cosy.prepareChat 签名（URL/头/密文 body）"]
+    CRED -->|有| OUT["OpenAI 白名单字段 + prefs 补默认<br/>（reasoning_effort / max_completion_tokens）<br/>cosy.prepareChat 签名（URL/头/密文 body）"]
     OUT --> FB["首字节护栏（默认 45s）<br/>POST agent_chat_generation?Encode=1"]
     FB --> OK{"上游 2xx?"}
     OK -->|否| EUP["401/429 透传，其余 502<br/>带上游正文摘要"]
     OK -->|是| PARSE["SSE 信封解析 createQoderEnvelopeParser"]
     PARSE --> EV{"帧类型"}
-    EV -->|"event:error"| EERR["流内 error chunk + [DONE]"]
+    EV -->|"event:error / 带内失败帧"| EERR["流内 error chunk + [DONE]（流式）<br/>502 qoder_upstream_error（非流式）"]
     EV -->|"[DONE]" / 尾帧| DONE
     EV -->|inner chunk| EMIT["标准 OpenAI chunk：流式原样下发<br/>非流式聚合（tool_calls 按 index 累积）"]
     EMIT --> METER["usage.credits → usage.credit<br/>meter.record（kind=chat）"]
     METER --> DONE(["done"])
 ```
+
+## 逐模型调节（qoderModelPrefs，2026-09-22）
+
+设置卡 Qoder 区每行两个 select（控件仿 Qoder 官方客户端）：**思考强度**（档位 off/low/medium/high/max，默认=不注入）与**上下文长度**（选项 = 目录 `context_config` 变体，如 Qwen3.8-Max 的 200K/400K/1M；无变体的模型不出该控件）。
+
+- **存储**：文件层 `qoderModelPrefs`（`~/.dsh/codebuddy-plugin.json`）——`{[id]: {effort?, contextVariant?}}`，只存已设键；**完整替换语义**（patch 发全量期望态，`{}` = 删记录回默认）；校验严格（未知键/非法档位/未知变体/目录外 id 一律 400 带中文原因，踩坑 #7）。
+- **写路径**：patch action `qoderModelSetPrefs` → `setQoderModelPrefs` → 写文件层 → `syncQoderModelsToDshSettings` 镜像。
+- **镜像**：settings.yaml 的 `providers.qoder.models` 条目仅在选中变体时改 `contextWindow`（= 变体 token_count）；未选/变体消失回落目录默认档；`variants` 不进 settings.yaml（镜像形状零扰动）。
+- **读侧契约**：GET /dsh-tap/settings 的 `qoder.models` 带 `modelPrefs`（当前值）与 `variants`（`[{name,tokenCount,isDefault}]`，无变体 → 缺省/空数组）——UI 唯一数据源。
+- **出站**：见 handleChat 第 5 步（补默认注入，客户端带值不覆盖）。
 
 ## 错误处理（无独立 errors.js——归网关内联映射）
 
@@ -165,6 +176,7 @@ flowchart TB
 | 未登录/凭据不可用 | 503 `qoder_credential_unavailable`（引导设置卡授权） |
 | 上游 401 / 429 | 原状态透传（其余非 2xx 归 502，带上游正文前 200 字符） |
 | SSE `event:error` 帧 / inner chunk 非法 JSON | 流内 error chunk + `[DONE]`（流式）/ 聚合已收内容 |
+| **带内失败帧**（HTTP 200 信封装业务错误：无 choices/usage、有 code/message） | 流式 = 错误 chunk + `[DONE]`；非流式 = **502 `qoder_upstream_error`** 带上游 body 前 400 字符（2026-09-22 修复：旧实现静默空响应/挂死） |
 | 首字节超时 | AbortController 中止 → 500 `qoder gateway error: …首字节超时` |
 | listen 失败（EADDRINUSE 等） | 降级 `runtime.lastError` + stderr 告警，不崩宿主 |
 
@@ -172,14 +184,17 @@ flowchart TB
 
 | 命令 | 覆盖 |
 |------|------|
-| `node scripts/verify-qoder-provider.mjs` | 离线 83 断言：PKCE 形态/normalizeExpiry 三态/设备流快乐路径/授权 URL 门禁/刷新回写与 needsRelogin/临期自动刷新/logout 代际守卫/machine_id 自持/视图脱敏 + mock 上游的网关翻译 13 断言（流式逐帧/聚合/计量归一/错误帧/401 透传/Host 门//v1/models）+ 目录投影 5 断言 |
+| `node scripts/verify-qoder-provider.mjs` | 离线 **122 断言**：PKCE 形态/normalizeExpiry 三态/设备流快乐路径/授权 URL 门禁/刷新回写与 needsRelogin/临期自动刷新/logout 代际守卫/machine_id 自持/视图脱敏 + mock 上游的网关翻译（流式逐帧/聚合/计量归一/错误帧/**带内失败帧两态**/401 透传/Host 门//v1/models）+ 目录投影 + **prefs 出站注入 9 断言** + **组合根端到端 23 断言**（真 apply 起网关，prefs→镜像→注入全链） |
 | `node scripts/probe-qoder-live.mjs --login` | 真实设备流登录（浏览器授权；令牌只打掩码，存 `~/.dsh/qoder-plugin-auth.json`） |
-| `node scripts/probe-qoder-live.mjs --chat "文本"` | 真实对话（cosy 签名路径；证据落 docs/probes/） |
+| `node scripts/probe-qoder-live.mjs --chat "文本" [--model <key>]` | 真实对话（cosy 签名路径；证据落 docs/probes/）。**key 必须用目录真实值**（`--catalog` 或 settings.yaml 镜像块查）——臆造 key 被上游静默改派 auto（踩坑 #37） |
+| `dsh-ui-test/qoder-prefs-check.js`（仓库外） | 浏览器端到端 30 断言：渲染/变体条件渲染/持久化往返/完整替换语义/镜像生效/回默认/去抖/跨标签保留 |
 
 ## 已知边界（诚实标注）
 
 - 单账号 OAuth，无多 Key 轮换（与 Trae 一致）；logout 保留 machine_id。
-- `maxTokens` 目录不发布，投影取 32768 保守默认——需要更大输出上限在 settings.yaml 镜像里手调。
-- 上游错误正文只回显前 200 字符；Qoder 错误信封不像 Trae 有稳定码表，不做码表回填。
+- `maxTokens` 目录不发布，投影取 32768 保守默认——出站未带时网关以 profile.maxTokens 补默认；更大上限在 prefs/settings.yaml 层调。
+- 上游错误正文只回显前 200 字符（带内失败帧前 400）；Qoder 错误信封不像 Trae 有稳定码表，不做码表回填。
+- **Qwen3.8-Flash（qfmodel）2026-09-22 上游节点故障**：上游后端 `oa_qwen-plus-main` 对任意请求返回带内 400 `Execution failed`（连续 3 次复测，证据 docs/probes/qoder-chat-live-1790007\*.json）——属上游侧，待其修复后复测；插件侧已表现为可读 502。
+- 响应 chunk `model` 字段恒为 `"auto"`（上游行为），不可作路由/归因证据（踩坑 #37）。
 - 通道实证账号为 `PLAN_TIER_FREE`（quota:0）——FREE 账号实测可对话（目录含 `is_free` 条目），但**付费墙策略随时可变**（api2-v2 面已实证对裸 Bearer 关死）。
 - 翻译网关只做**只读对话**用途：不触碰 agent 面其他能力（设计文档 §8 纪律）。

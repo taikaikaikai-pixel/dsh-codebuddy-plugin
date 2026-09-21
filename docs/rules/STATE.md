@@ -68,6 +68,14 @@
 - 探测纪律：1.5s+ 间隔、单账号、只读优先；证据落 `docs/probes/<课题>-<日期>.jsonl`，预测须预注册（脚本内 expect 字段）。
 - 工作区注意：**2026-09-21 起正本在 Windows** `C:\Users\21613\dev\dsh-tap`（git 历史已通过本地 fetch 从 WSL 并入，v0.8.3 分支连续）；WSL 侧 `/root/dev/dsh-tap` 已退役留作备份，别再往那边改（见上「分支拓扑」节与下「上次会话 2026-09-21」）。
 
+## 上次会话（2026-09-22，Windows 侧 dsh-tap）干了什么
+
+1. **Qwen3.8-Flash「用不了」根因定界 = 上游侧**：真实目录 key 是 `qfmodel`（非命名规律猜的 `qmodel_38flash`——臆造 key 被上游**静默改派 auto**，响应 model 字段 + billable:false 是哨兵，踩坑 #37）；qfmodel 请求在 HTTP 200 信封装带内业务错误 `{"code":"400","message":"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null"}`，连续 3 次复测一致——上游给 Flash 配的 qwen-plus 主节点执行失败。证据 docs/probes/qoder-chat-live-1790007\*.json。**待上游修复后复测**（`probe-qoder-live --chat --model qfmodel`）。
+2. **插件侧真 bug 修复（3370adc）**：翻译网关把带内失败帧（无 choices/usage、有 code/message）当普通帧吞掉 → 流式空响应/非流式挂死。现识别上抛：流式错误 chunk+[DONE]、非流式 502 `qoder_upstream_error` 带详情。错误形态三分类已入 gateway-facts Qoder 节。
+3. **Qoder 目录模型逐模型调节落地（dc3c3b8 后端 + 955f45c UI）**：思考强度（off/low/medium/high/max，off=不注入）+ 上下文长度（目录 context_config 变体仿官方客户端；镜像写 contextWindow + 出站补默认 max_completion_tokens，客户端带值不覆盖）。文件层 `qoderModelPrefs` 完整替换语义；契约 GET `qoder.models.modelPrefs/variants` + patch `qoderModelSetPrefs`。verify-qoder 122 断言、dsh-ui-test/qoder-prefs-check.js 30 断言全绿。
+4. **测试基建两修**：verify-qoder 真机 fixture expires_at 时间炸弹（踩坑 #38）；verify-core-generic 0600 位断言 win32 平台分支。
+5. **注意**：dsh 用户实例（3090/3903，PID 28096）已用 09-22 工作区代码重启；上游目录端点 09-22 间歇 503（实例启动时 sync 正常，下午探测时挂、傍晚恢复）。
+
 ## 上次会话（2026-09-21，Windows 侧 dsh-tap）干了什么
 
 1. **版本控制合并**：Windows 副本（v0.9.8，Qoder 通道）此前无 .git；WSL 仓库（37+1 提交，分支 v0.8.3，领先 origin 10）为正。做法 = WSL 提交未落盘的「分支拓扑」节 → Windows `git fetch` WSL 本地远端（UNC，免代理）→ `git reset wsl/v0.8.3`（mixed，工作区不动）→ 恢复 Windows 缺失的 tracked 文件（`git ls-files -d`：wiki/×11 + .agents/ponytail）→ Windows 侧 v0.9.7/v0.9.8 工作作为新提交落到真实历史上。Windows STATE.md 经校验为 WSL 版严格超集（零 `<` 行）。

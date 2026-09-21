@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.9（未发布，2026-09-22）
+
+- **修复：Qoder 翻译网关"带内失败帧"静默吞**（实测根因案例 = Qwen3.8-Flash"用不了"）：上游会在 HTTP 200 的 SSE 信封装业务错误对象（无 choices/usage、有 code/message，实测形态 `{"code":"400","message":"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null"}`）——旧解析器按普通帧吞掉，流式空响应/非流式挂死。现识别上抛：流式 = 错误 chunk + [DONE]，非流式 = 502 `qoder_upstream_error` 带上游详情（gateway.js 解析器 + handleChat 错误路径；verify-qoder [14] +2 断言锁形态）
+- **根因定界：Qwen3.8-Flash（qfmodel）属上游侧故障**——其上游后端节点 `oa_qwen-plus-main` 执行失败（连续 3 次复测一致，证据 docs/probes/qoder-chat-live-1790007\*.json），待上游修复；插件侧已把故障表现为可读错误。附带探测教训入踩坑 #37：臆造 key `qmodel_38flash` 被上游**静默改派 auto**（响应 model 字段 + billable:false 是哨兵），诊断必须用真实目录 key
+- **新增：Qoder 目录模型逐模型「思考强度」「上下文长度」调节**（控件仿 Qoder 官方客户端）：文件层 `qoderModelPrefs`（{[id]:{effort?,contextVariant?}}，完整替换语义；档位 off/low/medium/high/max，off = 不注入参数）；镜像时按所选目录 `context_config` 变体写 profile.contextWindow（未选维持目录默认档）；网关"补默认"注入——payload 未带 reasoning_effort 时注入 prefs.effort、未带 max_tokens 系时注入 profile.maxTokens（**客户端带值绝不覆盖**）；契约：GET `qoder.models.modelPrefs/variants`、patch action `qoderModelSetPrefs`（严格校验，400 带中文原因）；设置卡 Qoder 区每行两个 select（思考强度恒出、上下文长度仅 variants 非空渲染），useRef 同值去抖 + 失败销账（踩坑 #27/#32 纪律）
+- **测试基建两修**（均预存问题、与本次功能无关）：verify-qoder 真机形态 fixture `expires_at` 写死 2026-09-20 的时间炸弹改 `now+1h`（踩坑 #38）；verify-core-generic 0600 权限位断言在 win32 不可观测改平台分支（代码仍传 0o600）
+- **验证**：verify-qoder-provider 85 → **122 断言**全绿（新增 [16] 出站注入 9 断言、[17] 组合根端到端 23 断言）；浏览器 `dsh-ui-test/qoder-prefs-check.js` **30 断言**全绿（渲染/变体条件/持久化往返/完整替换语义/镜像生效/回默认/去抖/跨标签保留）；verify-bridge / verify-core-generic / verify-providers 回归绿
+
 ## 0.9.8 (2026-09-20)
 
 - **Qoder CN 通道聊天面全线打通（设计文档 §5e）**：推翻"OpenAI 面裸 Bearer"设想——真实形态是 `QoderContext.prepareInferRequest(endpoint, bodyJson, modelKey, modelSource)` 签名 + WASM 加密 body，POST 到 region 发现服务给出的 infer 节点（CN = `gateway.qoder.com.cn`）的 `/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`；响应为 SSE 信封（`data:{body:"<标准 OpenAI chunk JSON>"}`、body="[DONE]"、尾帧计时、event:error 异常帧）。矩阵实测：单轮/多轮/模型切换（auto/qmodel_38max）/OpenAI tools 流式全通，usage 带 credits 计量
