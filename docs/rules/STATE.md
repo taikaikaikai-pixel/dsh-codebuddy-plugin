@@ -68,6 +68,13 @@
 - 探测纪律：1.5s+ 间隔、单账号、只读优先；证据落 `docs/probes/<课题>-<日期>.jsonl`，预测须预注册（脚本内 expect 字段）。
 - 工作区注意：**2026-09-21 起正本在 Windows** `C:\Users\21613\dev\dsh-tap`（git 历史已通过本地 fetch 从 WSL 并入，v0.8.3 分支连续）；WSL 侧 `/root/dev/dsh-tap` 已退役留作备份，别再往那边改（见上「分支拓扑」节与下「上次会话 2026-09-21」）。
 
+## 上次会话（2026-09-22 续，Windows 侧 dsh-tap）
+
+1. **第二类上游报错根因闭合（插件侧真 bug，已修）**：`provider_error … "Messages with role 'tool' must be a response to a preceding message with 'tool_calls'"` = 宿主 pi-ai 的 `transform-messages.js` 把 `stopReason=error/aborted` 的 assistant **整条删掉、却保留其 toolResult** → 出站孤儿 `role:"tool"`（离线复现 `[system,user,tool,user]`），严格上游 400。修复 = 网关出站口 `sanitizeToolPairing()`（孤儿补 assistant 桩 / 缺结果补"不可用"结果 / 合法历史逐字节不变），**修复后真实上游端到端实测**：孤儿复现体 400 → 200 正常出文本，两条对照行为不变。入踩坑 #39，verify-qoder [18] 9 断言锁定案；wiki 10-provider-qoder 新增"出站 tool 配对修复"节
+2. **Qwen3.8-Flash（qfmodel）根因定案 = 上游节点故障（"Qoder 里能用"前提被推翻）**：完整诊断 docs/diagnosis-qoder-flash.md。客户端侧成因穷举排除（模型 key 由客户端日志自证；body/9 组 clientMetadata/`cosyVersion` 1.1.40→999.999.999/`context_window` 各值/tools 全扫，官方 `QoderContext` 原实现签也照样失败）；`oa_qwen-plus-main` 只被 qfmodel 指名，同坏体在 qmodel/qmodel_38max/q37fmodel 正常；**时间线**：客户端 transcript 里 09-18/09-19 有 754 条 qfmodel 消息（真实可用），最后成功 **04:21:38**，13 秒后同一客户端 `output_tokens=0`，04:31 起 dsh 复现并持续 → 节点在 04:21:38–04:21:51 之间坏了。**插件侧无解**（已如实上抛 `qoder_upstream_error`）；复测 `node scripts/probe-qoder-flash-confirm.mjs`。另：**上游容错面按模型家族分裂**——孤儿 tool 在 dmodel/kmodel/mmodel 上 400、在 auto/qmodel_38max/qmodel/gmodel 上被静默容忍，"换模型能跑"不能证伪协议问题
+3. **附带修复：`Cosy-ClientType` 头保真度**：官方 wasm 恒出 `5`（`client_type` 传 `'qoder'`/`5`/缺省都一样），我方旧值 `'qoder'` 让所有请求带第三方指纹，已修为 5（与模型可用性无关）
+4. **待办**：qfmodel 上游修复后复测（确认探针 + `--suite flash`）；宿主 pi-ai 的"删 assistant 留 toolResult"缺陷值得向 dsh 上游报（插件侧已兜住）；本轮改动需**重启 dsh**（运行中实例仍加载旧网关模块）
+
 ## 上次会话（2026-09-22，Windows 侧 dsh-tap）干了什么
 
 1. **Qwen3.8-Flash「用不了」根因定界 = 上游侧**：真实目录 key 是 `qfmodel`（非命名规律猜的 `qmodel_38flash`——臆造 key 被上游**静默改派 auto**，响应 model 字段 + billable:false 是哨兵，踩坑 #37）；qfmodel 请求在 HTTP 200 信封装带内业务错误 `{"code":"400","message":"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null"}`，连续 3 次复测一致——上游给 Flash 配的 qwen-plus 主节点执行失败。证据 docs/probes/qoder-chat-live-1790007\*.json。**待上游修复后复测**（`probe-qoder-live --chat --model qfmodel`）。

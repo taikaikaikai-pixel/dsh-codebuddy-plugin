@@ -1,0 +1,282 @@
+{
+  "ts": "2026-09-21T20:50:59.789Z",
+  "endpoint": "https://gateway.qoder.com.cn",
+  "records": [
+    {
+      "label": "flash_attempt_1",
+      "modelKey": "qfmodel",
+      "atLocal": "2026-09-21T20:50:44.021Z",
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "requestHeaders": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiI4NTA4OWY3OS1lY2FjLTQ1OTAtODM3Yi0yMzFhODlmZGM4ZjEiLCJpbmZvIjoiNlRqbE4rYnliTGk5a29GN1RSTGxSQzlaYmJlcitOakVRQVZRUzlaQlhraFZqRGQ3Q1lnTHZSZXh6K2I0S1gyMDZsY0pjOWZRNllOTkgxTDMzVzc5aktRRVBNc2YyVGhJaWpWNmUxMDBldXpjeHVhbnlGVUVJR3JNQUtUMUpkNE1oaFJ0NVczNXNYT0ZuUU1VNTdUOVJVa1B2ajZzQVl2SjJpMGtKVllPczRYUUE4MWFLOG1PMU5GRDRURHYvdzZzdkpFdVlJVHBheWJicWJTUmxneUY5Y3htYk5pVkxJVTMxSU1zSTZWejM0RT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.3bd54effa770dfc3b49c1173a4459780",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023844",
+        "Cosy-Key": "FT9PLEd+9oK1XOyoVmcX74gs/zUgTxJ7YYu1HDwCnUqKs5zdPhqcjMo/ELkcmVp4WaC30fTQ8LgOXwt1ScbRK+UgWN30xASBwCE0T+KDnWmQLMf/MuGqvp6bzcfdCXMSnvig+iE5dgrjhAFbdzqMUYUeeMpyHs6PogCWTXvZ4nw=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023844162,\"totalDuration\":1790023844162,\"serverDuration\":-1790023844077}\n\n",
+      "dissect": {
+        "text": "",
+        "chunks": 0,
+        "errBody": "{\"code\":\"400\",\"message\":\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\"}",
+        "usage": null
+      }
+    },
+    {
+      "label": "flash_attempt_2",
+      "modelKey": "qfmodel",
+      "atLocal": "2026-09-21T20:50:46.044Z",
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "requestHeaders": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiJiYmZjNGM1OC0xZjkyLTQwZDUtODVjMC01NzJlYjRjNWEwNzkiLCJpbmZvIjoiNlRqbE4rYnliTGk5a29GN1RSTGxSQzlaYmJlcitOakVRQVZRUzlaQlhraFZqRGQ3Q1lnTHZSZXh6K2I0S1gyMDZsY0pjOWZRNllOTkgxTDMzVzc5aktRRVBNc2YyVGhJaWpWNmUxMDBldXpjeHVhbnlGVUVJR3JNQUtUMUpkNE1oaFJ0NVczNXNYT0ZuUU1VNTdUOVJVa1B2ajZzQVl2SjJpMGtKVllPczRYUUE4MWFLOG1PMU5GRDRURHYvdzZzdkpFdVlJVHBheWJicWJTUmxneUY5Y3htYk5pVkxJVTMxSU1zSTZWejM0RT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.b4f6881f01ec8fff120d46bfd393df23",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023846",
+        "Cosy-Key": "FT9PLEd+9oK1XOyoVmcX74gs/zUgTxJ7YYu1HDwCnUqKs5zdPhqcjMo/ELkcmVp4WaC30fTQ8LgOXwt1ScbRK+UgWN30xASBwCE0T+KDnWmQLMf/MuGqvp6bzcfdCXMSnvig+iE5dgrjhAFbdzqMUYUeeMpyHs6PogCWTXvZ4nw=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023847249,\"totalDuration\":1790023847249,\"serverDuration\":-1790023846035}\n\n",
+      "dissect": {
+        "text": "",
+        "chunks": 0,
+        "errBody": "{\"code\":\"400\",\"message\":\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\"}",
+        "usage": null
+      }
+    },
+    {
+      "label": "flash_attempt_3",
+      "modelKey": "qfmodel",
+      "atLocal": "2026-09-21T20:50:49.149Z",
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "requestHeaders": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiJkZTU5YmZmMi0wNTFiLTRhMTMtODg4ZC0yYzU0NjhmOTk3ZTYiLCJpbmZvIjoiNlRqbE4rYnliTGk5a29GN1RSTGxSQzlaYmJlcitOakVRQVZRUzlaQlhraFZqRGQ3Q1lnTHZSZXh6K2I0S1gyMDZsY0pjOWZRNllOTkgxTDMzVzc5aktRRVBNc2YyVGhJaWpWNmUxMDBldXpjeHVhbnlGVUVJR3JNQUtUMUpkNE1oaFJ0NVczNXNYT0ZuUU1VNTdUOVJVa1B2ajZzQVl2SjJpMGtKVllPczRYUUE4MWFLOG1PMU5GRDRURHYvdzZzdkpFdVlJVHBheWJicWJTUmxneUY5Y3htYk5pVkxJVTMxSU1zSTZWejM0RT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.112839fc062c3b49122e36e7df2f6378",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023849",
+        "Cosy-Key": "FT9PLEd+9oK1XOyoVmcX74gs/zUgTxJ7YYu1HDwCnUqKs5zdPhqcjMo/ELkcmVp4WaC30fTQ8LgOXwt1ScbRK+UgWN30xASBwCE0T+KDnWmQLMf/MuGqvp6bzcfdCXMSnvig+iE5dgrjhAFbdzqMUYUeeMpyHs6PogCWTXvZ4nw=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023849229,\"totalDuration\":1790023849229,\"serverDuration\":-1790023849168}\n\n",
+      "dissect": {
+        "text": "",
+        "chunks": 0,
+        "errBody": "{\"code\":\"400\",\"message\":\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\"}",
+        "usage": null
+      }
+    },
+    {
+      "label": "control_max",
+      "modelKey": "qmodel_38max",
+      "atLocal": "2026-09-21T20:50:51.114Z",
+      "requestBody": {
+        "model": "qmodel_38max",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "requestHeaders": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiIwMGZkMzJhYi05MGJlLTRhNmQtYjBkOS04N2ZhMTM0MTgxNWIiLCJpbmZvIjoiNlRqbE4rYnliTGk5a29GN1RSTGxSQzlaYmJlcitOakVRQVZRUzlaQlhraFZqRGQ3Q1lnTHZSZXh6K2I0S1gyMDZsY0pjOWZRNllOTkgxTDMzVzc5aktRRVBNc2YyVGhJaWpWNmUxMDBldXpjeHVhbnlGVUVJR3JNQUtUMUpkNE1oaFJ0NVczNXNYT0ZuUU1VNTdUOVJVa1B2ajZzQVl2SjJpMGtKVllPczRYUUE4MWFLOG1PMU5GRDRURHYvdzZzdkpFdVlJVHBheWJicWJTUmxneUY5Y3htYk5pVkxJVTMxSU1zSTZWejM0RT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.e0bf73c33bbf826be0533f3a9b523bbc",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023851",
+        "Cosy-Key": "FT9PLEd+9oK1XOyoVmcX74gs/zUgTxJ7YYu1HDwCnUqKs5zdPhqcjMo/ELkcmVp4WaC30fTQ8LgOXwt1ScbRK+UgWN30xASBwCE0T+KDnWmQLMf/MuGqvp6bzcfdCXMSnvig+iE5dgrjhAFbdzqMUYUeeMpyHs6PogCWTXvZ4nw=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qmodel_38max",
+        "X-Model-Source": "system"
+      },
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求只回复两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"：“\\\"},\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到”。必须\\\"},\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"严格满足。\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790023853,\\\"id\\\":\\\"chatcmpl-7ebc46af-8251-9461-a02a-9a71d00b14e4\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":16,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":12},\\\"credits\\\":0.012158784,\\\"original_credits\\\":0.03039696,\\\"prompt_tokens\\\":66,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":82}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1315,\"totalDuration\":1973,\"serverDuration\":667}\n\n",
+      "dissect": {
+        "text": "收到",
+        "chunks": 9,
+        "errBody": null,
+        "usage": {
+          "billable": true,
+          "completion_tokens": 16,
+          "completion_tokens_details": {
+            "reasoning_tokens": 12
+          },
+          "credits": 0.012158784,
+          "original_credits": 0.03039696,
+          "prompt_tokens": 66,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 82
+        }
+      }
+    },
+    {
+      "label": "control_plus",
+      "modelKey": "qmodel",
+      "atLocal": "2026-09-21T20:50:55.654Z",
+      "requestBody": {
+        "model": "qmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "requestHeaders": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiIwYWRlZTdjZC0xY2I1LTRiMGEtYjc2YS01OTc3ZGI0NTY4NDYiLCJpbmZvIjoiNlRqbE4rYnliTGk5a29GN1RSTGxSQzlaYmJlcitOakVRQVZRUzlaQlhraFZqRGQ3Q1lnTHZSZXh6K2I0S1gyMDZsY0pjOWZRNllOTkgxTDMzVzc5aktRRVBNc2YyVGhJaWpWNmUxMDBldXpjeHVhbnlGVUVJR3JNQUtUMUpkNE1oaFJ0NVczNXNYT0ZuUU1VNTdUOVJVa1B2ajZzQVl2SjJpMGtKVllPczRYUUE4MWFLOG1PMU5GRDRURHYvdzZzdkpFdVlJVHBheWJicWJTUmxneUY5Y3htYk5pVkxJVTMxSU1zSTZWejM0RT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.81609cfd0e367749e7e2ec224d87b7af",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023855",
+        "Cosy-Key": "FT9PLEd+9oK1XOyoVmcX74gs/zUgTxJ7YYu1HDwCnUqKs5zdPhqcjMo/ELkcmVp4WaC30fTQ8LgOXwt1ScbRK+UgWN30xASBwCE0T+KDnWmQLMf/MuGqvp6bzcfdCXMSnvig+iE5dgrjhAFbdzqMUYUeeMpyHs6PogCWTXvZ4nw=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qmodel",
+        "X-Model-Source": "system"
+      },
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求只回复两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"：“收到”。\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"我需要\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"严格遵守这个指令，\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"不\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"添加任何其他字符。\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790023857,\\\"id\\\":\\\"chatcmpl-cd8378ed-2a96-9843-b8fc-582d63986b9d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":23,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":19},\\\"credits\\\":0.0019020320000000001,\\\"original_credits\\\":0.00475508,\\\"prompt_tokens\\\":15,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":38}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1038,\"totalDuration\":1422,\"serverDuration\":830}\n\n",
+      "dissect": {
+        "text": "收到",
+        "chunks": 11,
+        "errBody": null,
+        "usage": {
+          "billable": true,
+          "completion_tokens": 23,
+          "completion_tokens_details": {
+            "reasoning_tokens": 19
+          },
+          "credits": 0.0019020320000000001,
+          "original_credits": 0.00475508,
+          "prompt_tokens": 15,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 38
+        }
+      }
+    }
+  ]
+}

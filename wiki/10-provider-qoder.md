@@ -128,7 +128,7 @@ export function createQoderEnvelopeParser()  // SSE 信封解析器（单测可�
 1. **payload 校验**：messages 非空数组，否则 400 `invalid chat payload`；model 缺省回落 `'auto'`；
 2. **并发闸**：`SessionLimiter.acquire(sessionId, maxConcurrentPerSession ?? 4)`（会话 id 提取同 core 桥，无则随机 UUID）；
 3. **凭据**：`resolveCredential(s)` 为空 → 503 `qoder_credential_unavailable`（文案引导设置卡授权）；
-4. **出站构造**：OpenAI 字段**白名单**透传（messages/tools/tool_choice/temperature/top_p/max_tokens/stop/reasoning_effort…，`CHAT_FIELDS`，pi-ai 私有扩展不透传）+ 强制 `stream:true` + `stream_options.include_usage`；
+4. **出站构造**：OpenAI 字段**白名单**透传（messages/tools/tool_choice/temperature/top_p/max_tokens/stop/reasoning_effort…，`CHAT_FIELDS`，pi-ai 私有扩展不透传）+ 强制 `stream:true` + `stream_options.include_usage`；**messages 过 `sanitizeToolPairing()`**（见下节"出站 tool 配对修复"）；
 5. **逐模型 prefs 补默认**（2026-09-22）：payload 未带 `reasoning_effort` 且 `getModelPrefs(model).effort` 已设（≠off）→ 注入；`effort=off` = 省略参数（与 cordis.patch.yml verified 语义一致）；payload 未带 max_tokens/max_completion_tokens 且目录 profile 存在 → 注入 `max_completion_tokens=profile.maxTokens`；**客户端带值绝不覆盖**；
 6. **签名**：`cosy.prepareChat(cred, {endpoint, body, modelKey, modelSource})` 产出 URL/头组/密文 body（**签名绑定 URL，不可手改**）；
 7. **首字节护栏**：`upstreamFirstByteTimeoutMs`（默认 45s，复用 trae 同名设置）——fetch 响应头到达即清定时器，只约束"连上却不出头"的死态；
@@ -157,6 +157,33 @@ flowchart TB
     EMIT --> METER["usage.credits → usage.credit<br/>meter.record（kind=chat）"]
     METER --> DONE(["done"])
 ```
+
+## 出站 tool 配对修复（sanitizeToolPairing，2026-09-22）
+
+**症状**：工具轮之后的下一次请求报
+`qoder upstream error: {"code":"provider_error","message":"Error in upstream response","request_id":"…","type":"provider_error","details":"{\"error\":{\"message\":\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\"…}}"}`。
+
+**根因（宿主侧的一半 + 上游严格校验的另一半）**：`@earendil-works/pi-ai` 的 `transform-messages.js` 第二遍处理里，`stopReason==='error'||'aborted'` 的 assistant 消息会被**整条丢弃**（注释理由：中断轮次含半截推理/工具调用，重放会触发 API 错误），但它产出的 `toolResult` 消息照旧进 params——`openai-completions.js` 的 `convertMessages` 于是产出 `[system, user, tool, user]`，第三条 `role:"tool"` 没有前置 `assistant.tool_calls`。上游 OpenAI 兼容面严格校验该不变量即回 400（Qoder 归一为 `provider_error`）。
+
+**触发场景与自续循环**：一次失败/中断的工具轮（上游 400、5xx、用户 Esc、流中断）会把当轮 assistant 写成 `stopReason=error/aborted`（`dsh-llm-pi-ai` 的 `case "error"` → `mapStopReason(event.error)`），**这条消息留在会话历史里**——于是此后**每一次**请求都带孤儿 tool 结果，直到该会话被丢弃。这解释了现场"第一次报错后怎么重试都是同一个错"。
+
+**修复落点**：插件不能改宿主 pi-ai（踩坑 #9 的依赖边界），所以在**翻译网关出站口**做消息体检——`sanitizeToolPairing(messages)` 纯函数（`providers/qoder/gateway.js` 导出，verify-qoder [18] 锁定案）：
+
+| 出站形态 | 处理 |
+|---|---|
+| 孤儿 `role:"tool"`（前置 assistant 被删） | 补一条**仅含该 tool_call 的 assistant 桩**（id 取原 `tool_call_id`，name 取 tool 消息的 `name` 或 `'tool'`）后原样保留结果——比丢弃结果更保上下文（实测上游放行两态） |
+| assistant 声明了 tool_call 但缺结果（会话尾 / user 插在结果前） | 补 `(tool result unavailable: previous attempt was interrupted)` 结果，保住配对 |
+| 合法历史 | **逐字节不变**（修复不碰正常请求） |
+
+修复只动 `messages`，字段白名单、prefs 补默认、签名/加密、计量路径全不受影响；取证日志出站行带 `repaired=orphans=N synthesized=M` 便于观察触发频率。
+
+**上游容错面按模型家族分裂（差分矩阵实测，docs/probes/qoder-matrix-1790023075879.json）**：孤儿 tool 在 **dmodel/kmodel/mmodel 上 400**（内层文案三家各一：`Messages with role 'tool' must be a response…` / `Invalid request: tool_call_id  is not found` / `invalid params, tool result's tool id(…) not found`），在 **auto/qmodel_38max/qmodel/gmodel 上被静默当文本处理**——所以"换成 auto 能跑"不能证伪协议问题，诊断必须按模型家族取样。
+
+## 模型路由是头驱动的（2026-09-22 实测，排错必读）
+
+服务端按 **`X-Model-Key` 头**（= `prepareChat` 的 `modelKey`）选推理节点，**body 里的 `model` 字段不决定路由**：`X-Model-Key: qfmodel` + body `model:"auto"` → 打到 Flash 的节点；`X-Model-Key: auto` + body `model:"qfmodel"` → 走 auto。所以排"模型用不了"时必须同时核对两处（插件两处同源：`upstream.model` 与 `modelSourceOf(model)`/`modelKey` 都取客户端的 `model` 字段）。
+
+模型故障排查入口：**docs/diagnosis-qoder-flash.md**（Qwen3.8-Flash 上游节点 `oa_qwen-plus-main` 故障的完整证据链与排除矩阵），确认探针 `scripts/probe-qoder-flash-confirm.mjs`。
 
 ## 逐模型调节（qoderModelPrefs，2026-09-22）
 

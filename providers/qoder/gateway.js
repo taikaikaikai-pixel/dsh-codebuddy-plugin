@@ -28,6 +28,7 @@ import { createServer } from 'node:http'
 import { appendFileSync } from 'node:fs'
 
 import { SessionLimiter, extractSessionId } from '../../core/bridge.js'
+import { sanitizeToolPairing, describeRepair } from '../tool-pairing.js'
 import { randomUUID } from 'node:crypto'
 
 /** 上游接受的 OpenAI 字段白名单（dsh/pi-ai 可能附带私有扩展，不透传）。 */
@@ -36,6 +37,10 @@ const CHAT_FIELDS = [
   'max_completion_tokens', 'stop', 'reasoning_effort', 'presence_penalty',
   'frequency_penalty', 'response_format', 'seed', 'user', 'parallel_tool_calls',
 ]
+
+// 出站 messages 的 tool 配对不变量修复：实现与根因见 providers/tool-pairing.js
+// （踩坑 #39）。本模块重新导出，保持既有 import 路径与回归断言可用。
+export { sanitizeToolPairing }
 
 /** Host 门（同 trae gateway）：回环端口是唯一防线，Host 必须回环。 */
 function isLoopbackHost(hostHeader) {
@@ -159,6 +164,12 @@ export function createQoderGateway(deps) {
       for (const f of CHAT_FIELDS) {
         if (payload[f] !== undefined && payload[f] !== null) upstream[f] = payload[f]
       }
+      // tool 配对修复（实测根因：pi-ai 丢弃 error/aborted 的 assistant 但保留其
+      // toolResult → 上游 400 "role 'tool' must be a response to a preceding
+      // message with 'tool_calls'"）。只动 messages，字段与其余语义不碰。
+      const pair = sanitizeToolPairing(upstream.messages)
+      upstream.messages = pair.messages
+      const repairedNote = describeRepair(pair.repaired)
       // 出站补默认（客户端已带的绝不覆盖）：
       //  - reasoning_effort：prefs.effort 已设且非 off——off 的语义是"省略参数"
       //    （同 cordis.patch.yml codebuddy 侧 verified 行为），不是发 'off' 线值；
@@ -243,7 +254,7 @@ export function createQoderGateway(deps) {
           if (!line.startsWith('data:')) continue
           const ev = parser.handle(lastEvent, line.slice(5).trim())
           if (ev.error) {
-            gwLog({ dir: 'err', model, ms: Date.now() - t0, note: 'stream-error-frame' })
+            gwLog({ dir: 'err', model, ms: Date.now() - t0, note: 'stream-error-frame', repaired: repairedNote })
             if (wantStream) {
               emitError(`qoder upstream error: ${ev.error}`)
             } else {
@@ -295,7 +306,7 @@ export function createQoderGateway(deps) {
         }))
       }
       if (usage) deps.meter.record({ ts: t0, kind: 'chat', model, usage })
-      gwLog({ dir: 'out', model, ms: Date.now() - t0, bytes: content.length, usage, finishReason })
+      gwLog({ dir: 'out', model, ms: Date.now() - t0, bytes: content.length, usage, finishReason, repaired: repairedNote })
     } catch (err) {
       if (!res.headersSent) {
         res.writeHead(500, { 'Content-Type': 'application/json' })

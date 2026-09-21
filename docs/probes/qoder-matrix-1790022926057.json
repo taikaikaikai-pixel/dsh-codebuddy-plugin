@@ -1,0 +1,436 @@
+{
+  "ts": "2026-09-21T20:35:05.139Z",
+  "infer": "https://gateway.qoder.com.cn",
+  "cases": [
+    {
+      "label": "baseline",
+      "note": "最小体（对照）",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022905331,\"totalDuration\":1790022905331,\"serverDuration\":-1790022905244}\n\n"
+    },
+    {
+      "label": "regression_max",
+      "note": "同账号回归对照：38max",
+      "modelKey": "qmodel_38max",
+      "modelSource": "system",
+      "request": {
+        "model": "qmodel_38max",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "收到",
+        "reasoning": "用户要求只回复两个字“收到”。需要严格遵守。直接输出两个字即可。",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 20,
+          "completion_tokens_details": {
+            "reasoning_tokens": 16
+          },
+          "credits": 0.013438656000000002,
+          "original_credits": 0.033596640000000004,
+          "prompt_tokens": 66,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 86
+        },
+        "errorObjects": [],
+        "frames": 10,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求只回复两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"“收到”。需要\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"严格遵守。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"直接输出两个字即可\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790022908,\\\"id\\\":\\\"chatcmpl-7b92f36c-066e-9856-a013-61e6bad0b010\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":20,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":16},\\\"credits\\\":0.013438656000000002,\\\"original_credits\\\":0.033596640000000004,\\\"prompt_tokens\\\":66,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":86}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1217,\"totalDuration\":1840,\"serverDuration\":13}\n\n"
+    },
+    {
+      "label": "effort_medium",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ],
+        "reasoning_effort": "medium"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022911509,\"totalDuration\":1790022911509,\"serverDuration\":-1790022910352}\n\n"
+    },
+    {
+      "label": "effort_max",
+      "note": "设置卡里 qfmodel 的现存值",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ],
+        "reasoning_effort": "max"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022913515,\"totalDuration\":1790022913515,\"serverDuration\":-1790022913092}\n\n"
+    },
+    {
+      "label": "max_tokens_default",
+      "note": "镜像默认输出上限",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ],
+        "max_completion_tokens": 32768
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022916024,\"totalDuration\":1790022916024,\"serverDuration\":-1790022915094}\n\n"
+    },
+    {
+      "label": "max_tokens_2048",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ],
+        "max_completion_tokens": 2048
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022917674,\"totalDuration\":1790022917674,\"serverDuration\":-1790022917605}\n\n"
+    },
+    {
+      "label": "tools_only",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "description": "取当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "tz": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tz"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022919535,\"totalDuration\":1790022919535,\"serverDuration\":-1790022919252}\n\n"
+    },
+    {
+      "label": "multi_turn",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": "你是助手"
+          },
+          {
+            "role": "user",
+            "content": "我叫小明"
+          },
+          {
+            "role": "assistant",
+            "content": "好的"
+          },
+          {
+            "role": "user",
+            "content": "我叫什么"
+          }
+        ]
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022921181,\"totalDuration\":1790022921181,\"serverDuration\":-1790022921113}\n\n"
+    },
+    {
+      "label": "source_user",
+      "note": "X-Model-Source 变量",
+      "modelKey": "qfmodel",
+      "modelSource": "user",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022922827,\"totalDuration\":1790022922827,\"serverDuration\":-1790022922768}\n\n"
+    },
+    {
+      "label": "source_unknown",
+      "note": "未知 source 是否被静默改派",
+      "modelKey": "qfmodel",
+      "modelSource": "zzz",
+      "request": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "",
+        "toolCalls": [],
+        "finish": null,
+        "usage": null,
+        "errorObjects": [
+          {
+            "code": "400",
+            "message": "[FAIL]node:oa_qwen-plus-main msg:Execution failed: null",
+            "statusCodeValue": 400
+          }
+        ],
+        "frames": 1,
+        "done": false,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790022924476,\"totalDuration\":1790022924476,\"serverDuration\":-1790022924415}\n\n"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # AGENTS.md — dsh-tap 开发指南
 
-面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#36）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
+面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#39）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
 
 ## 项目是什么
 
@@ -95,6 +95,9 @@ Qoder CN 通道：
 34. dsh 0.1.6 拆除 `settings.plugin.item` 槽（迁入 Plugin Manager `plugins.item`，`{view:'summary'|'page'}` 契约）——旧槽上 `slots.inject` 静默等待，升级后卡片"消失且零报错"（dshmarket 同受害）；修复 = 双槽注册 + 卡片 embedded 分形；升级 dsh 后先 grep 新产物的槽名清单对账
 35. Windows Git Bash 的 `curl -d` 中文按 ANSI(GBK) 发字节——含非 ASCII 的 HTTP 测试用 Node fetch，"中文乱码"先怀疑测试工具链
 36. wasm-bindgen 的 RequestResult.headers 是 JS Map——`{...map}` 展开得空头组（服务器断连无报错），必须 Object.fromEntries；手写胶水位运算永远加括号（`ptr >>> 0 + len` ≡ `ptr >>> len`）
+37. 未知模型 key 被上游**静默改派 auto**——响应 model 字段 + billable:false 是哨兵，探测必须用真实目录 key
+38. 测试 fixture 禁写绝对日期（"未来时间"到期即必红）；"昨天绿今天红"先查 fixture 时钟
+39. pi-ai 丢弃 `stopReason=error/aborted` 的 assistant **但保留其 toolResult** → 出站孤儿 `role:"tool"` → 严格上游 400（Qoder `provider_error` 根因）；翻译网关出站前必须做消息配对体检（`sanitizeToolPairing`，verify-qoder [18] 锁定案）
 
 ## 常用命令
 
@@ -112,6 +115,8 @@ node scripts/verify-trae-provider.mjs           # Trae 通道离线回归（mock
 node scripts/verify-qoder-provider.mjs          # Qoder CN 离线回归（mock 设备流全流程 + 翻译网关信封 + 目录投影）
 node scripts/probe-qoder-live.mjs --login       # Qoder CN 真实设备流登录（浏览器授权；令牌存 ~/.dsh/qoder-plugin-auth.json）
 node scripts/probe-qoder-live.mjs --chat "文本" # Qoder CN 真实对话（cosy 签名路径，证据落 docs/probes/）
+node scripts/probe-qoder-matrix.mjs --suite flash|tools|reject|repair  # Qoder 差分矩阵（逐变量隔离上游报错，证据 docs/probes/qoder-matrix-*.json）
+node scripts/probe-qoder-flash-confirm.mjs      # Qwen3.8-Flash 上游节点状态确认（3×Flash + 2×对照，恢复即翻绿）
 node scripts/probe-trae-live.mjs --login        # Trae 真实登录（浏览器授权 + DeviceProof 刷新自证；一次性）
 node scripts/probe-trae-live.mjs --chat "文本"  # Trae 真实对话联调（原始证据落 docs/probes/ 校准信封）
 node scripts/measure-latency.mjs --mock|--real  # 识图/搜索端到端延迟分布（JSONL 落盘）
@@ -135,7 +140,7 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 - 改 Trae 通道 → docs/reverse/traework-cn.md + trae-cloud-api.md（目录提取另见 trae-model-catalog.md）；错误码表在 providers/trae/errors.js
 
-- 排查"缓存命中率低/重复提问" → docs/diagnosis-cache-quota.md；排查 "trae 3003 all models failed" → docs/diagnosis-trae-3003.md
+- 排查"缓存命中率低/重复提问" → docs/diagnosis-cache-quota.md；排查 "trae 3003 all models failed" → docs/diagnosis-trae-3003.md；排查 Qoder "upstream error / provider_error / Flash 不可用" → docs/diagnosis-qoder-flash.md
 
 - 要原始实测证据 → docs/probes/（历次探测 JSON/JSONL 落盘）
 

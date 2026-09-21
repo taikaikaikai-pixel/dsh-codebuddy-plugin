@@ -1,0 +1,671 @@
+{
+  "ts": "2026-09-21T20:44:11.413Z",
+  "endpoint": "https://gateway.qoder.com.cn",
+  "records": [
+    {
+      "label": "flash@m_clienttype",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"client_type\":\"qoder\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiI5MzViNTgyZi01Y2Q2LTRmMTQtOWQzYi1mYTRjZWUwZjQzODAiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.b15cbd2313d704f1706260cee0bcd44d",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023429",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023432057,\"totalDuration\":1790023432057,\"serverDuration\":-1790023429835}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_none",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiJjMzgyZDE2Yi1mYzY5LTRkNjItYTc3Ny1jNDMzOGZlMjcxMzAiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.aaf4b54df26f9b0ca5ac548778a4885c",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "5",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023433",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023434811,\"totalDuration\":1790023434811,\"serverDuration\":-1790023433845}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_empty",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"uid\":\"\",\"encrypt_user_info\":\"\",\"key\":\"\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiJmYzdhYjQyNS1lYjYxLTRhMGItYmYxNy0yY2UzMGEwM2FkYWUiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.b67f51615c28550fc6dd22843c901f90",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "5",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023436",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "assistant",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023436705,\"totalDuration\":1790023436705,\"serverDuration\":-1790023436594}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_cli_app",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"client_type\":\"qoder\",\"business_product\":\"qoder\",\"business_type\":\"CLI\",\"scene\":\"app\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiI2ODhhYzNlYS03NTM3LTQ4YzYtYTc5Yi1mZTY5MjliYTk4ZTIiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.fef5d826e6e64e592fcf1f569453585f",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "qoder",
+        "Cosy-Business-Type": "CLI",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023438",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "app",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023438546,\"totalDuration\":1790023438546,\"serverDuration\":-1790023438467}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_cli_app_only",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"client_type\":\"qoder\",\"scene\":\"app\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiI3MDIwMTIzMy1mMmEzLTQ3ZjgtYjEwMC01ZTFiYmVhMzNkMjkiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.1af22b7bc1cad607155526f9216ebfa9",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "agent",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023440",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "app",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023440416,\"totalDuration\":1790023440416,\"serverDuration\":-1790023440348}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_cli_quest",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"client_type\":\"qoder\",\"business_product\":\"qoder\",\"business_type\":\"CLI\",\"scene\":\"quest\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiI5YmE1MGYyNS0zMjMyLTRiM2QtOWUzYi02YWU5NjZiYTBhMjciLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.9040b0b71f233e4ab35abe97de5d89a4",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "qoder",
+        "Cosy-Business-Type": "CLI",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023442",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "quest",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023442293,\"totalDuration\":1790023442293,\"serverDuration\":-1790023442216}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_ide_app",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"client_type\":\"qoder\",\"business_product\":\"qoder\",\"business_type\":\"IDE\",\"scene\":\"app\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiJhYzczM2Y2MC05MWVmLTQ4NTMtODFlMS01MTBhMTdhMjFhMmUiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.c7c12253e872234f386f22c2cf663002",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "qoder",
+        "Cosy-Business-Type": "IDE",
+        "Cosy-ClientType": "qoder",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023444",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "app",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023445067,\"totalDuration\":1790023445067,\"serverDuration\":-1790023444089}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_type_cli",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"client_type\":\"qoder-cli\",\"business_type\":\"CLI\",\"scene\":\"app\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiJkNzFkNzQ0Ny1lMWMxLTRlNTQtYmEwNy03MzNmODdjMTA2YTQiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.c5cc506281342de44bbbe0b8770f840f",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "cli",
+        "Cosy-Business-Type": "CLI",
+        "Cosy-ClientType": "qoder-cli",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023446",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "app",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023447758,\"totalDuration\":1790023447758,\"serverDuration\":-1790023446844}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    },
+    {
+      "label": "flash@m_work_app",
+      "modelKey": "qfmodel",
+      "modelSource": "system",
+      "version": "1.1.57",
+      "clientMetaRaw": "{\"client_type\":\"qoder-work\",\"business_product\":\"qoder-work\",\"business_type\":\"QoderWork\",\"scene\":\"app\"}",
+      "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+      "headerNames": [
+        "Accept",
+        "Authorization",
+        "Cache-Control",
+        "Connection",
+        "Content-Type",
+        "Cosy-Business-Product",
+        "Cosy-Business-Type",
+        "Cosy-ClientType",
+        "Cosy-Data-Policy",
+        "Cosy-Date",
+        "Cosy-Key",
+        "Cosy-MachineId",
+        "Cosy-MachineToken",
+        "Cosy-MachineType",
+        "Cosy-Scene",
+        "Cosy-User",
+        "Cosy-Version",
+        "Login-Version",
+        "X-Model-Key",
+        "X-Model-Source"
+      ],
+      "headers": {
+        "Accept": "text/event-stream",
+        "Authorization": "Bearer COSY.eyJ2ZXJzaW9uIjoidjEiLCJyZXF1ZXN0SWQiOiI2M2RiYjAxYy0xZWFjLTRlMTUtYTgwYS0yMTg5OTY1OWYyMGIiLCJpbmZvIjoia3ZvbmgzTXBCemZENTlSTzBLQ1huQzkrTnRYRCttcWcxYXJ0U2pQTGJ4ZFpGa0RYQWRCQ3lWVE0vRzk0MXQvNDFydzBtNWFqQy83Vll5eFFyenVDVXdVKzUzZHV1MStuSGlUMmNVak84R2dqbGNRRDhuODJ5amJsSWt5bkdvc1pkd0FvQW1naE85c2h6aGR2cFRsSXZpL092Um8vZ0loMWZ6eGRjbzdqY3lETnZkckVuNDN3OFJOYkZEcGpCZjI3UVhFSzFuR1FwckFDVndqSi9PdjNzNUxjRzh6Ymp5QjFPSlZYbHhROXd3VT0iLCJjb3N5VmVyc2lvbiI6IjEuMS41NyIsImlkZVZlcnNpb24iOiIifQ==.a297473d0b75a285dc2ae9de0622ac28",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "Cosy-Business-Product": "qoder-work",
+        "Cosy-Business-Type": "QoderWork",
+        "Cosy-ClientType": "qoder-work",
+        "Cosy-Data-Policy": "agree",
+        "Cosy-Date": "1790023449",
+        "Cosy-Key": "T9C31enb3LKQZbQK0skM7OU5EpXtB7tFSJ4TSZJ4/bq0lNzCqUqAxnTvJajq8lkJV4tvjafwZdSOvWHMFK532qqycvy95t5O7R9TfaY8wcMYrEymlW/ORUW3SkGB2EiSqW2PKmaxxo5tFIGs2wRBlMBTAUuJ4j/ElIphjTrQ5oQ=",
+        "Cosy-MachineId": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineToken": "4e0567e33bf7515449b31181148a9b64ec1ad7ad0f2b518d",
+        "Cosy-MachineType": "5",
+        "Cosy-Scene": "app",
+        "Cosy-User": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+        "Cosy-Version": "1.1.57",
+        "Login-Version": "v2",
+        "X-Model-Key": "qfmodel",
+        "X-Model-Source": "system"
+      },
+      "requestBody": {
+        "model": "qfmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "只回复两个字：收到"
+          }
+        ]
+      },
+      "netErr": null,
+      "status": 200,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790023449629,\"totalDuration\":1790023449629,\"serverDuration\":-1790023449552}\n\n",
+      "dissect": {
+        "text": "",
+        "frames": 1,
+        "errors": [],
+        "usage": null
+      }
+    }
+  ]
+}

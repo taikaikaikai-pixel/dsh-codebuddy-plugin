@@ -38,6 +38,8 @@ import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { appendFileSync } from 'node:fs'
 
+import { sanitizeToolPairing } from '../tool-pairing.js'
+
 import { SessionLimiter, extractSessionId } from '../../core/bridge.js'
 import { normalizeTraeError, formatTraeErrorMessage, TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './errors.js'
 import {
@@ -170,8 +172,12 @@ function nativeTools(tools) {
  */
 export function buildChatRequest(payload, sessionId) {
   const requestId = randomUUID()
+  // 出站 tool 配对体检（踩坑 #39，与 Qoder 网关同一不变量）：pi-ai 会删掉
+  // stopReason=error/aborted 的 assistant 却留下其 toolResult，孤儿 tool 消息在
+  // 严格上游会被拒；trae 侧同样不能假设宿主序列化器输出合法。
+  const pair = sanitizeToolPairing(payload.messages)
   const body = {
-    messages: toNativeMessages(payload.messages),
+    messages: toNativeMessages(pair.messages),
     model: typeof payload.model === 'string' ? payload.model : 'glm-5.3',
     function: DEFAULT_FUNCTION,
     request_id: requestId,

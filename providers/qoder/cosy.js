@@ -25,6 +25,12 @@
  * 线程/并发：WASM 实例单例（模块级 promise 缓存）；QoderContext 持有的是不可变
  * 凭据快照，每次调用独立签名——凭据轮换（refresh 后 accessToken 变化）时
  * ensureContext 检测令牌字符串变化并重建上下文（构造很便宜，WASM 不重载）。
+ *
+ * clientMetadata（2026-09-22 对齐官方）：`{"client_type":5}`——wasm 把该字段映射成
+ * `Cosy-ClientType` 头，官方 CLI/IDE 实测线缆值恒为 **5**；我们早期传字符串
+ * `'qoder'` 会让出站头带上 `Cosy-ClientType: qoder`（与官方客户端签名不一致，
+ * 网关侧可据此分辨第三方客户端）。这是**头保真度**修正，与模型可用性无关
+ * （qfmodel 上游节点故障两种值下都复现）。
  */
 
 import { readFileSync } from 'node:fs'
@@ -336,7 +342,7 @@ export function createCosyRuntime({ wasmPath }) {
       access_token: cred.accessToken,
       encrypt_user_info: rf.encrypt_user_info,
       key: rf.key,
-    }), JSON.stringify({ client_type: 'qoder' }))
+    }), JSON.stringify({ client_type: 5 }))
     contextKey = key
     return context
   }

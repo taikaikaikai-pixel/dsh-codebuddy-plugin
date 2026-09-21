@@ -484,6 +484,105 @@ console.log('\n[14] 翻译网关：COSY 信封 ↔ OpenAI 流式/非流式翻译
   infer.close()
 }
 
+// ── [18] tool 配对修复：pi-ai 孤儿 tool 消息 → 出站前修好（2026-09-22 实测根因）──
+console.log('\n[18] 出站 tool 配对修复（sanitizeToolPairing + 网关接线）')
+{
+  const { sanitizeToolPairing, createQoderGateway } = await import('../providers/qoder/gateway.js')
+
+  const pairOk = (msgs) => {
+    const ids = new Set()
+    for (const m of msgs) {
+      if (m.role === 'assistant' && Array.isArray(m.tool_calls)) for (const tc of m.tool_calls) ids.add(tc.id)
+      else if (m.role === 'tool') { if (!ids.has(m.tool_call_id)) return false }
+      else if (m.role === 'assistant') ids.clear()
+    }
+    return true
+  }
+
+  // 纯函数：pi-ai 的真实产物（system,user,tool,user——assistant 被 stopReason=error 删掉）
+  const orphan = sanitizeToolPairing([
+    { role: 'system', content: 'sys' },
+    { role: 'user', content: '现在几点？' },
+    { role: 'tool', tool_call_id: 'call_abc123', name: 'get_current_time', content: '2026-09-22 05:00:00 +08:00' },
+    { role: 'user', content: '谢谢' },
+  ])
+  ok(pairOk(orphan.messages) === true, '孤儿 tool → 补 assistant 桩后配对合法')
+  ok(orphan.repaired.orphans === 1 && orphan.messages[2]?.role === 'assistant'
+    && orphan.messages[2]?.tool_calls?.[0]?.id === 'call_abc123'
+    && orphan.messages[2]?.tool_calls?.[0]?.function?.name === 'get_current_time',
+  '桩保留 tool_call_id 与工具名', JSON.stringify(orphan.messages[2]))
+  ok(orphan.messages[3]?.role === 'tool' && orphan.messages[3]?.tool_call_id === 'call_abc123', '原 tool 结果保留在桩之后')
+
+  // 纯函数：tool_call 无结果 → 补"不可用"结果（同一故障的另一半）
+  const missing = sanitizeToolPairing([
+    { role: 'user', content: 'hi' },
+    { role: 'assistant', content: null, tool_calls: [{ id: 'call_x', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'user', content: '算了' },
+  ])
+  ok(missing.repaired.synthesized === 1 && missing.messages[2]?.role === 'tool'
+    && missing.messages[2]?.tool_call_id === 'call_x' && /unavailable/.test(missing.messages[2]?.content ?? ''),
+  'tool_calls 缺结果 → 合成不可用结果', JSON.stringify(missing.messages.map((m) => m.role)))
+  ok(pairOk(missing.messages) === true, '合成后配对合法')
+
+  // 纯函数：同 id 的重复结果 → 丢弃（上游会当孤儿 400）
+  const dup = sanitizeToolPairing([
+    { role: 'user', content: 'hi' },
+    { role: 'assistant', content: null, tool_calls: [{ id: 'call_dup', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'tool', tool_call_id: 'call_dup', content: 'r1' },
+    { role: 'tool', tool_call_id: 'call_dup', content: 'r2' },
+  ])
+  ok(dup.repaired.duplicates === 1 && dup.messages.filter((m) => m.role === 'tool').length === 1,
+    '同 id 重复 tool 结果 → 只留第一个', JSON.stringify(dup.messages.map((m) => m.role)))
+
+  // 纯函数：合法历史零改动（修复不能碰正常请求）
+  const clean = [
+    { role: 'user', content: 'hi' },
+    { role: 'assistant', content: null, tool_calls: [{ id: 'call_ok', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'tool', tool_call_id: 'call_ok', content: 'result' },
+  ]
+  const untouched = sanitizeToolPairing(clean)
+  ok(untouched.repaired.orphans === 0 && untouched.repaired.synthesized === 0
+    && JSON.stringify(untouched.messages) === JSON.stringify(clean), '合法历史逐字节不变')
+
+  // 网关接线：stub cosy（捕获签名前的**明文** body，避开 WASM 密文）
+  const signedBodies = []
+  const stubCosy = {
+    prepareChat: async (_cred, { body, modelKey }) => {
+      signedBodies.push({ body: JSON.parse(body), modelKey })
+      return { url: 'http://127.0.0.1:1/unused', headers: {}, body: '{}' }
+    },
+  }
+  const metered2 = []
+  const runtime2 = { running: false, port: null, lastError: null }
+  const gw2 = createQoderGateway({
+    settings: () => ({ qoderInferBaseURL: 'https://example.invalid', maxConcurrentPerSession: 4, upstreamFirstByteTimeoutMs: 3000 }),
+    resolveCredential: async () => ({ authorization: 'Bearer dt-test', machineId: 'a'.repeat(48), uid: 'u-1' }),
+    cosy: stubCosy,
+    meter: { record: (r) => metered2.push(r) },
+    runtime: runtime2,
+    forensics: { logPath: () => undefined },
+    getCatalogProfiles: () => [],
+    getModelSource: () => 'system',
+  })
+  const stopGw2 = gw2.listen(0)
+  for (let i = 0; i < 50 && !runtime2.running; i++) await sleep(50)
+  const call = (messages, stream) => fetch(`http://127.0.0.1:${runtime2.port}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'qmodel', stream, messages }),
+  })
+  await call([
+    { role: 'user', content: '现在几点？' },
+    { role: 'tool', tool_call_id: 'call_live_1', name: 'get_current_time', content: '2026-09-22 05:00:00 +08:00' },
+  ], false).then((r) => r.text()) // 上游 stub 不可达 → 500/502，但签名前的明文已捕获
+  const seen = signedBodies.at(-1)?.body
+  ok(seen?.messages?.[1]?.role === 'assistant' && seen?.messages?.[2]?.role === 'tool',
+    '网关出站前插入 assistant 桩（明文可见）', JSON.stringify(seen?.messages?.map((m) => m.role)))
+  ok(seen?.stream === true && seen?.stream_options?.include_usage === true, '强制流式与 usage 语义未被修复流程破坏')
+  ok(seen?.model === 'qmodel', 'model 字段原样')
+
+  await stopGw2()
+}
+
 // ── [15] 目录投影：明文形态 + 过滤 + sources 映射 ───────────────────────────
 console.log('\n[15] 目录投影（fetchQoderCatalog）')
 {

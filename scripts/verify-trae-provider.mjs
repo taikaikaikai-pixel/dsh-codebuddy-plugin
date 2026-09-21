@@ -890,9 +890,11 @@ try {
     envBody.messages[0].content?.length === 1 && envBody.messages[0].content[0].type === 'text' && envBody.messages[0].content[0].text === 'a'
     && envBody.model === 'm1' && envBody.session_id === 'conv-1' && envBody.function === 'inline_chat' && envBody.stream === true
     && envBody.max_tokens === 64 && envBody.temperature === 0.5 && typeof envBody.request_id === 'string' && envReqId === envBody.request_id)
-  check('buildChatRequest：默认模型 + tool 角色原生透传',
+  check('buildChatRequest：默认模型 + tool 角色透传（孤儿 tool 先补 assistant 桩，踩坑 #39）',
     buildChatRequest({ messages: [] }, 's').body.model === 'glm-5.3'
-    && buildChatRequest({ messages: [{ role: 'tool', tool_call_id: 'c1', content: 'out' }] }, 's').body.messages[0].tool_call_id === 'c1')
+    && buildChatRequest({ messages: [{ role: 'tool', tool_call_id: 'c1', content: 'out' }] }, 's').body.messages
+      .some((m) => m.tool_call_id === 'c1')
+    && buildChatRequest({ messages: [{ role: 'tool', tool_call_id: 'c1', content: 'out' }] }, 's').body.messages[0]?.tool_calls?.[0]?.id === 'c1')
   const envTools = buildChatRequest({
     messages: [{ role: 'user', content: 'x' }],
     tools: [{ type: 'function', function: { name: 'f', description: 'd', parameters: { type: 'object', properties: {} } } }],
