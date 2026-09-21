@@ -111,6 +111,7 @@ export function createQoderEnvelopeParser() {
  *   forensics?: { logPath: () => string|undefined },
  *   getCatalogProfiles: () => Array|null,  // /v1/models 端点
  *   getModelSource: (id: string) => string, // X-Model-Source（目录 sources 映射）
+ *   getModelPrefs?: () => object, // { [id]: { effort?, contextVariant? } } 出站补默认
  * }} deps
  */
 export function createQoderGateway(deps) {
@@ -157,6 +158,20 @@ export function createQoderGateway(deps) {
       const upstream = { model, stream: true, stream_options: { include_usage: true } }
       for (const f of CHAT_FIELDS) {
         if (payload[f] !== undefined && payload[f] !== null) upstream[f] = payload[f]
+      }
+      // 出站补默认（客户端已带的绝不覆盖）：
+      //  - reasoning_effort：prefs.effort 已设且非 off——off 的语义是"省略参数"
+      //    （同 cordis.patch.yml codebuddy 侧 verified 行为），不是发 'off' 线值；
+      //  - max_completion_tokens：目录 profile.maxTokens 是输出上限的牙齿，payload
+      //    未带 max_tokens 系时注入。只补默认，不碰白名单/计量路径。
+      const prefs = deps.getModelPrefs?.() ?? {}
+      const effort = prefs[model]?.effort
+      if (upstream.reasoning_effort === undefined && effort !== undefined && effort !== 'off') {
+        upstream.reasoning_effort = effort
+      }
+      if (upstream.max_tokens === undefined && upstream.max_completion_tokens === undefined) {
+        const profile = (deps.getCatalogProfiles() ?? []).find((p) => p.id === model)
+        if (Number.isFinite(profile?.maxTokens)) upstream.max_completion_tokens = profile.maxTokens
       }
       const bodyJson = JSON.stringify(upstream)
 

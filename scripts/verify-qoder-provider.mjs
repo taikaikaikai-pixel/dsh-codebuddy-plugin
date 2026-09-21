@@ -14,6 +14,9 @@
  *   [9] machine_id 自持且跨登录复用
  *   [10] 视图绝不外泄令牌与 machine_id
  *   [11] 轮询期网络抖动不判失败
+ *   [15] 目录投影：context_config 变体表 → variants 清单 + contextWindow 覆盖纯函数
+ *   [16] 出站补默认：prefs.effort（off=省略参数）+ profile.maxTokens，不覆盖客户端
+ *   [17] qoderModelSetPrefs 全链路：文件层 → 镜像 → GET 契约（DSH_HOME 隔离起真组合根）
  */
 
 import { createServer, request as httpRequest } from 'node:http'
@@ -485,7 +488,7 @@ console.log('\n[14] 翻译网关：COSY 信封 ↔ OpenAI 流式/非流式翻译
 console.log('\n[15] 目录投影（fetchQoderCatalog）')
 {
   const { createCosyRuntime } = await import('../providers/qoder/cosy.js')
-  const { fetchQoderCatalog } = await import('../providers/qoder/catalog.js')
+  const { fetchQoderCatalog, applyQoderContextVariant } = await import('../providers/qoder/catalog.js')
   const { fileURLToPath } = await import('node:url')
   const wasmPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'providers', 'qoder', 'qoder_auth.wasm')
   const cosy = createCosyRuntime({ wasmPath })
@@ -509,7 +512,238 @@ console.log('\n[15] 目录投影（fetchQoderCatalog）')
   ok(result.profiles[0].contextWindow === 180000, '无 context_config 回落 max_input_tokens')
   ok(result.profiles[0].input.includes('image') && result.profiles[1].input.includes('image'), 'is_vl → input 含 image')
   ok(result.sources.qmodel_38max === 'system', 'sources 映射保留')
+  ok(JSON.stringify(result.variants.qmodel_38max) === JSON.stringify([
+    { name: '200K', tokenCount: 200000, isDefault: true },
+    { name: '1M', tokenCount: 1000000, isDefault: false },
+  ]), 'variants 逐模型清单（name/tokenCount/isDefault）')
+  ok(Array.isArray(result.variants.auto) && result.variants.auto.length === 0, '无 context_config → variants 空数组')
+  ok(applyQoderContextVariant(result.profiles[1], '1M', result.variants.qmodel_38max).contextWindow === 1000000, '选中变体 → contextWindow 覆盖')
+  ok(applyQoderContextVariant(result.profiles[1], '404K', result.variants.qmodel_38max).contextWindow === 200000, '变体名不在目录 → 维持默认档')
+  ok(applyQoderContextVariant(result.profiles[1], undefined, result.variants.qmodel_38max) === result.profiles[1], '未选变体 → profile 原样（镜像形状不变）')
   catServer.close()
+}
+
+// ── [16] 出站补默认注入：prefs.effort + profile.maxTokens ───────────────────
+console.log('\n[16] 网关出站注入：思考强度与输出上限只补默认、不覆盖客户端')
+{
+  const { createQoderGateway } = await import('../providers/qoder/gateway.js')
+  const seen = [] // mock 上游收到的 bodyJson（= prepareChat 的 body 参数）
+  const infer = createServer((req, res) => {
+    const chunks = []
+    req.on('data', (c) => chunks.push(c))
+    req.on('end', () => {
+      seen.push(JSON.parse(Buffer.concat(chunks).toString('utf8')))
+      const env = (body) => `data:${JSON.stringify({ headers: { 'Content-Type': ['application/json'] }, body, statusCodeValue: 200, statusCode: 'OK' })}\n\n`
+      const chunk = JSON.stringify({ choices: [{ delta: { content: 'ok' }, index: 0, finish_reason: 'stop' }], created: 1, id: 'c1', model: 'auto', object: 'chat.completion.chunk' })
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      res.end(env(chunk) + env('[DONE]'))
+    })
+  })
+  await new Promise((r) => infer.listen(0, '127.0.0.1', r))
+  const inferOrigin = `http://127.0.0.1:${infer.address().port}`
+
+  // stub cosy：prepareChat 原样透传 body——真 WASM 会加密 body，mock 看不到
+  // 明文；这里要断言的正是 prepareChat 收到的 upstream 组装结果。
+  const stubCosy = {
+    prepareChat: async (_cred, { endpoint, body }) => ({
+      url: `${endpoint}/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1`,
+      headers: {},
+      body,
+    }),
+  }
+  let prefs = {}
+  const runtime16 = { running: false, port: null, lastError: null }
+  const gateway16 = createQoderGateway({
+    settings: () => ({ qoderInferBaseURL: inferOrigin, maxConcurrentPerSession: 4, upstreamFirstByteTimeoutMs: 5000 }),
+    resolveCredential: async () => ({ authorization: 'Bearer dt-test', machineId: 'a'.repeat(48), uid: 'u-1' }),
+    cosy: stubCosy,
+    meter: { record: () => {} },
+    runtime: runtime16,
+    forensics: { logPath: () => undefined },
+    getCatalogProfiles: () => [
+      { id: 'auto', name: 'Auto', contextWindow: 180000, maxTokens: 32768, input: ['text', 'image'] },
+      { id: 'm1', name: 'M1', contextWindow: 200000, maxTokens: 8192, input: ['text'] },
+    ],
+    getModelSource: () => 'system',
+    getModelPrefs: () => prefs,
+  })
+  const stopGw16 = gateway16.listen(0)
+  for (let i = 0; i < 50 && !runtime16.running; i++) await sleep(50)
+  const gw16 = `http://127.0.0.1:${runtime16.port}`
+  const chat16 = (payload) => fetch(`${gw16}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ stream: false, messages: [{ role: 'user', content: 'hi' }], ...payload }),
+  }).then((r) => r.json())
+  const last = () => seen[seen.length - 1]
+
+  prefs = { m1: { effort: 'high' } }
+  await chat16({ model: 'm1' })
+  ok(last().reasoning_effort === 'high', 'prefs.effort=high → 上游 body 见 reasoning_effort:"high"')
+  ok(last().max_completion_tokens === 8192, '客户端未带 → 补 max_completion_tokens=profile.maxTokens')
+
+  await chat16({ model: 'm1', reasoning_effort: 'low' })
+  ok(last().reasoning_effort === 'low', '客户端带 effort → 尊重客户端不覆盖')
+
+  prefs = { m1: { effort: 'off' } }
+  await chat16({ model: 'm1' })
+  ok(!('reasoning_effort' in last()), "effort='off' → 省略参数（不发 'off' 线值）")
+
+  prefs = {}
+  await chat16({ model: 'm1' })
+  ok(!('reasoning_effort' in last()), '未设 prefs → 不注入 reasoning_effort')
+  ok(last().max_completion_tokens === 8192, '无 prefs 但有目录 profile → 仍补 max_completion_tokens')
+
+  await chat16({ model: 'auto' })
+  ok(last().max_completion_tokens === 32768, 'auto 目录 profile → 补 max_completion_tokens=32768')
+
+  await chat16({ model: 'm1', max_tokens: 500 })
+  ok(last().max_tokens === 500 && !('max_completion_tokens' in last()), '客户端带 max_tokens → 透传且不补 max_completion_tokens')
+
+  await chat16({ model: 'ghost' })
+  ok(!('max_completion_tokens' in last()) && !('reasoning_effort' in last()), '目录外模型 → 双不注入')
+
+  await stopGw16()
+  infer.close()
+}
+
+// ── [17] 组合根端到端：prefs 文件层 → 镜像 → GET 契约（DSH_HOME 隔离沙箱）────
+console.log('\n[17] qoderModelSetPrefs 全链路：apply() 起真组合根，mock 目录上游')
+{
+  const { readFileSync, existsSync } = await import('node:fs')
+  const YAML = (await import('yaml')).default
+  const { readJson } = await import('../core/json-store.js')
+
+  // DSH_HOME 必须在 import('../index.js') 之前落点（路径常量模块加载时固化）
+  const dir17 = mkdtempSync(join(tmpdir(), 'qoder-e2e-'))
+  process.env.DSH_HOME = dir17
+  // 预置已登录凭据（远有效期 → 不触发 refresh）
+  writeJson(join(dir17, 'qoder-plugin-auth.json'), {
+    auth: { accessToken: 'dt-e2e', refreshToken: 'drt-e2e', expiresAt: Date.now() + 3_600_000, loginMethod: 'browser' },
+    machine: { machineId: 'a'.repeat(48) },
+    account: { uid: 'u-e2e' },
+  })
+  const cat = createServer((req, res) => {
+    const url = new URL(req.url, 'http://127.0.0.1')
+    if (url.pathname.endsWith('/api/v2/model/list')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({
+        chat: [
+          { key: 'auto', format: 'openai', source: 'system', enable: true, display_name: 'Auto', is_vl: true, max_input_tokens: 180000 },
+          { key: 'qmodel_38max', format: 'openai', source: 'system', enable: true, display_name: 'Qwen3.8-Max', is_vl: true, context_config: { '200K': { token_count: 200000, is_default: true }, '1M': { token_count: 1000000 } } },
+        ],
+      }))
+      return
+    }
+    res.writeHead(404, { 'Content-Type': 'application/json' })
+    res.end('{}')
+  })
+  await new Promise((r) => cat.listen(0, '127.0.0.1', r))
+  const catOrigin = `http://127.0.0.1:${cat.address().port}`
+
+  // 空闲端口给翻译网关（qoderBridgePort 必须 ≥1）
+  const probe = createServer()
+  await new Promise((r) => probe.listen(0, '127.0.0.1', r))
+  const gwPort = probe.address().port
+  await new Promise((r) => probe.close(r))
+
+  // 生产形态：启用开关与网关参数走文件层——镜像函数按文件层解析
+  // qoderEnabled（Config({...readFileLayer()})），不经 apply 的 entry config
+  writeJson(join(dir17, 'codebuddy-plugin.json'), {
+    qoderEnabled: true,
+    qoderBridgePort: gwPort,
+    qoderInferBaseURL: catOrigin,
+  })
+
+  let routeHandler = null
+  let disposeFn = null
+  const tap = await import('../index.js')
+  tap.apply({
+    inject: (services, cb) => {
+      if (services.includes('webServer')) cb({ webServer: { register: (route) => { routeHandler = route.handler } } })
+      // tools/settings 注入不回调：对应同步空转，不影响本块断言面
+    },
+    on: (event, cb) => { if (event === 'dispose') disposeFn = cb },
+  }, {
+    bridgeEnabled: false,   // 不起 codebuddy 桥
+    searchEnabled: false,   // 不注册 web 搜索/抓取 provider
+    imageGenEnabled: false,
+    traeEnabled: false,
+    baseURL: catOrigin,     // codebuddy 侧启动同步也指向 mock（404 快速失败）
+  })
+  ok(typeof routeHandler === 'function', 'apply() 注册 /dsh-tap/settings 路由')
+
+  const ui = createServer((req, res) => routeHandler(req, res))
+  await new Promise((r) => ui.listen(0, '127.0.0.1', r))
+  const uiOrigin = `http://127.0.0.1:${ui.address().port}`
+  const call = async (method, body) => {
+    const res = await fetch(`${uiOrigin}/dsh-tap/settings`, {
+      method,
+      headers: { 'content-type': 'application/json', origin: uiOrigin },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+    return { status: res.status, json: await res.json().catch(() => null) }
+  }
+
+  // 等 apply() 里 syncQoderBridge 的目录同步落镜：catalogState 与镜像写在
+  // 同一 then 链，但视图 sync 标志先于镜像可见——以镜像文件落盘为准
+  const SETTINGS_YAML = join(dir17, 'settings.yaml')
+  const FILE_LAYER = join(dir17, 'codebuddy-plugin.json')
+  let g = null
+  for (let i = 0; i < 100; i++) {
+    g = (await call('GET')).json
+    if (g?.qoder?.models?.sync && existsSync(SETTINGS_YAML)) break
+    await sleep(100)
+  }
+  ok(g?.qoder?.models?.sync?.count === 2 && existsSync(SETTINGS_YAML), '目录同步并镜像落盘（2 模型）', JSON.stringify(g?.qoder?.models?.sync))
+  ok(JSON.stringify(g.qoder.models.variants.qmodel_38max) === JSON.stringify([
+    { name: '200K', tokenCount: 200000, isDefault: true },
+    { name: '1M', tokenCount: 1000000, isDefault: false },
+  ]), 'GET 契约：qoder.models.variants 逐模型清单')
+  ok(Array.isArray(g.qoder.models.variants.auto) && g.qoder.models.variants.auto.length === 0, 'GET 契约：无变体模型 → 空数组')
+  ok(JSON.stringify(g.qoder.models.modelPrefs) === '{}', 'GET 契约：初始 modelPrefs 为空字典')
+  ok(!JSON.stringify(g).includes('dt-e2e'), 'GET 响应脱敏：access token 不进设置视图（审计 [26] 同纪律）')
+
+  let doc = YAML.parse(readFileSync(SETTINGS_YAML, 'utf8'))
+  let block = doc['llm-pi-ai'].providers.qoder
+  ok(block.models.length === 2, '镜像块铺 2 模型')
+  ok(JSON.stringify(Object.keys(block.models.find((m) => m.id === 'qmodel_38max')).sort()) === JSON.stringify(['contextWindow', 'id', 'input', 'maxTokens', 'name']), '镜像条目形状不变（variants 不进 settings.yaml）')
+  ok(block.models.find((m) => m.id === 'qmodel_38max').contextWindow === 200000, '未选变体 → contextWindow 维持目录默认档')
+
+  let r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'qmodel_38max', prefs: { effort: 'high', contextVariant: '1M' } } } })
+  ok(r.status === 200 && r.json.ok === true, 'qoderModelSetPrefs → 200 ok')
+  ok(JSON.stringify(readJson(FILE_LAYER).qoderModelPrefs) === JSON.stringify({ qmodel_38max: { effort: 'high', contextVariant: '1M' } }), '写文件层 qoderModelPrefs（只存已设置键）')
+  doc = YAML.parse(readFileSync(SETTINGS_YAML, 'utf8'))
+  ok(doc['llm-pi-ai'].providers.qoder.models.find((m) => m.id === 'qmodel_38max').contextWindow === 1000000, '镜像 contextWindow = 选中变体 token_count')
+  ok(r.json.qoder.models.modelPrefs.qmodel_38max.contextVariant === '1M', 'POST 响应回带 qoder 区读侧一致')
+
+  const yamlBefore = readFileSync(SETTINGS_YAML, 'utf8')
+  const layerBefore = readFileSync(FILE_LAYER, 'utf8')
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'qmodel_38max', prefs: { effort: 'high', contextVariant: '1M' } } } })
+  ok(r.json.ok === true, '重复提交同值 → ok')
+  ok(readFileSync(SETTINGS_YAML, 'utf8') === yamlBefore && readFileSync(FILE_LAYER, 'utf8') === layerBefore, '幂等：settings.yaml 与文件层逐字节不变')
+
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'qmodel_38max', prefs: { effort: 'off' } } } })
+  ok(r.json.ok === true && JSON.stringify(readJson(FILE_LAYER).qoderModelPrefs) === JSON.stringify({ qmodel_38max: { effort: 'off' } }), 'prefs 完整替换：contextVariant 被清掉')
+  doc = YAML.parse(readFileSync(SETTINGS_YAML, 'utf8'))
+  ok(doc['llm-pi-ai'].providers.qoder.models.find((m) => m.id === 'qmodel_38max').contextWindow === 200000, '变体清掉 → 镜像回落目录默认档')
+
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'qmodel_38max', prefs: {} } } })
+  ok(r.json.ok === true && JSON.stringify(readJson(FILE_LAYER).qoderModelPrefs ?? {}) === '{}', '空 prefs = 删记录回默认')
+
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'qmodel_38max', prefs: { effort: 'ultra' } } } })
+  ok(r.status === 400 && /effort 档位必须是/.test(r.json?.error ?? ''), '非法档位 → 400 带原因')
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'qmodel_38max', prefs: { contextVariant: '404K' } } } })
+  ok(r.status === 400 && /没有名为/.test(r.json?.error ?? ''), '未知变体名 → 400 带原因')
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'ghost', prefs: { effort: 'high' } } } })
+  ok(r.status === 400 && /不在 Qoder 目录里/.test(r.json?.error ?? ''), '目录外模型 → 400 带原因')
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'auto', prefs: { contextVariant: '200K' } } } })
+  ok(r.status === 400, '无变体模型拒收 contextVariant')
+  r = await call('POST', { patch: { qoderModelSetPrefs: { id: 'auto', prefs: { effort: 'low' } } } })
+  ok(r.json.ok === true, '无变体模型可设 effort')
+
+  if (disposeFn) disposeFn()
+  ui.close()
+  cat.close()
 }
 
 server.close()

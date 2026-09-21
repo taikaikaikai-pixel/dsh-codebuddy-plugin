@@ -62,6 +62,7 @@ import { TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/trae/errors.js'
 import { PROVIDER_ID_RE, createOpenAICompatProvider } from './providers/openai-compat.js'
 import { QODER_CLIENT_ID } from './providers/qoder/oauth.js'
 import { createQoderProvider } from './providers/qoder/index.js'
+import { applyQoderContextVariant } from './providers/qoder/catalog.js'
 import { scanLocalCredentials, readImportCredential } from './local-scan.js'
 import arkProvider from './providers/ark/index.js'
 import bailianProvider from './providers/bailian/index.js'
@@ -852,6 +853,7 @@ const qoderProvider = createQoderProvider({
   meter,
   runtime: qoderRuntime,
   forensics: { logPath: () => process.env.QODER_GATEWAY_LOG },
+  getModelPrefs: () => readQoderModelPrefs(),
 })
 
 function readQoderModelState() {
@@ -861,6 +863,27 @@ function readQoderModelState() {
     disabled: state.disabled && typeof state.disabled === 'object' && !Array.isArray(state.disabled)
       ? state.disabled : {},
   }
+}
+
+// 逐模型偏好：{ [id]: { effort?, contextVariant? } }，与 qoderModelState 并列的
+// 独立文件层键（其形状是 disabled 集合字典，与 prefs 记录不对称，故不扩它）。
+// 只存已设置的键、空记录不落盘（= 默认）。effort 档位拼写 off/low/medium/high/
+// max（cordis.patch.yml verified 表）；contextVariant 是目录 context_config 变体名，
+// 镜像时换成 contextWindow（applyQoderContextVariant）。
+const QODER_EFFORT_LEVELS = ['off', 'low', 'medium', 'high', 'max']
+
+function readQoderModelPrefs() {
+  const raw = readFileLayer().qoderModelPrefs
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const out = {}
+  for (const [id, v] of Object.entries(raw)) {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) continue
+    const rec = {}
+    if (typeof v.effort === 'string' && QODER_EFFORT_LEVELS.includes(v.effort)) rec.effort = v.effort
+    if (typeof v.contextVariant === 'string' && v.contextVariant) rec.contextVariant = v.contextVariant
+    if (Object.keys(rec).length) out[id] = rec
+  }
+  return out
 }
 
 /** 镜像 providers.qoder **整块**（路由存在性管理，同 trae 镜像纪律）。 */
@@ -874,8 +897,11 @@ function syncQoderModelsToDshSettings() {
   const s = Config({ ...readFileLayer() })
   const view = qoderProvider.catalogView()
   const disabled = readQoderModelState().disabled
+  const prefs = readQoderModelPrefs()
   const models = s.qoderEnabled === true && view
-    ? view.profiles.filter((p) => !disabled[p.id])
+    ? view.profiles
+        .filter((p) => !disabled[p.id])
+        .map((p) => applyQoderContextVariant(p, prefs[p.id]?.contextVariant, view.variants?.[p.id]))
     : null
   const path = ['llm-pi-ai', 'providers', 'qoder']
   if (!models || models.length === 0) {
@@ -908,6 +934,43 @@ function setQoderModelEnabled({ id, enabled }) {
   if (enabled) delete state.disabled[id]
   else state.disabled[id] = true
   layer.qoderModelState = state
+  writeFileLayer(layer)
+  syncQoderModelsToDshSettings()
+  return state
+}
+
+/**
+ * qoderModelSetPrefs 写路径（UI 契约：patch.qoderModelSetPrefs = { id, prefs }）。
+ * prefs 是该模型记录的**完整替换**——只存已设置的键，空对象 = 删记录回默认。
+ * effort 校验档位拼写；contextVariant 必须命中该模型目录变体（无变体模型拒收）。
+ */
+function setQoderModelPrefs({ id, prefs }) {
+  if (typeof id !== 'string' || !id.trim()) throw new Error('qoderModelSetPrefs 需要 id')
+  assertSafeModelId(id)
+  const view = qoderProvider.catalogView()
+  if (!view || !view.profiles.some((p) => p.id === id)) throw new Error(`${id} 不在 Qoder 目录里（先同步目录）`)
+  if (!prefs || typeof prefs !== 'object' || Array.isArray(prefs)) throw new Error('qoderModelSetPrefs 需要 prefs 对象')
+  const unknown = Object.keys(prefs).filter((k) => k !== 'effort' && k !== 'contextVariant')
+  if (unknown.length) throw new Error(`prefs 不支持的键：${unknown.join(', ')}`)
+  const rec = {}
+  if (prefs.effort !== undefined) {
+    if (!QODER_EFFORT_LEVELS.includes(prefs.effort)) {
+      throw new Error(`effort 档位必须是 ${QODER_EFFORT_LEVELS.join('/')} 之一`)
+    }
+    rec.effort = prefs.effort
+  }
+  if (prefs.contextVariant !== undefined) {
+    const variants = view.variants?.[id] ?? []
+    if (!variants.some((v) => v?.name === prefs.contextVariant)) {
+      throw new Error(`${id} 没有名为 ${prefs.contextVariant} 的上下文变体`)
+    }
+    rec.contextVariant = prefs.contextVariant
+  }
+  const state = readQoderModelPrefs()
+  if (Object.keys(rec).length) state[id] = rec
+  else delete state[id]
+  const layer = readFileLayer()
+  layer.qoderModelPrefs = state
   writeFileLayer(layer)
   syncQoderModelsToDshSettings()
   return state
@@ -1132,6 +1195,12 @@ function settingsView(resolveNow) {
       },
       models: {
         disabled: Object.keys(readQoderModelState().disabled),
+        // 逐模型偏好读侧（UI 契约 qoderModelSetPrefs 的镜像；只含已设置键，
+        // 无 effort 键 = 不注入、无 contextVariant 键 = 目录默认档）。
+        modelPrefs: readQoderModelPrefs(),
+        // 每模型上下文变体清单（目录 context_config；无变体 = []，UI 据此隐藏
+        // 该模型的上下文选择）。
+        variants: qoderProvider.catalogView()?.variants ?? {},
         sync: qoderProvider.catalogView()
           ? { at: qoderProvider.catalogView().at, count: qoderProvider.catalogView().count }
           : null,
@@ -1149,6 +1218,10 @@ function settingsView(resolveNow) {
  *   POST {action:'oauth-logout'}                            → clears tokens
  *   POST {action:'qoder-oauth-start'|'qoder-oauth-status'|'qoder-oauth-logout'}
  *                                                           → Qoder CN 设备流（Phase 1 仅登录）
+ *   POST {patch:{qoderModelSetEnabled:{id,enabled}}}        → Qoder 逐模型启停 → 镜像
+ *   POST {patch:{qoderModelSetPrefs:{id,prefs}}}            → Qoder 逐模型思考强度/上下文
+ *                                                             变体（prefs 完整替换；{}
+ *                                                             = 删记录回默认）→ 镜像
  *   POST {action:'model-list'}                              → gateway catalog
  *   POST {action:'model-sync'}                              → G4 resync /v3/config → mirror
  *   POST {action:'provider-list'|'provider-add'|'provider-remove'|'provider-refresh'}
@@ -1480,6 +1553,24 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               setQoderModelEnabled(patch.qoderModelSetEnabled)
               const after = readFileLayer()
               delete withKeys.qoderModelState
+              Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
+              writeFileLayer(after)
+              sendJSON(response, 200, {
+                ok: true,
+                value: settingsView(resolveNow).value,
+                user: maskedUserLayer(after),
+                qoder: settingsView(resolveNow).qoder,
+              })
+              applyLive()
+              return
+            }
+            if (patch.qoderModelSetPrefs !== undefined) {
+              // 同 qoderModelSetEnabled 的层叠纪律：setQoderModelPrefs 内部自写
+              // qoderModelPrefs，事后重读层并把本请求里的 apiKeys 改动合回。
+              const withKeys = { ...nextUser }
+              setQoderModelPrefs(patch.qoderModelSetPrefs)
+              const after = readFileLayer()
+              delete withKeys.qoderModelPrefs
               Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
               writeFileLayer(after)
               sendJSON(response, 200, {

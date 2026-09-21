@@ -30,7 +30,31 @@ export function projectQoderModel(entry) {
 }
 
 /**
- * 拉取目录 → { profiles, raw }。明文/密文两态自适应。
+ * 目录条目 → 上下文变体清单 [{name, tokenCount, isDefault}]（context_config
+ * 变体表，实测 Qwen3.8-Max：200K 默认/400K/1M）。无变体/全非法 → []——
+ * 设置卡据此隐藏该模型的上下文选择。
+ */
+export function projectQoderVariants(entry) {
+  const ctx = entry?.context_config
+  if (!ctx || typeof ctx !== 'object') return []
+  return Object.entries(ctx)
+    .filter(([, v]) => v && Number.isFinite(v.token_count))
+    .map(([name, v]) => ({ name, tokenCount: v.token_count, isDefault: v.is_default === true }))
+}
+
+/**
+ * 选中变体 → profile.contextWindow 覆盖（未选/变体名已不在目录 → 原样）。
+ * 纯函数单点：镜像（syncQoderModelsToDshSettings）与回归断言共用。
+ */
+export function applyQoderContextVariant(profile, variantName, variants) {
+  if (!variantName || !Array.isArray(variants)) return profile
+  const hit = variants.find((v) => v && v.name === variantName && Number.isFinite(v.tokenCount))
+  if (!hit) return profile
+  return { ...profile, contextWindow: hit.tokenCount }
+}
+
+/**
+ * 拉取目录 → { profiles, sources, variants, raw }。明文/密文两态自适应。
  * @param {object} cosy  createCosyRuntime 实例
  * @param {object} cred  { accessToken, machineId, uid }
  * @param {string} inferBaseURL  例 https://gateway.qoder.com.cn
@@ -56,5 +80,8 @@ export async function fetchQoderCatalog(cosy, cred, inferBaseURL) {
   // X-Model-Source 头取数（全部实测条目为 "system"，但保留逐条目映射以防分化）
   const sources = {}
   for (const e of entries) sources[e.key] = typeof e.source === 'string' && e.source ? e.source : 'system'
-  return { profiles, sources, raw: body }
+  // 上下文变体清单逐模型保留（不进 profiles——镜像块形状不变，见 index.js 镜像纪律）
+  const variants = {}
+  for (const e of entries) variants[e.key] = projectQoderVariants(e)
+  return { profiles, sources, variants, raw: body }
 }

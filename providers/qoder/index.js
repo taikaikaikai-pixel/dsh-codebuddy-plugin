@@ -32,6 +32,7 @@ const WASM_PATH = join(dirname(fileURLToPath(import.meta.url)), 'qoder_auth.wasm
  *   meter: { record: Function },
  *   runtime: { running: boolean, port: number|null, lastError: string|null },
  *   forensics?: { logPath: () => string|undefined },
+ *   getModelPrefs?: () => object,  // { [id]: { effort?, contextVariant? } } 出站补默认
  * }} deps
  */
 export function createQoderProvider(deps) {
@@ -39,7 +40,7 @@ export function createQoderProvider(deps) {
   const cosy = createCosyRuntime({ wasmPath: WASM_PATH })
 
   // 目录实例状态（模块作用域每插件实例一份，踩坑 #20 纪律）。
-  let catalogState = null // { profiles, sources, fetchedAt }
+  let catalogState = null // { profiles, sources, variants, fetchedAt }
 
   const provider = {
     id: QODER_PROVIDER_ID,
@@ -62,7 +63,7 @@ export function createQoderProvider(deps) {
       try {
         const accessToken = String(cred.authorization).replace(/^Bearer\s+/, '')
         const result = await fetchQoderCatalog(cosy, { accessToken, machineId: cred.machineId, uid: cred.uid }, s.qoderInferBaseURL)
-        catalogState = { profiles: result.profiles, sources: result.sources, fetchedAt: Date.now() }
+        catalogState = { profiles: result.profiles, sources: result.sources, variants: result.variants, fetchedAt: Date.now() }
         return { ok: true, count: result.profiles.length, fetchedAt: catalogState.fetchedAt }
       } catch (err) {
         return { ok: false, error: err?.message ?? String(err), kept: catalogState != null }
@@ -71,7 +72,7 @@ export function createQoderProvider(deps) {
 
     catalogView() {
       return catalogState
-        ? { at: catalogState.fetchedAt, count: catalogState.profiles.length, profiles: catalogState.profiles }
+        ? { at: catalogState.fetchedAt, count: catalogState.profiles.length, profiles: catalogState.profiles, variants: catalogState.variants }
         : null
     },
 
@@ -90,6 +91,7 @@ export function createQoderProvider(deps) {
     forensics: deps.forensics,
     getCatalogProfiles: () => catalogState?.profiles ?? null,
     getModelSource: (id) => catalogState?.sources?.[id] ?? 'system',
+    getModelPrefs: deps.getModelPrefs ?? (() => ({})),
   })
   provider.gateway = gateway
 
