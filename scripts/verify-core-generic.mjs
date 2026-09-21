@@ -258,8 +258,16 @@ async function main() {
     // [11]+[13]: these files carry tokens/keys — the usage store is flushed
     // through writeJson on dispose(), so the mode is observable here.
     const st = statSync(join(tmp, 'usage.json'))
-    check('json-store file mode is 0600', (st.mode & 0o777) === 0o600,
-      `mode ${(st.mode & 0o777).toString(8)}`)
+    if (process.platform === 'win32') {
+      // win32 无 POSIX 权限位：writeFile 的 mode 选项不体现在 stat().mode
+      // （仅反映只读属性）。代码路径与 POSIX 一致（writeJson 传 0o600），
+      // 位断言只在 POSIX 平台有意义。
+      check('json-store file mode is 0600 (win32: POSIX 位不可观测，代码已传 0o600)', true,
+        'platform-skip')
+    } else {
+      check('json-store file mode is 0600', (st.mode & 0o777) === 0o600,
+        `mode ${(st.mode & 0o777).toString(8)}`)
+    }
 
     // [17]: the credentials file is parsed line-wise, never with a RegExp
     // built from envName (settings-controlled free text). Prefixed names so

@@ -310,7 +310,7 @@ console.log('\n[13] 真实 poll 响应形态回放')
   const real = {
     id: 'dt-abc', token: 'dt-realshape', user_id: '019efdac-1bf3-792a-a63d-1b94c1ea9fb0',
     code_challenge: 'x', code_challenge_method: 'S256', nonce: 'n-1',
-    expires_at: '2026-09-20T11:03:28.128Z', refresh_token_id: 'rtr-1',
+    expires_at: new Date(Date.now() + 36e5).toISOString(), refresh_token_id: 'rtr-1',
     created_at: '2026-09-19T11:03:28.128Z', updated_at: '2026-09-19T11:03:28.128Z',
     refresh_token: 'drt-realshape', expires_in: 86400,
     refresh_token_expires_in: 2592000, refresh_token_expires_at: '2026-10-19T11:03:28.128Z',
@@ -360,6 +360,13 @@ console.log('\n[14] 翻译网关：COSY 信封 ↔ OpenAI 流式/非流式翻译
       res.writeHead(200, { 'Content-Type': 'text/event-stream' })
       if (inferScript === 'errorframe') {
         res.end('event:error\ndata:{"stackTrace":[{"methodName":"x"}],"msgInfo":"boom"}\n\n')
+        return
+      }
+      if (inferScript === 'failframe') {
+        // 带内失败帧：HTTP 200 信封装业务错误（2026-09-22 实测 qfmodel 上游节点挂）
+        res.end('data:' + JSON.stringify({ headers: { 'Content-Type': ['application/json'] }, body: '{"code":"400","message":"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null"}', statusCodeValue: 400, statusCode: 'BAD_REQUEST' }) + '\n\n'
+          + 'event:finish\n'
+          + 'data:' + JSON.stringify({ firstTokenDuration: 1, totalDuration: 2, serverDuration: 2 }) + '\n\n')
         return
       }
       const chunk = (delta, extra = {}) => JSON.stringify({ choices: [{ delta, index: 0, ...(extra.finish ? { finish_reason: extra.finish } : {}) }], created: 1, id: 'c1', model: 'auto', object: 'chat.completion.chunk' })
@@ -426,6 +433,23 @@ console.log('\n[14] 翻译网关：COSY 信封 ↔ OpenAI 流式/非流式翻译
   })
   const errSse = await resp3.text()
   ok(errSse.includes('"error"') && errSse.trimEnd().endsWith('data: [DONE]'), 'error 帧 → 错误 chunk + [DONE]')
+
+  // 带内失败帧（HTTP 200 信封装业务错误，实测 qfmodel 上游节点挂的形态）→ 绝不静默空响应
+  inferScript = 'failframe'
+  const respF = await fetch(`${gw}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'qfmodel', stream: true, messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const failSse = await respF.text()
+  ok(failSse.includes('qoder upstream error') && failSse.includes('oa_qwen-plus-main') && failSse.trimEnd().endsWith('data: [DONE]'), '带内失败帧 → 流式错误 chunk + [DONE]')
+  const respF2 = await fetch(`${gw}/v1/chat/completions`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ model: 'qfmodel', stream: false, messages: [{ role: 'user', content: 'hi' }] }),
+  })
+  const failJson = await respF2.json()
+  ok(respF2.status === 502 && failJson.error.code === 'qoder_upstream_error' && /oa_qwen-plus-main/.test(failJson.error.message ?? ''),
+    '带内失败帧 → 非流式 502 + 上游错误详情')
+  inferScript = 'normal'
 
   // 上游 401 → 状态与错误码透传
   inferScript = 'http401'

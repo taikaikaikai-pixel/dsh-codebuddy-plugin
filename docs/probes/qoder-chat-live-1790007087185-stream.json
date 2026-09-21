@@ -1,0 +1,32 @@
+{
+  "request": {
+    "model": "qmodel_38flash",
+    "stream": true,
+    "stream_options": {
+      "include_usage": true
+    },
+    "messages": [
+      {
+        "role": "user",
+        "content": "回复 ok 两个字母即可"
+      }
+    ]
+  },
+  "signedUrl": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+  "status": 200,
+  "headers": {
+    "access-control-expose-headers": "TraceId",
+    "cache-control": "no-cache",
+    "connection": "keep-alive",
+    "content-encoding": "br",
+    "content-type": "text/event-stream;charset=UTF-8",
+    "date": "Mon, 21 Sep 2026 16:11:26 GMT",
+    "entry-timestamp": "1790007086231",
+    "leave-timestamp": "1790007086257",
+    "set-cookie": "acw_tc=ac10e36417900070862116710e09d7c8ddbf0ee855826f3acedbb2e53310a2;path=/;HttpOnly;Max-Age=1800",
+    "sw-trace-id": "4f2d55b7e0ce11715d795798b3cfbbc0",
+    "transfer-encoding": "chunked",
+    "vary": "Accept-Encoding"
+  },
+  "body": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"ok\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790007087,\\\"id\\\":\\\"chatcmpl-b97ad591-278b-9f45-8b87-66fd1348b99a\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790007087,\\\"id\\\":\\\"chatcmpl-b97ad591-278b-9f45-8b87-66fd1348b99a\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790007087,\\\"id\\\":\\\"chatcmpl-b97ad591-278b-9f45-8b87-66fd1348b99a\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":false,\\\"completion_tokens\\\":1,\\\"completion_tokens_details\\\":{},\\\"credits\\\":0.0,\\\"original_credits\\\":0.0,\\\"prompt_tokens\\\":18,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":19}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":461,\"totalDuration\":862,\"serverDuration\":26}\n\n"
+}

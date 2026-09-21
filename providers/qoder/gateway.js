@@ -12,7 +12,10 @@
  *   入站 SSE：data:{headers, body, statusCodeValue} 信封——body 是**字符串**，
  *         内容为标准 OpenAI chat.completion.chunk 的 JSON 或 "[DONE]"；
  *         尾帧 {firstTokenDuration,totalDuration,serverDuration} 无 body 忽略；
- *         event:error + data:{stackTrace…} 为服务端异常（如 body 非合法 JSON）。
+ *         event:error + data:{stackTrace…} 为服务端异常（如 body 非合法 JSON）；
+ *         带内失败帧 = HTTP 200 信封里 body 是业务错误对象（无 choices/usage、
+ *         有 code/message，实测形态 {"code":"400","message":"[FAIL]node:…
+ *         msg:Execution failed: null"}）——同等当错误上抛，不静默空响应。
  *         翻译 = 拆信封把 inner chunk 原样下发（增量/tool_calls/finish/usage
  *         全是标准 OpenAI 形态，2026-09-20 矩阵实测）；usage.credits →
  *         usage.credit 进计量（usage-meter 契约）。
@@ -75,6 +78,12 @@ export function createQoderEnvelopeParser() {
       }
       let chunk
       try { chunk = JSON.parse(frame.body) } catch {
+        state.done = true
+        return { error: frame.body.slice(0, 400) }
+      }
+      // 带内失败帧：HTTP 200 信封装业务错误（无 choices/usage、有 code/message，
+      // 实测 2026-09-22 qfmodel 上游节点挂：{"code":"400","message":"[FAIL]node:…"}）
+      if (!Array.isArray(chunk.choices) && !chunk.usage && (chunk.code !== undefined || typeof chunk.message === 'string')) {
         state.done = true
         return { error: frame.body.slice(0, 400) }
       }
@@ -219,8 +228,13 @@ export function createQoderGateway(deps) {
           if (!line.startsWith('data:')) continue
           const ev = parser.handle(lastEvent, line.slice(5).trim())
           if (ev.error) {
-            emitError(`qoder upstream error: ${ev.error}`)
             gwLog({ dir: 'err', model, ms: Date.now() - t0, note: 'stream-error-frame' })
+            if (wantStream) {
+              emitError(`qoder upstream error: ${ev.error}`)
+            } else {
+              res.writeHead(502, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: { message: `qoder upstream error: ${ev.error}`, code: 'qoder_upstream_error' } }))
+            }
             release()
             return
           }
