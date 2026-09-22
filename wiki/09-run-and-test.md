@@ -80,10 +80,10 @@ CODEBUDDY_BRIDGE_DUMP=/tmp/dump dsh web           # 叠加请求体明文（仅�
 
 脚本位于**仓库外**本地目录 `dsh-ui-test/`（puppeteer-core + 系统 Chrome，不进仓库）：
 
-- `_helpers.js`：共享驱动（打开卡片、请求计数、Key 清理、模式切换、`normalizeField`——基线一律从 GET /settings 实况读取并收尾复原）；
-- step20（设置卡 22 断言，含 7 标签顺序与折叠态芯片）、step22（流畅度 25 断言：DOM 标记证明保存不卸载/严格 1 POST+1 GET/草稿跨标签保留/思考强度 select 设档与持久化/Key 排序）、step24（生图 7 断言）、step25（额度与用量 13 断言：可见才轮询/切走即停）、step26/27/28/29（13 断言）/31-trae 等；
+- `card-regression.js`：**设置卡 28 断言**（2026-09-23 重建，接替已丢失的 step20/22）——注意条与**独立预言机**双向对齐（直接从 GET 视图算应有的 warn/err 集合，避免 `.cbc-strip` 缺席时 `[].every()` 恒真的空洞通过）、8 标签齐全、面板懒挂载与隐藏、模型筛选计数、幽灵输入、HelpNote 折叠、用量刷新按钮与时间戳、标签键盘导航（roving tabIndex / tabpanel 双向引用 / 方向键从聚焦处起算）、浅色主题、无 pageerror；另有两组 **mock GET/POST** 通道：[12]「启用+未监听 → warn 芯片带端口」正向回归、[14]「保存后退避补拉自愈」（踩坑 #45）——都不写真实设置，跑前跑后对 `~/.dsh/codebuddy-plugin.json` 取哈希对账；
+- `qoder-slot-check.js`（槽迁移 + Qoder CN 标签 10 断言）、`qoder-e2e.js`（选择器出模→发消息→收回复）、`qoder-prefs-check.js`（模型行思考强度/上下文 select）、`qoder-tab-phase2.js`（启用开关/目录同步/模型启停/端口行）、`shots-baseline.js`（8 标签明暗基线截图）、`debug-dom.js` / `debug-inputs.js`（宿主原语真实 DOM dump，选择器校准）；
 - 跑前 `dsh web`（建议 `--disable-http-cache` 对抗浏览器缓存），跑后杀 3080；
-- 选择器一律按 `.cbc-*` 类与行内单元格精确匹配（step20 曾因模糊匹配误删 Key）。
+- 选择器一律按 `.cbc-*` 类与行内单元格精确匹配（已丢失的 step20 曾因模糊匹配误删 Key）；基线从 GET /settings 实况读取并收尾复原，不硬编码起始模式。
 
 ## 依赖关系图（模块级）
 

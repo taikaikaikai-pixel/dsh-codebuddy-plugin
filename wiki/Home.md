@@ -1,6 +1,6 @@
 # dsh-tap — Code Wiki 首页
 
-> 当前版本：**0.9.10**（适配 dsh 0.1.7-alpha.2 的配置持久化改向，见 [CHANGELOG.md](../CHANGELOG.md)；0.9.9 的思考强度档位更新未单独发版、随本版出货。本 wiki 随 0.9.7/0.9.8 补齐 Qoder 叙事）
+> 当前版本：**0.9.11**（设置卡前端刷新三轮：注意条只浮 warn/err、`fetchWithTimeout`/`PanelBoundary` 护栏、HelpNote 折叠、幽灵输入，外加提交前审查修正——标签栏 roving tabIndex/tabpanel 语义、保存后网关退避补拉（踩坑 #45）、catch 带原因收全，见 [CHANGELOG.md](../CHANGELOG.md)。上一版 0.9.10 适配 dsh 0.1.7-alpha.2 的配置持久化改向；0.9.9 的思考强度档位更新未单独发版、随 0.9.10 出货。本 wiki 随 0.9.7/0.9.8 补齐 Qoder 叙事）
 
 ## 项目是什么
 

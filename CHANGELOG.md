@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.9.11 (2026-09-23)
+
+- **设置卡前端刷新（轮 1：简洁/健壮/信息展示/美观/功能）**：基线截图（dsh-ui-test `shots-baseline.js`，8 标签全拍）→ 逐条改 → 复拍对照 → `qoder-slot-check.js` 10/10 回归绿
+  - **状态条改"注意条"**：原展开态常驻 7 枚芯片与标签徽标完全重复 → 只浮出 warn/err 需处理态（可点击直跳分区），全绿时整条消失；常态状态唯一承载处 = 标签徽标（补 `工具 n/2` 徽标；**修复 trae/qoder 启用但网关未监听仍显示中性/ok 的口径**——统一 warn「未监听」，注意条芯片带端口）
+  - **健壮性三件**：①`fetchWithTimeout`（GET 20s / POST 30s，AbortError 换带原因错误——设置服务挂起不再永久"正在读取"）；②`PanelBoundary` 分区级渲染错误隔离（class 组件 + `getDerivedStateFromError`，单标签塌落出 fallback+重试按钮换 key 重挂载，不拖垮整卡）；③save / startOAuthFlow / 用量 pull 的 catch 不再吞 `e.message`（超时原因可见，踩坑 #7 纪律扩展）
+  - **额度与用量**：手动「刷新」按钮 + 「更新于 HH:MM:SS · 本页可见时每 10 秒自动刷新」时间戳（pull 提组件级经 ref 持有，interval 与按钮同入口）；token/请求数千分位（`fmtNum`）；轮次行命中率 title 带原始命中/未命中计数
+  - **模型页**：行内上限输入改幽灵态（`cbc-ghost`：常态无边框、hover/focus 显边框、去数字步进器）+ aria-label（上下文/输出上限）；滚动区 300→400px；筛选时组标题显示「筛选命中 N（可用 x / 未启用 y）」
+  - **标签栏键盘导航**：←/→ 切标签并移动焦点（role=tablist 的 WAI-ARIA 约定）
+- **设置卡前端刷新（轮 2：降噪折叠 + 浅色核验 + 回归套件重建）**
+  - **HelpNote 折叠说明**：>60 字的背景说明（登录 Key 轮换/额度口径/模型同步/生图/服务商/Trae/Qoder/桥 共 10 处）收进 `details.cbc-help`（summary「使用说明」+ ▸/▾ 伪元素标记），每标签少一堵小字墙；短的就地点提示（模型组勾选语义、OAuth 覆盖范围、空态、baseURL 一行）保持直显。信息一次点击可达，`qoder-slot-check` 依赖的文案均不在折叠内
+  - **幽灵输入修正（宿主原语 DOM 实测）**：dsh 0.1.7 的 `Input` 原语把 className 落在 **wrapper span**（边框也在 wrapper）、内层 input 只带 CSS-module 类——轮 1 的 `:focus` 规则永远不命中（焦点在内层）、spinner 伪元素选择器也落空。补 `:focus-within` 与 `.cbc-ghost input::-webkit-*-spin-button` 双路径（wrapper/原生兜底都覆盖）；aria-label 透传正常（校准回归选择器的依据）
+  - **回归套件重建** `dsh-ui-test/card-regression.js`（**16 断言**，替代丢失的 step20/22 等）：PM 列卡/summary、8 标签齐全、**注意条仅 warn/err**、面板懒挂载+hidden 切换、模型筛选（组标题计数+行全匹配）、幽灵输入存在、**HelpNote 折叠/展开/再收起**、用量刷新按钮+「更新于 HH:MM:SS」时间戳、ArrowRight 键盘导航、浅色主题渲染、无 dsh-tap pageerror；浅色/暗色/筛选态截图落 shots/
+  - **验证**：card-regression 16/16 + qoder-slot-check 10/10 双绿；浅色主题截图核验（幽灵输入/注意条/徽标/HelpNote 全部正常）
+- **设置卡前端刷新（轮 3：提交前代码审查 → 逐条修 → 断言补强）**：审查工作区 diff（vs `d02794f`）判「修完再提交」，无 Critical，四条 Important 全收
+  - **标签栏 ARIA 补齐**：轮 1 声称的「WAI-ARIA tablist 约定」当时只实现了一半——全文件零 `tabIndex`、无 `aria-controls`/`role="tabpanel"`，8 个标签全在 Tab 序里（键盘用户要按 8 次才穿过标签栏），且 ←/→ 从 `activeTab` 起算而非当前聚焦标签（聚焦到非活跃标签再按 → 会从别处跳）。补 roving tabIndex（活跃 0 / 其余 -1）+ `id`/`aria-controls` ↔ `role="tabpanel"`/`aria-labelledby` 双向引用（懒挂载未挂载的分区不留空引用）+ 方向键改从聚焦标签的 `data-tab` 起算
+  - **假「未监听」永久驻留 → 保存后退避补拉**（**踩坑 #45 新记**）：POST 响应是 `applyLive()` 之后**同步**返回的，而 `runtime.running` 由 `'listening'` 事件**异步**翻转（index.js:1656 + providers/trae/gateway.js:756）⇒ 紧随的 GET 可能采样到 pre-listening 窗口；主视图没有轮询（只有 usage 分区自己 10s 轮询），这枚 warn 会挂到用户收起再展开。`load()` 改为回传视图，保存后若仍有「未监听」芯片按 1s/2s/4s 补拉三次（卸载清 timer）；真失败（EADDRINUSE 等）用尽后停手，warn 如实留下
+  - **catch 带原因收全**：轮 1 只改了 save / startOAuthFlow / 用量 pull 三处，其余 **10 处**（模型列表、三家目录同步、provider-list、Key 增删、三处登出）在超时后仍只报「（网络）」= 踩坑 #7 原样复现，一并改成 `e.message` 优先
+  - **同口径小修**：Qoder 未监听芯片补端口（轮 1「注意条芯片带端口」对 Qoder 不成立，Trae 早有）；`PanelBoundary` 补 `componentDidCatch` 把堆栈送 console（fallback 只显示 message）；`常態`→`常态` 用字统一
+  - **断言补强 16→28**：`[3]` 注意条改**独立预言机**双向对齐（直接从 GET 视图算应有的 warn/err 集合再逐条比；旧写法在 `.cbc-strip` 缺席时 `[].every()` 恒真 = 空洞通过，漏显漏报都测不出）、`[9]` 补焦点跟随 + roving tabIndex + tabpanel 双向引用 + **方向键从聚焦处起算**（旧实现此处必红）、新增 `[12]`「启用+未监听 → warn 芯片带端口」正向回归与 `[14]`「保存后退避补拉自愈」——两组都 mock GET/POST，**零真实写入**（跑前跑后 `~/.dsh/codebuddy-plugin.json` 哈希一致）
+  - **验证**：card-regression **28/28** + qoder-slot-check **10/10**；离线全绿（verify-bridge / verify-core-generic / verify-providers / verify-trae-provider 89 / verify-qoder-provider 154 / verify-host-config 36 / verify-models --list 23 条）
+  - 审查列出、**本轮有意未收**的 Minor（留后）：轮询不感知 `document.hidden`（「本页可见」实指本卡标签选中，非浏览器标签页）、`fmtNum` 对 ≥3 位小数分组错误（当前调用点全是整数）、首次 pull 失败后时间戳仍停在「正在读取…」、超时护栏只到响应头（`r.text()` 阶段不设防）、滚动区 400px 是内联魔数而 `.cbc-scrollbox` 仍写 300、`pullRef.current` 在 render 体内赋值（latest-ref 惯用法，并发渲染语义上不纯）
+
 ## 0.9.10 (2026-09-23)
 
 - **适配 dsh 0.1.7-alpha.2：配置持久化从 `settings.yaml` 迁到 profile 的 cordis patch**（用户"更新 deepseek harness，注意插件"驱动；0.1.6-alpha.2 → 0.1.7-alpha.2，逐包 diff 全插件接触面 + 隔离实例实测后再动日常实例）

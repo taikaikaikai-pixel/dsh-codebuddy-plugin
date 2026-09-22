@@ -22,8 +22,8 @@ window.__ModuleLoader__.load({
 卡片外壳仍是折叠卡（PluginCard 形态），信息分三层：
 
 1. **折叠态**：头部右侧常显 3 枚状态芯片（登录 / 模型数 / 流式桥）——数据来自组件挂载即拉的 GET 视图（展开时再刷一次），不展开也能读卡。
-2. **展开态顶部 = 状态条**：7 枚可点击芯片（登录/模型/桥/搜索/生图/Trae/Qoder），点击直跳所属标签。
-3. **标签栏**：8 个分区，懒挂载（首次访问才 mount），此后**隐藏不卸载**（display:none）——草稿/滚动/已拉目录跨标签切换与保存保留；usage 轮询仅在分区可见期间运行（切走即停）。
+2. **展开态顶部 = 注意条**（0.9.11 起，原"状态条"）：只浮出 warn/err 的**需处理态**，芯片可点击直跳所属标签；全绿时整条消失。常态状态的唯一承载处 = 标签徽标（含 `工具 n/2`），不再与注意条重复铺一整排。
+3. **标签栏**：8 个分区，懒挂载（首次访问才 mount），此后**隐藏不卸载**（display:none）——草稿/滚动/已拉目录跨标签切换与保存保留；usage 轮询仅在分区可见期间运行（切走即停）。←/→ 切标签并移动焦点，roving tabIndex（只有活跃标签在 Tab 序里）+ `aria-controls` ↔ `role="tabpanel"`/`aria-labelledby` 双向引用；方向键从**当前聚焦**的标签起算，不是从 activeTab。
 
 | 标签 | 内容 |
 |------|------|
@@ -67,6 +67,15 @@ POST { action: 'oauth-start' | 'oauth-status' | 'oauth-logout'
 4. 字段编辑器组件必须在**模块级**定义——组件身份随父重渲染变化会导致输入失焦。
 5. 标签面板懒挂载后**隐藏不卸载**——组件状态（草稿/目录数据）跨标签与保存保留；挂载即拉数据的分区（model-list 等）不会因切标签重复请求。
 
+## 健壮性护栏（0.9.11）
+
+1. **`fetchWithTimeout`**：GET 20s / POST 30s，AbortController 超时后把 AbortError 换成带时长的中文错误——设置服务挂起不再永久停在"正在读取"。全部 fetch 走它（成功/失败两条路径都 `clearTimeout`）。注意护栏只到响应头，`r.text()` 阶段不设防。
+2. **`PanelBoundary`**：分区级渲染错误隔离（class 组件 + `getDerivedStateFromError`）。单标签塌落只影响自己，出 fallback + 「重试」按钮（换 `key` 强制重挂载子树）；`componentDidCatch` 把堆栈进 console（fallback 只显示 message，踩坑 #7）。
+3. **错误提示带原因**：save / OAuth / 用量 pull / 目录同步 / Key 增删 / 登出等 catch 一律 `e.message` 优先，"（网络）"只是兜底。
+4. **保存后的网关退避补拉**（`settleGateways`，踩坑 #45）：POST 响应同步返回，而 `runtime.running` 由 `'listening'` 事件异步翻转 ⇒ 紧随的 GET 可能读到假「未监听」；主视图没有轮询，不补拉就永久驻留。保存后若仍有「未监听」芯片，按 1s/2s/4s 补拉三次，真失败则用尽后停手、warn 如实留下。
+5. **`HelpNote`**：>60 字的背景说明折进原生 `details.cbc-help`（summary「使用说明」），零 JS 状态、父组件重渲染不复位；短的就地点提示保持直显。
+6. **幽灵输入 `cbc-ghost`**（模型行上限）：常态无边框、hover/focus 显边框、去数字步进器。宿主 `Input` 原语把 className 落在 **wrapper span**、内层 input 只带 CSS-module 类 ⇒ 规则必须同时写 `:focus-within`（wrapper）与 `.cbc-ghost input::-webkit-*-spin-button`（内层）双路径。
+
 ## 改 UI 后的回归
 
-文案/结构改动先 grep 浏览器回归脚本的选择器（`.cbc-*` 类与行内单元格精确匹配），再跑 `dsh-ui-test/` 的 step 系列（仓库外本地目录，puppeteer-core + 系统 Chrome；step20/22/24/25/26/27/28/29/31-trae）。测试驱动先用 `window.__cbc.tab('分区名')` 激活标签再操作行（querySelector 能点中隐藏 DOM，但那不再是真实用户路径）。跑前 `dsh web`，跑后杀 3080。
+文案/结构改动先 grep 浏览器回归脚本的选择器（`.cbc-*` 类与行内单元格精确匹配），再跑 `dsh-ui-test/`（仓库外本地目录，puppeteer-core + 系统 Chrome）：`card-regression.js`（设置卡 28 断言）+ `qoder-slot-check.js`（10 断言）；Qoder 专项另有 `qoder-e2e.js` / `qoder-prefs-check.js` / `qoder-tab-phase2.js`，截图基线 `shots-baseline.js`，选择器校准用 `debug-dom.js` / `debug-inputs.js`（旧 step 系列已丢失，勿按名引用）。测试驱动先用 `window.__cbc.tab('分区名')` 激活标签再操作行（querySelector 能点中隐藏 DOM，但那不再是真实用户路径）。跑前 `dsh web`，跑后杀 3080。
