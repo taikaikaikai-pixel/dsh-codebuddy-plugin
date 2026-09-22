@@ -1,0 +1,139 @@
+# 设置卡交互重设计：通道手风琴（待评审）
+
+> 状态：三节设计已与用户逐节评审通过（2026-09-23）；本文为定稿设计，待审后转实施计划。
+> 驱动：用户"这个项目的前端页面的交互，有点麻烦。不够简单" → 痛点定位轮（多选）结论 = **找不到、太散**。
+> 范围：`lib/client.js` 前端交互模型重写；后端路由契约零变化。目标版本 **0.10.0**（交互模型换代，非补丁；取值可在评审时改）。
+
+## 1. 目标与非目标
+
+**目标（按痛点排序）**
+
+1. 用"按通道归类"消灭"散"：每个通道的凭据、模型、工具、网关全部收进该通道区块；模型管理从三处归一，网关状态从五处归一。
+2. 用"区块头常显状态行"消灭"找不到"：不展开也能读到三通道 + 通用的状态；warn/err 就地出现在所属区块头，替代独立的注意条。
+3. 删掉为标签栏服务的三层状态补偿机制（折叠三芯片 / 注意条 / 标签徽标），状态展示收敛为单一真源。
+
+**非目标（本轮不做）**
+
+- 不改后端契约、不改槽位注册方式、不改 Plugin Manager summary 文案结构。
+- 不做草稿/批量/撤销式的保存模型（用户未把"交互噪音"选为痛点，保持"失焦即保存"）。
+- 不做跨通道的全局搜索框、主题定制、用量按通道拆分（YAGNI；额度账本保持跨通道单账）。
+- 不动 `core/`、`providers/`（纯前端）。
+
+## 2. 现状问题（证据）
+
+| # | 问题 | 证据 |
+|---|------|------|
+| 1 | 分区轴混用：Trae/Qoder 各占整页，与 CodeBuddy 的模型页同构却分居三处 | `lib/client.js:1512`（TraeSection）、`:1692`（QoderSection）、`:1070`（ModelsSection） |
+| 2 | 模型管理散在三处，各有一套同步按钮与列表 | 同上三处各自的 `fetchList`/`syncNow`/`fetchTlist`/`fetchQlist` |
+| 3 | 同一状态最多出现 5 处 | 折叠三芯片 `buildChips`（`:619`）、注意条 `strip`（`:532`）、标签徽标 `tabBadge`（`:680`）、行内 `Dot`、灰字说明 |
+| 4 | 工程项与日常项同层 | 3 个端口、`upstreamFirstByteTimeoutMs`、`sessionHeaderFormat`、`baseURL`、4 个域名、`qoderClientId` 全平铺 |
+| 5 | 8 个标签扁平铺开，无分组 | `TAB_DEFS`（`:363`） |
+
+补充实测：CodeBuddy 的桥（`:3901`）在"桥与高级"页，Trae/Qoder 的翻译网关（`:3902`/`:3903`）各在自己页——同一概念三处不同位置。后端口径核对：`meter` 由三通道网关共同记账（`core/usage-meter.js:120` 的 `record()` 被 `providers/trae/gateway.js:513`/`:683`、`providers/qoder/gateway.js:450` 调用）⇒ **用量是跨通道的**；账户剩余额度（`quotaSnapshot`）是 CodeBuddy 专有。
+
+## 3. 顶层结构（已确认）
+
+顶层 = 4 个可展开区块，顺序固定：**CodeBuddy → TraeWork CN → Qoder CN → 通用**。默认全部收起（首屏 = 4 条状态行，即总览）。
+
+区块头 = 唯一常显状态，格式（示例）：
+
+```
+● CodeBuddy    已登录（00）· 28 模型 · 桥 :3901 ✓
+■ TraeWork CN  未启用
+⚠ Qoder CN     已登录 · 网关 :3903 未监听
+○ 通用         额度 1879 credit · 服务商 3
+```
+
+状态点 tonal 沿用现有 `cbc-ok/warn/err/off` 四色；warn/err 只在所属区块头出现（原注意条的语义就地化）。
+
+**状态行真源**：判定口径与文案直接沿用现有 `buildChips`（`lib/client.js:619`），只是从"三处重复展示"收敛为区块头一处；`tabBadge`（`:680`）随标签栏一并删除。CodeBuddy / Trae / Qoder 三家的状态行所需数据**全部在 GET 响应内**；唯一例外是通用区块头的「额度 / 服务商数」——二者不在 GET 里，改为卡片挂载时各做一次 `action:'usage'` 与 `provider-list` 取样（一次性，不轮询；未取到前显示 `额度 — · 服务商 —`），通用区块展开后进入原轮询/原有交互。
+
+内容映射（归属原则 = 谁提供归谁，附代码证据）：
+
+| 区块 | 内容 | 证据 |
+|---|---|---|
+| CodeBuddy | 凭据、模型、**工具**（搜索/抓取、生图）、网关（流式桥）、高级 | 搜索/抓取走 `/agenttool/v1/*`、生图走 `/v2/images/generations`（`providers/codebuddy/agenttool.js`、`images.js`） |
+| TraeWork CN | 凭据、模型、网关（翻译网关 :3902、聊天传输、首字节超时）、高级（域名组） | `providers/trae/gateway.js` |
+| Qoder CN | 凭据、模型（启停 + 档位/上下文变体）、网关（:3903）、高级（域名组） | `providers/qoder/gateway.js` |
+| 通用 | 额度与用量（跨通道计量 + CodeBuddy 账户额度）、服务商（key 型上游 + 本机凭据导入） | `core/usage-meter.js` + `providers/qoder`/`trae` 记账调用点；`providers/openai-compat.js` |
+
+**删除**：8 标签导航（`TAB_DEFS`/tabBar/各 ARIA）、折叠三芯片、注意条、标签徽标。
+**保留**：失焦即保存、`ResetButton`、幽灵输入、`HelpNote`、`PanelBoundary`、`fetchWithTimeout`、懒挂载（语义平移）。
+
+## 4. 区块内部结构与交互（已确认）
+
+通道区块展开后 = 固定顺序分组（三家同构，CodeBuddy 多一个「工具」组）：
+
+```
+凭据 → 模型 → [工具] → 网关 → 高级(details 折叠)
+```
+
+- **凭据**：CodeBuddy = 登录方式 + 多 Key 管理 + 环境变量引用 + 失败冷却；Trae/Qoder = 登录/退出（二次确认）+ 令牌状态行。
+- **模型**：操作条 `[同步目录]` + 状态文字（`上次同步 MM-DD HH:mm · 目录 N 个`）；筛选框三家统一提供；行 = 勾选框 + 模型名 + ctx/输出（CodeBuddy 可编辑=幽灵输入，另两家只读）+ 档位/变体 select + 徽标（插件/目录/CLI/图/思考）。CodeBuddy 现有两按钮（刷新列表 / 立即同步）合并为 `[同步目录]`：一次点按顺序触发 `model-sync` → `model-list`；失败路径保持两侧原因分别可见（目录同步失败 vs 列表获取失败，各自照旧文案）。
+- **工具**（仅 CodeBuddy）：搜索与抓取开关 / 默认条数 / 正文上限；生图开关 / 生图模型。
+- **网关**：状态行 + 端口 + 该通道特有项（CodeBuddy：流式桥开关、会话归因、会话头格式、并发上限；Trae：聊天传输、首字节超时）。
+- **高级**（`<details>` 折叠，零 JS 状态）：域名族、`baseURL`、`qoderClientId` 等纯工程项。
+- **通用区块**：`额度与用量`（hero + 统计卡 + 资源包 + 轮次表，原样；轮询条件从"标签可见"改为"区块展开"）+ `服务商`（列表 + 添加行 + 本机凭据行，原样）。
+
+**交互细节**
+
+1. **区块头结构**：`div.cbc-acc-head` = 左侧占满的展开 `button`（状态点 + 名称 + 状态行 + 箭头，`aria-expanded`/`aria-controls`）+ 右侧可选启用开关（Trae/Qoder 的 `traeEnabled`/`qoderEnabled` 唯一落点，不在展开区重复）。分开两个交互元素，避免嵌套交互。CodeBuddy 无通道级开关，头部右侧只有箭头。
+2. **手风琴允许多开**，互不联动；展开才挂载分区内容，收起不卸载（`hidden` 保留 DOM——草稿、滚动位置、已拉目录跨展开与保存保留，语义平移自现有懒挂载纪律）。
+3. **状态收敛**：warn/err 仅见于所属区块头；错误横幅保留卡片顶部；保存成功提示从标签栏右侧移到"当前操作区块"的头部右侧（1.8s 自愈）。
+4. **键盘/ARIA**：区块头是普通 button（Enter/Space 展开/收起）；删除 tablist 的 roving tabIndex、`role="tab"`、方向键逻辑与相关断言。
+5. **模型档位/上限控件**：`LimitInput`、`effortByModel` select、Qoder `modelPrefs` 两 select 全部原样迁移（同值去重 `useRef` 纪律不变，踩坑 #27/#32）。
+6. **旧槽折叠态**（≤0.1.5 `settings.plugin.item`）：卡片头保留标题 + 一行简介；仅当存在 warn/err 时显示单枚"N 项需处理"芯片；展开卡片即进入四区块手风琴。`plugins.item` 的 summary 视图不变。
+
+## 5. 字段落点对照（`SETTINGS_FIELDS` 全量，31 项）
+
+| 字段 | 落点 |
+|---|---|
+| `authMode` `apiKeys` `activeApiKey` `apiKeyEnv` `keyCooldownMs` | CodeBuddy · 凭据 |
+| `effortByModel`（+ 状态量 `modelSetEnabled`/`modelSetLimits`） | CodeBuddy · 模型 |
+| `searchEnabled` `searchMaxResults` `fetchBodyCap` `imageGenEnabled` `imageGenModel` | CodeBuddy · 工具 |
+| `bridgeEnabled` `bridgePort` `sessionHeadersEnabled` `sessionHeaderFormat` `maxConcurrentPerSession` | CodeBuddy · 网关 |
+| `baseURL` | CodeBuddy · 高级 |
+| `traeEnabled` | TraeWork CN · 区块头开关 |
+| `traeChatTransport` `traeBridgePort` `upstreamFirstByteTimeoutMs` | TraeWork CN · 网关 |
+| `traeAuthBaseURL` `traeChatBaseURL` `traeLoginHost` | TraeWork CN · 高级 |
+| `qoderEnabled` | Qoder CN · 区块头开关 |
+| `qoderBridgePort` | Qoder CN · 网关 |
+| `qoderLoginHost` `qoderOpenapiBaseURL` `qoderInferBaseURL` `qoderClientId` | Qoder CN · 高级 |
+| `quotaTotalManual` | 通用 · 额度与用量 |
+| 其余状态量：`traeModelSetEnabled` / `qoderModelSetEnabled` / `qoderModelSetPrefs` / `provider-*` / `credential-*` | 各自通道的模型组 / 通用 · 服务商 |
+
+## 6. 兼容、回归与影响面（已确认）
+
+- **后端契约零变化**：GET/POST `/dsh-tap/settings` 的全部 action 与响应结构不动；槽位双注册（`plugins.item` / `settings.plugin.item`）不动。
+- **浏览器回归**（仓库外 `dsh-ui-test/`，puppeteer + 系统 Chrome）：
+  - 驱动方式从"点 `.cbc-tab` 文本 + 查 `.cbc-panel[data-tab=X]`"改为"点区块头 + 查新区块选择器"。
+  - `card-regression.js`（现 28 断言）：随结构消失的断言（标签齐全/徽标/注意条/ARIA tablist/方向键）替换为——4 区块与固定顺序、默认全收、状态行口径（**独立预言机**双向对齐，沿用 0.9.11 手法）、展开才挂载、收起保留（草稿 + 滚动）、多开独立、头部开关 = 1 POST、无注意条（warn 只出现在状态行）、**挂载取样各一次且收起不轮询**（usage/provider-list 在卡片挂载时各一次，通用区块收起期间无周期请求——承接原 step25「未激活不轮询 / 切走即停」的语义平移）。
+  - `qoder-slot-check.js`（现 10 断言）：Qoder CN 标签 → Qoder CN 区块；槽断言不变。
+  - `qoder-e2e.js` / `qoder-prefs-check.js` / `qoder-tab-phase2.js` / `shots-baseline.js`：选择器与驱动逐个适配。
+  - 纪律保持：mock GET/POST、零真实写入（跑前跑后 `~/.dsh/codebuddy-plugin.json` 哈希对账）。
+- **文档修正（实测漂移）**：`wiki/07-web-client.md` §改 UI 后的回归 说"测试驱动先用 `window.__cbc.tab('分区名')`"，但 `lib/client.js` 与 `dsh-ui-test/*.js` 中**均无此钩子**（脚本实际点击 `.cbc-tab`）。重设计后统一写清新区块驱动方式与选择器清单。
+- **文档与版本**：重写 `wiki/07-web-client.md` 卡片结构章节；更新 `AGENTS.md` 架构表 `lib/client.js` 行；`CHANGELOG.md` 记 0.10.0。
+- **已知限制**：旧槽（≤0.1.5）无本机宿主可实测，仅代码审查覆盖；回归脚本为仓库外资产且历史上丢失过（step 系列），本次重写后把"选择器清单 + 驱动方式"固化进 wiki。
+
+## 7. 实施顺序（供 writing-plans 展开）
+
+1. **骨架**：4 区块 + 状态行 + 手风琴 + 懒挂载；先打通 CodeBuddy 的「凭据/模型」两组（含同步按钮合并）。
+2. **迁移**：其余内容迁入手风琴（工具/网关/高级/额度/服务商/通用），删除三套状态层与 tablist 逻辑。
+3. **回归**：换驱动与选择器，重写断言集，`dsh-ui-test/` 全绿（含零写入 mock 组）。
+4. **收尾**：截图基线重拍、wiki/AGENTS/CHANGELOG 更新。
+
+## 8. 风险与缓解
+
+| 风险 | 缓解 |
+|---|---|
+| 展开态页面变长 | 默认全收 + 多开可控；模型列表保持滚动盒 |
+| 头部开关误触（收起态直接启用/停用通道） | 开关即普通 checkbox、可逆；若实感不佳，回退方案 = 开关移入展开区第一行（已与用户约定） |
+| 回归脚本重写工作量（仓库外一次重建） | 预留独立一轮（实施顺序 ③），断言集先写"独立预言机"再补细节 |
+| 旧槽路径无宿主可测 | 保留双槽注册；旧槽逻辑仅做代码审查 + 精简（折叠态只留 1 枚按需芯片） |
+
+## 9. 验收标准
+
+- `lib/client.js` 全量重写后：4 区块与状态行口径正确；默认全收；展开才挂载、收起保留；多开独立；无 tablist/注意条/徽标残留代码与样式。
+- `dsh-ui-test/` 全部脚本适配后跑绿（card-regression 重写版 + qoder 系列），零真实写入纪律可复验。
+- `npm run verify` 与全部离线回归（verify-bridge / core-generic / rotation / providers / trae / qoder / host-config）保持绿（纯前端改动，预期零影响，作为回归保险）。
+- 浅色/深色截图基线重拍并人工核验；wiki/AGENTS/CHANGELOG 更新到位。
