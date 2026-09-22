@@ -202,8 +202,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     JSON.stringify(st.titles) === JSON.stringify(["CodeBuddy", "TraeWork CN", "Qoder CN", "通用"]), JSON.stringify(st.titles));
 
   // ---- [A2] 默认全部收起 ----
-  check("[A2] 默认全收（无展开、无 body DOM）",
-    st.open.length === 0 && st.bodies.length === 0, JSON.stringify({ open: st.open, bodies: st.bodies }));
+  check("[A2] 默认全收（四区块都在、无一展开、无 body DOM）",
+    st.ids.length === 4 && st.open.length === 0 && st.bodies.length === 0,
+    JSON.stringify({ ids: st.ids, open: st.open, bodies: st.bodies }));
 
   // ---- [A3] 展开才挂载 ----
   check("[A3] 点开 CodeBuddy", await openBlock(page, "codebuddy"));
@@ -211,8 +212,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   st = await blockState(page);
   check("[A3] 展开后 body 挂载且可见",
     st.bodies.includes("codebuddy") && st.visible.includes("codebuddy"), JSON.stringify(st));
-  check("[A3] 未点过的区块不挂载",
-    !st.bodies.includes("trae") && !st.bodies.includes("general"), JSON.stringify(st.bodies));
+  check("[A3] 只有点过的区块挂载（恰一个 body = codebuddy）",
+    st.bodies.length === 1 && st.bodies[0] === "codebuddy", JSON.stringify(st.bodies));
   const hasCred = await page.evaluate(() =>
     /登录方式/.test((document.querySelector('.cbc-acc-body[data-block=codebuddy]') || {}).textContent || ""));
   check("[A3] CodeBuddy 区块含凭据内容", hasCred);
@@ -693,7 +694,7 @@ Expected: `[B1]` 无注意条 FAIL（`strip` 仍在）、`[B2]` 品牌前缀 FAI
 		}
 ```
 
-3f. CSS 里 `.cbc-strip` 与 `button.cbc-chip:hover` 等仍在用的规则保留（`.cbc-chip` 还被折叠态按需芯片与用量页的账户/流式桥行内芯片用着）；只删 `".cbc-strip{...}"` 一条。
+3f. CSS 清理：删 `".cbc-strip{...}"`（注意条已无），并删掉 Task 1 留下的死规则 `.cbc-tabs` / `.cbc-tab` / `.cbc-tab:hover` / `.cbc-tab:focus-visible` / `.cbc-tab.cbc-active` / `.cbc-tabcount` / `.cbc-tabcount.cbc-ok` / `.cbc-tabcount.cbc-warn` / `.cbc-panel` / `.cbc-panel[hidden]`（删前 grep 确认 JS 侧零引用）。**必须保留** `.cbc-saveflash`（`BlockHead` 的「已保存 ✓」在用）、`.cbc-chip` 与 `button.cbc-chip*`（折叠态按需芯片 + 用量页账户/流式桥行内芯片在用）、`.cbc-dot*`。
 
 - [ ] **Step 4: 跑回归确认绿**
 
