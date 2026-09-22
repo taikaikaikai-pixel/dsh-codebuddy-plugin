@@ -21,6 +21,7 @@
 - `window.open` 必须在点击处理器内**同步**发起（异步被弹窗拦截器吃掉）。
 - 后端契约零变化：`GET /dsh-tap/settings` 与全部 `POST {patch}` / `{action}` 的名称、参数、响应结构不动。
 - 测试纪律：浏览器回归的 mock 通道**零真实写入**（跑前跑后对 `~/.dsh/codebuddy-plugin.json` 取哈希对账）；选择器一律按 `.cbc-*` 类精确匹配（模糊匹配曾误删 Key）。
+- **mock 隔离纪律**：`page.evaluateOnNewDocument` 装的 fetch 补丁**跨 reload 持久**——所有 mock 组一律用 `newPage(installer)` 开独立页面，主页面 `page` 自始至终不装 mock（否则后续组的 `getView(page)` 会被上一个 mock 拦掉，读到假视图）。
 - `dsh-ui-test/` 在**仓库外**（`C:/Users/21613/dev/dsh-ui-test`）——它的改动**不进 git**，每个任务的 `git add` 只含仓库内文件。
 - 文档中出现的 `lib/client.js` 行号均为提交 `4d41f8d` 时的位置；实施时**以 grep 锚点定位为准**（行号会随任务推进漂移）。
 
@@ -162,6 +163,31 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     el.dispatchEvent(new Event("input", { bubbles: true }));
     return true;
   }, sel, val);
+  // 每组断言用独立页面：evaluateOnNewDocument 的 fetch 补丁跨 reload 持久，
+  // 复用同一页面会污染后续断言（连 getView 都会被拦）。installMock 在 goto 之前调用。
+  const newPage = async (installMock) => {
+    const pg = await browser.newPage();
+    const errors = [];
+    pg.on("pageerror", (e) => { const s = String(e).slice(0, 200); if (!/turnTail/.test(s)) errors.push(s); });
+    if (installMock) await installMock(pg);
+    await pg.goto(BASE, { waitUntil: "networkidle2", timeout: 60000 });
+    await sleep(4000);
+    const pm = await openPM(pg);
+    await sleep(2500);
+    const card = await openCard(pg);
+    await sleep(4000);
+    return { page: pg, errors: errors, opened: !!(pm && card) };
+  };
+  // 幂等展开（已展开则不点，避免把区块又收起）
+  const ensureOpen = (pg, id) => pg.evaluate((bid) => {
+    const acc = document.querySelector('.cbc-acc[data-block="' + bid + '"]');
+    if (!acc) return false;
+    if (acc.classList.contains("cbc-open")) return true;
+    const t = acc.querySelector(".cbc-acc-toggle");
+    if (!t) return false;
+    t.click();
+    return true;
+  }, id);
 
   check("[0] Plugin Manager 可开", await openPM(page));
   await sleep(2500);
@@ -539,7 +565,7 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
   mock.value.qoderBridgePort = 3903;
   mock.trae = Object.assign({}, mock.trae, { bridge: { running: false, port: null, lastError: "mock-eaddrinuse" } });
   mock.qoder = Object.assign({}, mock.qoder, { bridge: { running: false, port: null, lastError: "mock-eaddrinuse" } });
-  await page.evaluateOnNewDocument((m) => {
+  const b3 = await newPage((pg) => pg.evaluateOnNewDocument((m) => {
     const orig = window.fetch;
     window.fetch = function (input, init) {
       const url = typeof input === "string" ? input : (input && input.url) || "";
@@ -549,12 +575,9 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
       }
       return orig.apply(this, arguments);
     };
-  }, mock);
-  await page.reload({ waitUntil: "networkidle2", timeout: 60000 });
-  await sleep(4000);
-  check("[B3] mock 通道：PM 与卡可重开", (await openPM(page)) && await sleep(2500) === undefined && (await openCard(page)));
-  await sleep(4000);
-  st = await blockState(page);
+  }, mock));
+  check("[B3] mock 通道：PM 与卡可开", b3.opened);
+  st = await blockState(b3.page);
   const sById = {}; st.status.forEach((s) => { sById[s.id] = s; });
   check("[B3] Trae/Qoder 区块头 tone=warn", sById.trae.tone === "warn" && sById.qoder.tone === "warn",
     JSON.stringify({ trae: sById.trae, qoder: sById.qoder }));
@@ -562,18 +585,16 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
     /:3902/.test(sById.trae.text) && /:3903/.test(sById.qoder.text),
     JSON.stringify({ trae: sById.trae.text, qoder: sById.qoder.text }));
   check("[B3] 仍无注意条（warn 只在区块头）", st.strips === 0, "strips=" + st.strips);
-  await page.screenshot({ path: "shots/acc-task2-warn.png" });
+  await b3.page.screenshot({ path: "shots/acc-task2-warn.png" });
+  await b3.page.close();
 
   // [B4] mock 通道 2：保存后的网关退避补拉（踩坑 #45）在新结构下仍自愈
-  const page2 = await browser.newPage();
-  const pageErrors2 = [];
-  page2.on("pageerror", (e) => { const s = String(e).slice(0, 200); if (!/turnTail/.test(s)) pageErrors2.push(s); });
   const settleView = JSON.parse(JSON.stringify(view));
   settleView.value.bridgeEnabled = true;
   settleView.value.traeEnabled = false;
   settleView.value.qoderEnabled = false;
   settleView.bridge = { running: false, port: 3901, lastError: null };
-  await page2.evaluateOnNewDocument((v) => {
+  const b4 = await newPage((pg) => pg.evaluateOnNewDocument((v) => {
     const stt = { posts: 0, gets: 0 };
     const orig = window.fetch;
     const json = (o) => Promise.resolve(new Response(JSON.stringify(o), { status: 200, headers: { "content-type": "application/json" } }));
@@ -589,11 +610,10 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
       return json(body);
     };
     window.__settleProbe = stt;
-  }, settleView);
-  await page2.goto(BASE, { waitUntil: "networkidle2", timeout: 60000 });
-  await sleep(4000);
-  await openPM(page2); await sleep(2500);
-  await openCard(page2); await sleep(4000);
+  }, settleView));
+  const page2 = b4.page;
+  const pageErrors2 = b4.errors;
+  check("[B4] mock 通道 2 可开", b4.opened);
   const headOf = (pg) => pg.evaluate(() => ({
     text: ((document.querySelector('.cbc-acc[data-block=codebuddy] .cbc-acc-status') || {}).textContent || "").trim(),
     probe: window.__settleProbe || null,
@@ -710,10 +730,7 @@ git commit -m "feat(client): 状态收敛到区块头——删注意条/折叠�
 
 ```js
   // ---- [C] 区块头启用开关（Trae/Qoder 唯一落点）----
-  await page.reload({ waitUntil: "networkidle2", timeout: 60000 });   // 退出 mock 通道
-  await sleep(4000);
-  await openPM(page); await sleep(2500);
-  await openCard(page); await sleep(4000);
+  // `page` 自始至终不装 mock（mock 组都走 newPage 的独立页面），故此处无需 reload。
   const heads = await page.evaluate(() => ({
     codebuddy: !!document.querySelector('.cbc-acc[data-block=codebuddy] .cbc-acc-head input.cbc-check'),
     general: !!document.querySelector('.cbc-acc[data-block=general] .cbc-acc-head input.cbc-check'),
@@ -724,7 +741,7 @@ git commit -m "feat(client): 状态收敛到区块头——删注意条/折叠�
   check("[C1] CodeBuddy/通用头部无开关", !heads.codebuddy && !heads.general, JSON.stringify(heads));
 
   // [C2] 展开区内不再有「启用通道」行（唯一落点 = 头部）
-  await openBlock(page, "trae"); await sleep(2000);
+  await ensureOpen(page, "trae"); await sleep(2000);
   const dupRow = await page.evaluate(() => {
     const body = document.querySelector('.cbc-acc-body[data-block=trae]');
     const labels = [...(body ? body.querySelectorAll(".cbc-row-label") : [])].map((x) => (x.textContent || "").trim());
@@ -733,11 +750,8 @@ git commit -m "feat(client): 状态收敛到区块头——删注意条/折叠�
   check("[C2] Trae 展开区无「启用通道」行", !dupRow.includes("启用通道"), JSON.stringify(dupRow));
 
   // [C3] 点头部开关 = 恰好 1 次 POST，patch 只含该字段（mock，零真实写入）
-  const page3 = await browser.newPage();
-  const pageErrors3 = [];
-  page3.on("pageerror", (e) => { const s = String(e).slice(0, 200); if (!/turnTail/.test(s)) pageErrors3.push(s); });
   const realView3 = await getView(page);
-  await page3.evaluateOnNewDocument((v) => {
+  const c3 = await newPage((pg) => pg.evaluateOnNewDocument((v) => {
     const stt = { posts: 0, bodies: [] };
     const orig = window.fetch;
     const json = (o) => Promise.resolve(new Response(JSON.stringify(o), { status: 200, headers: { "content-type": "application/json" } }));
@@ -755,11 +769,10 @@ git commit -m "feat(client): 状态收敛到区块头——删注意条/折叠�
       return json(JSON.parse(JSON.stringify(v)));
     };
     window.__swProbe = stt;
-  }, realView3);
-  await page3.goto(BASE, { waitUntil: "networkidle2", timeout: 60000 });
-  await sleep(4000);
-  await openPM(page3); await sleep(2500);
-  await openCard(page3); await sleep(4000);
+  }, realView3));
+  const page3 = c3.page;
+  const pageErrors3 = c3.errors;
+  check("[C3] mock 通道可开", c3.opened);
   const clicked = await page3.evaluate(() => {
     const cb = document.querySelector('.cbc-acc-head input.cbc-check[data-field=traeEnabled]');
     if (!cb) return false;
@@ -976,6 +989,8 @@ git commit -m "feat(client): 通道内分组（凭据/模型/工具/网关/高�
 
 ```js
   // ---- [E] 模型组统一 ----
+  await ensureOpen(page, "codebuddy"); await ensureOpen(page, "trae"); await ensureOpen(page, "qoder");
+  await sleep(1500);
   const syncBar = async (pg, id) => pg.evaluate((bid) => {
     const bar = document.querySelector('.cbc-acc-body[data-block="' + bid + '"] .cbc-syncbar');
     if (!bar) return null;
@@ -997,9 +1012,8 @@ git commit -m "feat(client): 通道内分组（凭据/模型/工具/网关/高�
     !!tBar && tBar.buttons.length === 1 && tBar.buttons[0] === "同步目录" && tBar.hasFilter, JSON.stringify(tBar));
 
   // [E2] 点「同步目录」= 先 model-sync 后 model-list（mock 记 POST 序列，零真实写入）
-  const page4 = await browser.newPage();
   const realView4 = await getView(page);
-  await page4.evaluateOnNewDocument((v) => {
+  const e2 = await newPage((pg) => pg.evaluateOnNewDocument((v) => {
     const stt = { actions: [] };
     const orig = window.fetch;
     const json = (o) => Promise.resolve(new Response(JSON.stringify(o), { status: 200, headers: { "content-type": "application/json" } }));
@@ -1018,12 +1032,10 @@ git commit -m "feat(client): 通道内分组（凭据/模型/工具/网关/高�
       return json(JSON.parse(JSON.stringify(v)));
     };
     window.__syncProbe = stt;
-  }, realView4);
-  await page4.goto(BASE, { waitUntil: "networkidle2", timeout: 60000 });
-  await sleep(4000);
-  await openPM(page4); await sleep(2500);
-  await openCard(page4); await sleep(4000);
-  await openBlock(page4, "codebuddy"); await sleep(2500);
+  }, realView4));
+  const page4 = e2.page;
+  check("[E2] mock 通道可开", e2.opened);
+  await ensureOpen(page4, "codebuddy"); await sleep(2500);
   const syncClicked = await page4.evaluate(() => {
     const bar = document.querySelector('.cbc-acc-body[data-block=codebuddy] .cbc-syncbar');
     const btn = bar && [...bar.querySelectorAll("button")].find((b) => (b.textContent || "").trim() === "同步目录");
@@ -1151,11 +1163,8 @@ git commit -m "feat(client): 三家模型组同构——「同步目录」单按
 
 ```js
   // ---- [F] 通用区块头取样 + 轮询随展开 ----
-  const page5 = await browser.newPage();
-  const pageErrors5 = [];
-  page5.on("pageerror", (e) => { const s = String(e).slice(0, 200); if (!/turnTail/.test(s)) pageErrors5.push(s); });
   const realView5 = await getView(page);
-  await page5.evaluateOnNewDocument((v) => {
+  const f1 = await newPage((pg) => pg.evaluateOnNewDocument((v) => {
     const stt = { usage: 0, providerList: 0, credentialScan: 0, log: [] };
     const orig = window.fetch;
     const json = (o) => Promise.resolve(new Response(JSON.stringify(o), { status: 200, headers: { "content-type": "application/json" } }));
@@ -1183,11 +1192,10 @@ git commit -m "feat(client): 三家模型组同构——「同步目录」单按
       return json(JSON.parse(JSON.stringify(v)));
     };
     window.__genProbe = stt;
-  }, realView5);
-  await page5.goto(BASE, { waitUntil: "networkidle2", timeout: 60000 });
-  await sleep(4000);
-  await openPM(page5); await sleep(2500);
-  await openCard(page5); await sleep(4000);
+  }, realView5));
+  const page5 = f1.page;
+  const pageErrors5 = f1.errors;
+  check("[F1] mock 通道可开", f1.opened);
 
   let gen = await page5.evaluate(() => window.__genProbe);
   check("[F1] 挂载即取样：usage 与 provider-list 各恰好一次",
@@ -1216,9 +1224,8 @@ git commit -m "feat(client): 三家模型组同构——「同步目录」单按
   await page5.close();
 
   // [F6] api-key 模式降级：无 numericQuota 时不编造数字
-  const page6 = await browser.newPage();
   const realView6 = await getView(page);
-  await page6.evaluateOnNewDocument((v) => {
+  const f6 = await newPage((pg) => pg.evaluateOnNewDocument((v) => {
     const orig = window.fetch;
     const json = (o) => Promise.resolve(new Response(JSON.stringify(o), { status: 200, headers: { "content-type": "application/json" } }));
     window.fetch = function (input, init) {
@@ -1237,11 +1244,9 @@ git commit -m "feat(client): 三家模型组同构——「同步目录」单按
       }
       return json(JSON.parse(JSON.stringify(v)));
     };
-  }, realView6);
-  await page6.goto(BASE, { waitUntil: "networkidle2", timeout: 60000 });
-  await sleep(4000);
-  await openPM(page6); await sleep(2500);
-  await openCard(page6); await sleep(4000);
+  }, realView6));
+  const page6 = f6.page;
+  check("[F6] mock 通道可开", f6.opened);
   const genHead6 = await page6.evaluate(() =>
     ((document.querySelector('.cbc-acc[data-block=general] .cbc-acc-status') || {}).textContent || "").trim());
   check("[F6] api-key 模式头部标注「估算」且不编造数字",
@@ -1344,7 +1349,7 @@ git commit -m "feat(client): 通用区块头挂载取样（额度/服务商数�
 | `[5]` 模型筛选（组标题计数 + 行全匹配） | 选择器换 `.cbc-acc-body[data-block=codebuddy] input[placeholder*="过滤"]`，组标题断言改查 `.cbc-group-title` 里「筛选命中 N（可用 x / 未启用 y）」 |
 | `[6]` 幽灵输入存在（`input[aria-label*="上限"]`） | 选择器前缀换 `.cbc-acc-body[data-block=codebuddy]` |
 | `[7]` HelpNote 折叠 / 展开 / 再收起 | 选择器换 `.cbc-acc-body[data-block=codebuddy] details.cbc-help summary` |
-| `[8]` 用量刷新按钮 + 「更新于 HH:MM:SS」时间戳 | 先 `openBlock(page,'general')`，再查 `.cbc-acc-body[data-block=general]` 内的刷新按钮与 `.cbc-updated` 文案 |
+| `[8]` 用量刷新按钮 + 「更新于 HH:MM:SS」时间戳 | 用 `newPage()` 的独立页面（不要复用 `page`——`[G1]` 依赖 general 区块处于收起态），`ensureOpen(pg,'general')` 后查 `.cbc-acc-body[data-block=general]` 内的刷新按钮与 `.cbc-updated` 文案 |
 | `[9]` 标签键盘导航（roving tabIndex / tabpanel / 方向键） | **删除**（tablist 已退役）；替换为区块头键盘断言：`.cbc-acc-toggle` 可 focus、`aria-expanded` 随 Enter 翻转、`aria-controls` 指向存在的 `#cbc-block-<id>` |
 | `[10]` 浅色主题渲染 | `page.emulateMediaFeatures([{name:'prefers-color-scheme',value:'light'}])` 后重开卡截图，断言无 pageerror + 四区块仍在 |
 | `[11]`/`[13]` 无 pageerror | 每个 mock 通道各自断言（`[B4]`/`[C3]`/`[F5]` 已有），真实视图阶段补一条 |
