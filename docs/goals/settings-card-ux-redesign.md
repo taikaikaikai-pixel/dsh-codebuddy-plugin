@@ -64,7 +64,7 @@
 |---|---|---|
 | 保存后网关退避补拉 `settleGateways` | `:376` 延迟表 / `:436`–`:454` | **踩坑 #45**：POST 同步返回而 `running` 由 `listening` 事件异步翻转 ⇒ 假「未监听」会永久驻留。新结构下状态行仍在区块头，机制必须保留（1s/2s/4s 三次，用尽停手、warn 如实留下） |
 | `fetchWithTimeout`（GET 20s / POST 30s） | `:98` | 全部 fetch 走它；AbortError 换成带时长的中文错误 |
-| `PanelBoundary` 错误隔离 | `:296` | 粒度从"每标签"改为"每区块"；`componentDidCatch` 送堆栈进 console、fallback 只显示 message（踩坑 #7） |
+| `PanelBoundary` 错误隔离 | `:296` | 粒度从"每标签"改为**每分区**（一个区块内的各分区各自隔离——模型组塌落不影响同区块的凭据组，比整区块隔离更细）；`componentDidCatch` 送堆栈进 console、fallback 只显示 message（踩坑 #7） |
 | `startOAuthFlow` 同步开窗 | `:2042` | `window.open` 必须在点击处理器内同步发起，异步调用被弹窗拦截器吃掉 |
 | `pickComponent` 图标候选表 | `:84` | **踩坑 #44③**：宿主 0.1.7 废掉带尺寸数字后缀的图标名；按候选序取第一个存在的，全缺退原生兜底 |
 | 幽灵输入双路径 CSS | `:214`–`:218` | 宿主 `Input` 原语把 className 落在 wrapper span、焦点在内层 input ⇒ `:focus-within` 与 `.cbc-ghost input::-webkit-*-spin-button` 两条都要留 |
