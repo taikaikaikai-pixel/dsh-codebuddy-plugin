@@ -1,6 +1,6 @@
 {
   "name": "dsh-tap",
-  "version": "0.9.8",
+  "version": "0.9.10",
   "description": "CodeBuddy (copilot.tencent.com) provider bundle for DeepSeek Harness (dsh): 18 models (DeepSeek, GLM, Kimi, MiniMax, Hunyuan, auto) with adjustable reasoning efforts, CodeBuddy web search / web fetch backends for the stock dsh tools, and a settings card in the Web UI.",
   "type": "module",
   "main": "index.js",
@@ -12,6 +12,7 @@
   "files": [
     "index.js",
     "local-scan.js",
+    "host-config.js",
     "core/",
     "providers/",
     "lib/client.js",
@@ -36,7 +37,8 @@
     "verify:providers": "node scripts/verify-providers.mjs",
     "verify:trae": "node scripts/verify-trae-model-catalog.mjs",
     "verify:trae-provider": "node scripts/verify-trae-provider.mjs",
-    "verify:qoder": "node scripts/verify-qoder-provider.mjs"
+    "verify:qoder": "node scripts/verify-qoder-provider.mjs",
+    "verify:host-config": "node scripts/verify-host-config.mjs"
   },
   "keywords": [
     "dsh-plugin",

@@ -64,6 +64,7 @@ import { QODER_CLIENT_ID } from './providers/qoder/oauth.js'
 import { createQoderProvider } from './providers/qoder/index.js'
 import { applyQoderContextVariant } from './providers/qoder/catalog.js'
 import { scanLocalCredentials, readImportCredential } from './local-scan.js'
+import { createHostConfigLayer } from './host-config.js'
 import arkProvider from './providers/ark/index.js'
 import bailianProvider from './providers/bailian/index.js'
 import deepseekProvider from './providers/deepseek/index.js'
@@ -430,53 +431,50 @@ function computeEffectiveModels() {
 }
 
 /**
- * Mirror the effective model list into ~/.dsh/settings.yaml under
- * llm-pi-ai.providers.codebuddy.models (the settings-driven override over the
- * patch layer). Uses a comment-preserving YAML document edit. When the state
- * is pristine (nothing disabled, no extras) AND no dynamic catalog is synced,
- * the override is REMOVED instead — a stale settings list would shadow future
- * patch updates. G4: a synced dynamic catalog intentionally keeps the override
- * non-pristine (the list follows the gateway, refreshed every boot).
+ * 宿主配置层通道（dsh 0.1.7 起 = Settings forms seam，写落 profile 的
+ * cordis.patch.yml；≤0.1.6 回退 ~/.dsh/settings.yaml 文档编辑）。
+ * 详见 host-config.js 的头注释——两代宿主的差异全部收在那一处。
  */
-function syncModelsToDshSettings() {
-  let doc
+const hostConfig = createHostConfigLayer({
+  settingsPath: DSH_SETTINGS_PATH,
+  schema: Config,
+  log: (m) => process.stderr.write(`${m}\n`),
+})
+
+/**
+ * Mirror the effective model list into the host config layer under
+ * llm-pi-ai.providers.codebuddy.models (the user-layer override over the
+ * patch layer). dsh 0.1.7+ 走 Settings forms（volatile 字段，写 profile
+ * patch 即时生效）；旧宿主走注释保留的 settings.yaml 文档编辑。
+ * When the state is pristine (nothing disabled, no extras) AND no dynamic
+ * catalog is synced, the override is REMOVED instead — a stale override would
+ * shadow future patch updates. G4: a synced dynamic catalog intentionally keeps
+ * the override non-pristine (the list follows the gateway, refreshed every boot).
+ */
+async function syncModelsToDshSettings() {
   try {
-    doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
-  } catch {
-    doc = new YAML.Document()
+    const state = readModelState()
+    const pristine = Object.keys(state.disabled).length === 0
+      && Object.keys(state.extra).length === 0
+      && Object.keys(state.overrides ?? {}).length === 0
+      && dynamicCatalog == null
+    const path = ['providers', 'codebuddy', 'models']
+    if (pristine) return await hostConfig.applyOps([{ op: 'unset', path }])
+    const next = computeEffectiveModels()
+    // Defensive (0.8.7): an empty effective list must never be mirrored —
+    // llm-pi-ai (dsh 0.1.1-rc.2+) rejects it at apply time. setModelEnabled
+    // guards the last model already; this fallback drops the override (the
+    // patch static list then serves) instead of poisoning the namespace.
+    if (next.length === 0) return await hostConfig.applyOps([{ op: 'unset', path }])
+    return await hostConfig.applyOps([{ op: 'set', path, value: next }])
+  } catch (err) {
+    process.stderr.write(`[dsh-tap] model mirror failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
   }
-  const state = readModelState()
-  const pristine = Object.keys(state.disabled).length === 0
-    && Object.keys(state.extra).length === 0
-    && Object.keys(state.overrides ?? {}).length === 0
-    && dynamicCatalog == null
-  const path = ['llm-pi-ai', 'providers', 'codebuddy', 'models']
-  if (pristine) {
-    if (!doc.getIn(path)) return false
-    doc.deleteIn(path)
-    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
-    return true
-  }
-  const next = YAML.parse(YAML.stringify(computeEffectiveModels()))
-  const current = doc.getIn(path)
-  // Defensive (0.8.7): an empty effective list must never be mirrored —
-  // llm-pi-ai (dsh 0.1.1-rc.2+) rejects it at apply time. setModelEnabled
-  // guards the last model already; this fallback drops the override (the
-  // patch static list then serves) instead of poisoning the namespace.
-  if (next.length === 0) {
-    if (!doc.getIn(path)) return false
-    doc.deleteIn(path)
-    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
-    return true
-  }
-  if (YAML.stringify(current ?? null) === YAML.stringify(next)) return false
-  doc.setIn(path, next)
-  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
-  return true
 }
 
 /** Apply one enable/disable toggle and sync the effective list. */
-function setModelEnabled({ id, enabled, profile }) {
+async function setModelEnabled({ id, enabled, profile }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('modelSetEnabled 需要 id')
   assertSafeModelId(id)
   const layer = readFileLayer()
@@ -509,7 +507,7 @@ function setModelEnabled({ id, enabled, profile }) {
   }
   layer.modelState = state
   writeFileLayer(layer)
-  syncModelsToDshSettings()
+  await syncModelsToDshSettings()
   return state
 }
 
@@ -519,7 +517,7 @@ function setModelEnabled({ id, enabled, profile }) {
  * 静态 profile）给定的该模型实际上限；基清单无尺寸信息时不设上限。
  * 覆盖经 computeEffectiveModels 即时重铺 settings.yaml，下次请求生效。
  */
-function setModelLimits({ id, contextWindow, maxTokens }) {
+async function setModelLimits({ id, contextWindow, maxTokens }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('modelSetLimits 需要 id')
   assertSafeModelId(id)
   const base = computeBaseModels().find((m) => m.id === id)
@@ -543,7 +541,7 @@ function setModelLimits({ id, contextWindow, maxTokens }) {
   else delete state.overrides[id]
   layer.modelState = state
   writeFileLayer(layer)
-  syncModelsToDshSettings()
+  await syncModelsToDshSettings()
   return state
 }
 
@@ -562,13 +560,13 @@ function syncModelsFromGateway(resolveNow) {
       const profiles = catalog.models.map(catalogToProfile)
       if (!profiles.length) throw new Error('网关目录为空（保持现有清单）')
       dynamicCatalog = { profiles, fetchedAt: catalog.fetchedAt, count: profiles.length }
-      syncModelsToDshSettings()
+      await syncModelsToDshSettings()
       return { ok: true, fetchedAt: dynamicCatalog.fetchedAt, count: dynamicCatalog.count, source: 'gateway' }
     } catch (err) {
       // kept=false → dynamicCatalog 为 null，sync 落静态清单 + 纯净态纪律；
       // kept=true  → 以旧动态目录重铺（选择器不因一次拉取失败掉模型）。
       const kept = dynamicCatalog != null
-      syncModelsToDshSettings()
+      await syncModelsToDshSettings()
       return { ok: false, error: err?.message ?? String(err), kept, source: kept ? 'gateway-stale' : 'static' }
     } finally {
       modelSyncInFlight = null
@@ -579,9 +577,11 @@ function syncModelsFromGateway(resolveNow) {
 
 // ---------------------------------------------------------------------------
 // G6 多服务商注册表：key 型 OpenAI 兼容上游（preset 见下 + 自定义）。
-// 机制与官方 CustomProviderCard 相同：provider 块写 settings.yaml 的
-// llm-pi-ai.providers.<id>（chokidar 热加载、原地换路由，免重启），key 写
-// ~/.dsh/.credentials.yaml 的 <ID>_API_KEY（凭据缝每请求活解析，免重启）。
+// 机制与官方 CustomProviderCard 相同：provider 块写**宿主配置层**的
+// llm-pi-ai.providers.<id>（dsh 0.1.7+ = Settings forms seam，落 profile 的
+// cordis.patch.yml 即时生效；≤0.1.6 = ~/.dsh/settings.yaml，chokidar 热加载），
+// 选路细节全在 host-config.js；key 写 ~/.dsh/.credentials.yaml 的
+// <ID>_API_KEY（凭据缝每请求活解析，免重启）。
 // 插件文件层只存登记册 managedProviders（无 secret）；key 永不回传浏览器。
 // 纪律：写块前必过 validateProviderSpec + 实测 GET /models——llm-pi-ai
 // 命名空间解析失败会整域冻结（dsh-settings publish catch），坏块连坐
@@ -630,30 +630,25 @@ function deleteCredential(ref) {
   if (doc.delete(ref)) writeTextAtomic(DSH_CREDENTIALS_PATH, String(doc), 0o600)
 }
 
+/** 有效 provider 块视图（登记册对账/重名判定）。新宿主读 describe 的 live value。 */
 function readSettingsProviders() {
-  try {
-    return YAML.parse(readFileSync(DSH_SETTINGS_PATH, 'utf8'))?.['llm-pi-ai']?.providers ?? {}
-  } catch {
-    return {}
-  }
+  return hostConfig.readProviders()
 }
 
-/** 写/删（block=null）llm-pi-ai.providers.<id>，注释保留的 YAML 文档编辑。 */
-function writeProviderBlock(id, block) {
-  let doc
+/**
+ * 写/删（block=null）llm-pi-ai.providers.<id>。
+ * dsh 0.1.7+ = Settings forms 的 mutate（落 profile patch，即时生效）；
+ * ≤0.1.6 = 注释保留的 settings.yaml 文档编辑。
+ */
+async function writeProviderBlock(id, block) {
   try {
-    doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
-  } catch {
-    doc = new YAML.Document()
+    return await hostConfig.applyOps(block === null
+      ? [{ op: 'unset', path: ['providers', id] }]
+      : [{ op: 'set', path: ['providers', id], value: block }])
+  } catch (err) {
+    process.stderr.write(`[dsh-tap] provider block write failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
   }
-  const path = ['llm-pi-ai', 'providers', id]
-  if (block === null) {
-    if (!doc.getIn(path)) return
-    doc.deleteIn(path)
-  } else {
-    doc.setIn(path, YAML.parse(YAML.stringify(block)))
-  }
-  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
 }
 
 /**
@@ -684,13 +679,13 @@ async function addExtraProvider({ preset, id, baseURL, displayName, apiKey }) {
   const pid = adapter.id
   if (pid === 'codebuddy') throw new Error('codebuddy 是本插件保留路由')
   if (readManagedProviders().some((p) => p.id === pid)) throw new Error(`${pid} 已在注册表里`)
-  if (readSettingsProviders()[pid]) throw new Error(`settings.yaml 已存在 ${pid} 提供商（先手动清理或换 id）`)
+  if (readSettingsProviders()[pid]) throw new Error(`宿主配置层已存在 ${pid} 提供商（先手动清理或换 id）`)
   if (typeof apiKey !== 'string' || !apiKey.trim()) throw new Error('需要 API Key')
   const key = apiKey.trim()
   // 实测目录：key/URL 错误在这里就炸，不落任何文件。
   const models = await adapter.fetchModels(key)
   writeCredential(adapter.keyRef, key)
-  writeProviderBlock(pid, adapter.modelBlock(models))
+  await writeProviderBlock(pid, adapter.modelBlock(models))
   writeManagedProviders(readManagedProviders().concat([{
     id: pid,
     displayName: adapter.displayName,
@@ -703,10 +698,10 @@ async function addExtraProvider({ preset, id, baseURL, displayName, apiKey }) {
 }
 
 /** 移除上游：删块 + 删凭据 + 出登记册（外部已删块也照常清理）。 */
-function removeExtraProvider(id) {
+async function removeExtraProvider(id) {
   const entry = readManagedProviders().find((p) => p.id === id)
   if (!entry) throw new Error(`${id} 不在注册表里`)
-  writeProviderBlock(id, null)
+  await writeProviderBlock(id, null)
   deleteCredential(entry.keyRef)
   writeManagedProviders(readManagedProviders().filter((p) => p.id !== id))
 }
@@ -722,7 +717,7 @@ async function refreshExtraProviderModels(id) {
   const presetHit = PROVIDER_PRESETS.find((p) => p.id === entry.preset)
   const adapter = createOpenAICompatProvider({ ...entry, fallbackModels: presetHit?.fallbackModels, staticCatalog: presetHit?.staticCatalog })
   const models = await adapter.fetchModels(key)
-  writeProviderBlock(id, adapter.modelBlock(models))
+  await writeProviderBlock(id, adapter.modelBlock(models))
   return { id, modelCount: models.length }
 }
 
@@ -947,44 +942,34 @@ function readQoderModelPrefs() {
 }
 
 /** 镜像 providers.qoder **整块**（路由存在性管理，同 trae 镜像纪律）。 */
-function syncQoderModelsToDshSettings() {
-  let doc
+async function syncQoderModelsToDshSettings() {
   try {
-    doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
-  } catch {
-    doc = new YAML.Document()
+    const s = Config({ ...readFileLayer() })
+    const view = qoderProvider.catalogView()
+    const disabled = readQoderModelState().disabled
+    const prefs = readQoderModelPrefs()
+    const models = s.qoderEnabled === true && view
+      ? view.profiles
+          .filter((p) => !disabled[p.id])
+          .map((p) => applyQoderContextVariant(p, prefs[p.id]?.contextVariant, view.variants?.[p.id]))
+      : null
+    const path = ['providers', 'qoder']
+    if (!models || models.length === 0) return await hostConfig.applyOps([{ op: 'unset', path }])
+    const block = {
+      displayName: 'Qoder CN',
+      api: 'openai-completions',
+      baseURL: `http://127.0.0.1:${s.qoderBridgePort}/v1`,
+      headers: { Authorization: 'Bearer dsh-qoder-bridge' },
+      models: YAML.parse(YAML.stringify(models)),
+    }
+    return await hostConfig.applyOps([{ op: 'set', path, value: block }])
+  } catch (err) {
+    process.stderr.write(`[dsh-tap] qoder mirror failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
   }
-  const s = Config({ ...readFileLayer() })
-  const view = qoderProvider.catalogView()
-  const disabled = readQoderModelState().disabled
-  const prefs = readQoderModelPrefs()
-  const models = s.qoderEnabled === true && view
-    ? view.profiles
-        .filter((p) => !disabled[p.id])
-        .map((p) => applyQoderContextVariant(p, prefs[p.id]?.contextVariant, view.variants?.[p.id]))
-    : null
-  const path = ['llm-pi-ai', 'providers', 'qoder']
-  if (!models || models.length === 0) {
-    if (!doc.getIn(path)) return false
-    doc.deleteIn(path)
-    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
-    return true
-  }
-  const block = {
-    displayName: 'Qoder CN',
-    api: 'openai-completions',
-    baseURL: `http://127.0.0.1:${s.qoderBridgePort}/v1`,
-    headers: { Authorization: 'Bearer dsh-qoder-bridge' },
-    models: YAML.parse(YAML.stringify(models)),
-  }
-  const current = doc.getIn(path)
-  if (YAML.stringify(current ?? null) === YAML.stringify(block)) return false
-  doc.setIn(path, YAML.parse(YAML.stringify(block)))
-  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
-  return true
 }
 
-function setQoderModelEnabled({ id, enabled }) {
+async function setQoderModelEnabled({ id, enabled }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('qoderModelSetEnabled 需要 id')
   assertSafeModelId(id)
   const view = qoderProvider.catalogView()
@@ -995,7 +980,7 @@ function setQoderModelEnabled({ id, enabled }) {
   else state.disabled[id] = true
   layer.qoderModelState = state
   writeFileLayer(layer)
-  syncQoderModelsToDshSettings()
+  await syncQoderModelsToDshSettings()
   return state
 }
 
@@ -1004,7 +989,7 @@ function setQoderModelEnabled({ id, enabled }) {
  * prefs 是该模型记录的**完整替换**——只存已设置的键，空对象 = 删记录回默认。
  * effort 校验档位拼写；contextVariant 必须命中该模型目录变体（无变体模型拒收）。
  */
-function setQoderModelPrefs({ id, prefs }) {
+async function setQoderModelPrefs({ id, prefs }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('qoderModelSetPrefs 需要 id')
   assertSafeModelId(id)
   const view = qoderProvider.catalogView()
@@ -1032,7 +1017,7 @@ function setQoderModelPrefs({ id, prefs }) {
   const layer = readFileLayer()
   layer.qoderModelPrefs = state
   writeFileLayer(layer)
-  syncQoderModelsToDshSettings()
+  await syncQoderModelsToDshSettings()
   return state
 }
 
@@ -1055,42 +1040,34 @@ function readTraeModelState() {
  *   启用+已同步 → 铺完整块（displayName/api/baseURL/headers/models），
  *     baseURL 跟随 traeBridgePort（改端口重铺镜像即热生效，优于旧 patch 静态式）；
  *   禁用/未同步/全部模型禁用 → 删除 providers.trae 整块（路由消失，选择器
- *     隐藏通道，chokidar 热加载免重启）。无 patch 基线即无回落，删块即干净。
+ *     隐藏通道，免重启：0.1.7+ 经 forms seam 落 profile patch 即时生效，
+ *     ≤0.1.6 靠 settings.yaml 的 chokidar 热加载）。无 patch 基线即无回落，
+ *     删块即干净。
  * 升级注意：<=0.8.5 写的 trae 块只带 models 路径（其余字段靠 patch 深合并），
  * 重启前须先清掉旧块（见 cordis.patch.yml 的 UPGRADE NOTE）。
  */
-function syncTraeModelsToDshSettings() {
-  let doc
+async function syncTraeModelsToDshSettings() {
   try {
-    doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
-  } catch {
-    doc = new YAML.Document()
+    const s = Config({ ...readFileLayer() }) // entry 侧无 trae 字段，schema 默认补齐
+    const view = traeProvider.catalogView()
+    const disabled = readTraeModelState().disabled
+    const models = s.traeEnabled === true && view
+      ? view.profiles.filter((p) => !disabled[p.id])
+      : null
+    const path = ['providers', 'trae']
+    if (!models || models.length === 0) return await hostConfig.applyOps([{ op: 'unset', path }])
+    const block = {
+      displayName: 'TraeWork CN',
+      api: 'openai-completions',
+      baseURL: `http://127.0.0.1:${s.traeBridgePort}/v1`,
+      headers: { Authorization: 'Bearer dsh-trae-bridge' },
+      models: YAML.parse(YAML.stringify(models)),
+    }
+    return await hostConfig.applyOps([{ op: 'set', path, value: block }])
+  } catch (err) {
+    process.stderr.write(`[dsh-tap] trae mirror failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
   }
-  const s = Config({ ...readFileLayer() }) // entry 侧无 trae 字段，schema 默认补齐
-  const view = traeProvider.catalogView()
-  const disabled = readTraeModelState().disabled
-  const models = s.traeEnabled === true && view
-    ? view.profiles.filter((p) => !disabled[p.id])
-    : null
-  const path = ['llm-pi-ai', 'providers', 'trae']
-  if (!models || models.length === 0) {
-    if (!doc.getIn(path)) return false
-    doc.deleteIn(path)
-    writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
-    return true
-  }
-  const block = {
-    displayName: 'TraeWork CN',
-    api: 'openai-completions',
-    baseURL: `http://127.0.0.1:${s.traeBridgePort}/v1`,
-    headers: { Authorization: 'Bearer dsh-trae-bridge' },
-    models: YAML.parse(YAML.stringify(models)),
-  }
-  const current = doc.getIn(path)
-  if (YAML.stringify(current ?? null) === YAML.stringify(block)) return false
-  doc.setIn(path, YAML.parse(YAML.stringify(block)))
-  writeTextAtomic(DSH_SETTINGS_PATH, String(doc))
-  return true
 }
 
 /**
@@ -1106,7 +1083,7 @@ function isSafeStateDbPath(p) {
   return ext === '.db' || ext === '.vscdb'
 }
 
-function setTraeModelEnabled({ id, enabled }) {
+async function setTraeModelEnabled({ id, enabled }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('traeModelSetEnabled 需要 id')
   assertSafeModelId(id)
   const view = traeProvider.catalogView()
@@ -1117,7 +1094,7 @@ function setTraeModelEnabled({ id, enabled }) {
   else state.disabled[id] = true
   layer.traeModelState = state
   writeFileLayer(layer)
-  syncTraeModelsToDshSettings()
+  await syncTraeModelsToDshSettings()
   return state
 }
 
@@ -1301,6 +1278,13 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
           return
         }
         if (request.method === 'GET') {
+          // 升级排查用：?probe=host-config 报宿主配置层实况（选路/可写性/
+          // entry 是否可见/revision/有效 provider 清单），同过本地门。
+          const probe = new URL(request.url, 'http://127.0.0.1').searchParams.get('probe')
+          if (probe === 'host-config') {
+            sendJSON(response, 200, { ok: true, probe: hostConfig.probe() })
+            return
+          }
           sendJSON(response, 200, settingsView(resolveNow))
           return
         }
@@ -1314,7 +1298,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
         request.on('data', (c) => {
           chunks.push(c)
         })
-        request.on('end', () => {
+        request.on('end', async () => {
           try {
             const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
             if (body?.action === 'oauth-start') {
@@ -1403,7 +1387,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
             if (body?.action === 'provider-remove') {
               try {
                 if (typeof body.id !== 'string') throw new Error('provider-remove 需要 id')
-                removeExtraProvider(body.id)
+                await removeExtraProvider(body.id)
                 sendJSON(response, 200, { ok: true, providers: extraProvidersView() })
               } catch (err) {
                 sendJSON(response, 400, { ok: false, error: err.message })
@@ -1567,7 +1551,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               // Runs against modelState inside setModelEnabled; re-read the
               // layer afterwards so apiKeys edits above are not clobbered.
               const withKeys = { ...nextUser }
-              setModelEnabled(patch.modelSetEnabled)
+              await setModelEnabled(patch.modelSetEnabled)
               const after = readFileLayer()
               delete withKeys.modelState
               Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
@@ -1585,7 +1569,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               // G5：同 modelSetEnabled 的层叠纪律——setModelLimits 内部自写
               // modelState，事后重读层并把本请求里的 apiKeys 改动合回。
               const withKeys = { ...nextUser }
-              setModelLimits(patch.modelSetLimits)
+              await setModelLimits(patch.modelSetLimits)
               const after = readFileLayer()
               delete withKeys.modelState
               Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
@@ -1601,7 +1585,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
             }
             if (patch.traeModelSetEnabled !== undefined) {
               const withKeys = { ...nextUser }
-              setTraeModelEnabled(patch.traeModelSetEnabled)
+              await setTraeModelEnabled(patch.traeModelSetEnabled)
               const after = readFileLayer()
               delete withKeys.traeModelState
               Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
@@ -1617,7 +1601,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
             }
             if (patch.qoderModelSetEnabled !== undefined) {
               const withKeys = { ...nextUser }
-              setQoderModelEnabled(patch.qoderModelSetEnabled)
+              await setQoderModelEnabled(patch.qoderModelSetEnabled)
               const after = readFileLayer()
               delete withKeys.qoderModelState
               Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
@@ -1635,7 +1619,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               // 同 qoderModelSetEnabled 的层叠纪律：setQoderModelPrefs 内部自写
               // qoderModelPrefs，事后重读层并把本请求里的 apiKeys 改动合回。
               const withKeys = { ...nextUser }
-              setQoderModelPrefs(patch.qoderModelSetPrefs)
+              await setQoderModelPrefs(patch.qoderModelSetPrefs)
               const after = readFileLayer()
               delete withKeys.qoderModelPrefs
               Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
@@ -1726,22 +1710,15 @@ export function apply(ctx, config = {}) {
   }
   ctx.inject(['tools'], (tctx) => { toolsCtx = tctx; syncImageTool() })
 
-  // Settings namespace claim for Settings → 插件配置: dsh ≥ 0.1.0-rc.7
-  // dispatches `settings.plugin.item` cards keyed by a namespace the Host
-  // serves (api-proxy `settings.describe`, allowlist removed in rc.7), so the
-  // browser-half card (registered under the same key) only renders when this
-  // registration lands. Reads/writes still go through our own webServer route
-  // + file layer — the seam is only the dispatch claim. Lazy inject:
-  // compositions without the settings service skip it (rc.6 dispatched cards
-  // unconditionally, so the card still renders there). Registration is an
-  // effect on this fiber — plugin dispose unregisters the namespace.
-  ctx.inject(['settings'], (sctx) => {
-    try {
-      sctx.settings.register('dsh-tap', Config)
-    } catch (err) {
-      process.stderr.write(`[dsh-tap] settings namespace register failed: ${err?.message ?? err}\n`)
-    }
-  })
+  // 宿主配置层挂载（dsh 0.1.7 起 settings 服务换了形态，见 host-config.js）：
+  // - 0.1.7+：configure({auto:false}) 声明"本插件自带设置卡页面"，宿主不再按
+  //   Config schema 自动生成一个页面；模型镜像/路由存在性经 mutate 落 profile patch。
+  // - ≤0.1.6：register('dsh-tap', Config) 声明命名空间——旧 `settings.plugin.item`
+  //   卡片派发按 Host 服务的命名空间清单走（api-proxy `settings.describe`），
+  //   不注册卡片就不出现（踩坑 #30）。
+  // 两条路由都由 host-config 按能力自选；读写仍走我们自己的 webServer 路由 +
+  // 文件层，seam 只承担"宿主配置层"这一段。
+  hostConfig.attach(ctx)
 
   // Bridge lifecycle: running state keyed by the port it listens on.
   // bridgeRuntime mirrors reality for the settings view (listen is async —
@@ -1875,12 +1852,11 @@ export function apply(ctx, config = {}) {
 
   applyLive()
   registerSettingsRoute(ctx, config, resolveNow, applyLive)
-  // Keep the settings.yaml model mirror in step with modelState across
-  // restarts (no-op when the feature was never used).
-  const state = readModelState()
-  if (Object.keys(state.disabled).length > 0 || Object.keys(state.extra).length > 0) {
-    syncModelsToDshSettings()
-  }
+  // 镜像写入统一交给下面 syncModelsFromGateway 的收尾（成功/失败两条路都会写），
+  // **此处不再先铺一次**：那一刻 dynamicCatalog 还是 null，有效清单只含静态基线，
+  // 会把宿主里上一次同步成功的完整清单打回残缺态（实测 28 → 16）；且 dsh 0.1.7
+  // 起每次写入都会触发 profile patch 重载 → 插件 re-apply → boot 再走一遍，
+  // 两次写入互相覆盖，最终停在残缺的那份（踩坑 #43 同批）。
   // G4：启动时自动从 /v3/config 同步模型清单；失败无感回落静态清单
   // （syncModelsFromGateway 内部已兜住一切异常，这里只记一行日志）。
   syncModelsFromGateway(resolveNow).then((r) => {
@@ -1895,6 +1871,7 @@ export function apply(ctx, config = {}) {
     if (disposeSearch) disposeSearch()
     if (disposeFetch) disposeFetch()
     if (disposeImageTool) disposeImageTool()
+    hostConfig.dispose()
     meter.dispose()
   })
 }
