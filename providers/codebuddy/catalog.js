@@ -55,18 +55,40 @@ export function createCatalog({ resolveCredential, envKey }) {
     )
     const models = (data.models ?? [])
       .filter((m) => typeof m?.id === 'string')
-      .map((m) => ({
-        id: m.id,
-        name: typeof m.name === 'string' ? m.name : m.id,
-        maxInputTokens: m.maxInputTokens ?? null,
-        maxOutputTokens: m.maxOutputTokens ?? null,
-        images: m.supportsImages === true,
-        cli: cliEnabled.has(m.id),
-        reasoning: m.reasoning?.effort != null,
-        // The catalog declares the model's default effort (e.g. "high"), not a
-        // tier list — surface it so the card can show it on catalog-only rows.
-        reasoningEffort: typeof m.reasoning?.effort === 'string' ? m.reasoning.effort : null,
-      }))
+      .map((m) => {
+        // 思考强度声明两代形态（2026-09-22 实测）：
+        //   legacy {"effort":"high","summary":"auto"} —— 只给默认档；
+        //   current {"canDisableThinking":true,"defaultEffort":"high",
+        //            "supportedEfforts":["low","high","max"]} —— 给能力清单。
+        // 后者是档位表的权威来源（无需探测即可驱动选择器与出站线值）。
+        const reasoning = m.reasoning && typeof m.reasoning === 'object' ? m.reasoning : null
+        const supported = Array.isArray(reasoning?.supportedEfforts)
+          ? reasoning.supportedEfforts.filter((s) => typeof s === 'string' && s)
+          : null
+        const defaultEffort = typeof reasoning?.defaultEffort === 'string' && reasoning.defaultEffort
+          ? reasoning.defaultEffort
+          : null
+        return {
+          id: m.id,
+          name: typeof m.name === 'string' ? m.name : m.id,
+          maxInputTokens: m.maxInputTokens ?? null,
+          maxOutputTokens: m.maxOutputTokens ?? null,
+          images: m.supportsImages === true,
+          cli: cliEnabled.has(m.id),
+          reasoning: !!reasoning && (reasoning.effort != null || defaultEffort != null
+            || supported != null || typeof reasoning.canDisableThinking === 'boolean'),
+          // 目录标注的**默认**档（legacy 的 effort 或新形态的 defaultEffort）——
+          // 卡片把它当"未设置时的既有档位"展示，不是档位清单。
+          reasoningEffort: typeof reasoning?.effort === 'string' && reasoning.effort
+            ? reasoning.effort
+            : defaultEffort,
+          defaultEffort,
+          supportedEfforts: supported,
+          canDisableThinking: typeof reasoning?.canDisableThinking === 'boolean'
+            ? reasoning.canDisableThinking
+            : null,
+        }
+      })
     return { models, fetchedAt: Date.now() }
   }
 

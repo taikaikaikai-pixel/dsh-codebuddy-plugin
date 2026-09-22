@@ -84,7 +84,39 @@ const hangCloses = []
 // 切换，refresh 在 ok 与 fail（401+12153，对齐 bogus refresh 实测）间切换。
 let oauthTokenMode = 'pending'
 let oauthRefreshMode = 'ok'
+// [17] 目录思考强度声明：'off' = /v3/config 500（启动同步失败，静态兜底——
+// 与前面各节的既有前提一致）；'on' = 发目录 fixture（含新形态 supportedEfforts
+// 与 legacy 形态各一条，用于锁定档位表的来源与优先级）。
+let catalogMode = 'off'
+const CATALOG_FIXTURE = {
+  models: [
+    {
+      id: 'glm-5.3-flash', name: 'GLM 5.3 Flash', maxInputTokens: 1000000, maxOutputTokens: 32000, supportsImages: true,
+      reasoning: { canDisableThinking: true, defaultEffort: 'high', summary: 'auto', supportedEfforts: ['low', 'high', 'max'] },
+    },
+    {
+      id: 'hy4-preview', name: 'Hunyuan Hy4 Preview', maxInputTokens: 1000000, maxOutputTokens: 64000, supportsImages: true,
+      reasoning: { canDisableThinking: false, defaultEffort: 'high', summary: 'auto', supportedEfforts: ['high'] },
+    },
+    {
+      id: 'mock-legacy', name: 'Mock Legacy Model', maxInputTokens: 200000, maxOutputTokens: 48000,
+      reasoning: { effort: 'medium', summary: 'auto' },
+    },
+  ],
+  agents: [{ name: 'cli', models: ['glm-5.3-flash', 'hy4-preview', 'mock-legacy'] }],
+}
 const upstream = createServer((req, res) => {
+  // [17] 目录端点（GET，无 body）：开闸才发目录，否则 500 走静态兜底。
+  if (req.url.startsWith('/v3/config')) {
+    if (catalogMode !== 'on') {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end('{"code":1,"msg":"catalog unavailable"}')
+      return
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ code: 0, data: CATALOG_FIXTURE }))
+    return
+  }
   // OAuth 设备流第一步（安全审计回归锁 [12]）：authUrl 可投毒。
   if (req.url.startsWith('/v2/plugin/auth/state')) {
     res.writeHead(200, { 'Content-Type': 'application/json' })
@@ -918,6 +950,85 @@ async function main() {
     res = await callRoute(routes, { action: 'oauth-status' })
     check('cleanup: signed out, mode restored, signal cleared',
       res.json?.oauth?.signedIn === false && res.json?.oauth?.needsRelogin === false, JSON.stringify(res.json?.oauth))
+  }
+
+  // ------------------------------------- 17. 目录声明的思考档位（2026-09-22）
+  //   网关 /v3/config 自 2026-09 起对新模型发能力清单
+  //   （supportedEfforts/canDisableThinking/defaultEffort）。契约：
+  //   a) 档位表 = 目录声明优先、静态 reasoningEfforts 兜底（legacy 形态不出表）；
+  //   b) 档位表进 settings.yaml 镜像的 models 条目（宿主 Effort 选择器据此出档）；
+  //   c) 桥出站按同一张表注入；未声明档位/无表模型不注入；
+  //   d) 没有实测"关思考"拼写 → 不出 off（canDisableThinking 也不凭空造线值）。
+  console.log('\n[17] catalog-declared reasoning tiers → model-list / mirror / bridge injection')
+  {
+    const layerPath = join(process.env.DSH_HOME, 'codebuddy-plugin.json')
+    const writeLayer = (obj) => writeFileSync(layerPath, JSON.stringify(obj) + '\n')
+
+    let res = await callRoute(routes, { action: 'model-list' })
+    check('before sync (catalog unreachable): model-list reports the failure, publishes no tiers',
+      res.status === 502 && res.json?.efforts === undefined, `${res.status} ${JSON.stringify(res.json?.error)}`)
+
+    catalogMode = 'on'
+    res = await callRoute(routes, { action: 'model-sync' })
+    check('model-sync pulls the catalog (3 models)', res.json?.sync?.ok === true && res.json?.sync?.count === 3,
+      JSON.stringify(res.json?.sync))
+
+    res = await callRoute(routes, { action: 'model-list' })
+    const listed = res.json
+    const flash = (listed?.catalog?.models ?? []).find((m) => m.id === 'glm-5.3-flash')
+    check('catalog entry carries the effort declaration verbatim',
+      JSON.stringify(flash?.supportedEfforts) === '["low","high","max"]'
+        && flash?.canDisableThinking === true && flash?.defaultEffort === 'high' && flash?.reasoningEffort === 'high',
+      JSON.stringify(flash))
+    check('declared tiers → efforts map (low/high/max, no off without a proven wire)',
+      JSON.stringify(listed?.efforts?.['glm-5.3-flash']) === '["low","high","max"]',
+      JSON.stringify(listed?.efforts?.['glm-5.3-flash']))
+    check('single-tier declaration survives (hy4-preview → ["high"])',
+      JSON.stringify(listed?.efforts?.['hy4-preview']) === '["high"]',
+      JSON.stringify(listed?.efforts?.['hy4-preview']))
+    check('legacy declaration (no supportedEfforts) yields no tier row',
+      listed?.efforts?.['mock-legacy'] === undefined, JSON.stringify(listed?.efforts?.['mock-legacy']))
+    check('static-only rows keep their patch table (auto stays table-less)',
+      listed?.efforts?.['auto'] === undefined && Array.isArray(listed?.efforts?.['hy3-preview']))
+    check('static table still governs models the catalog does not declare (deepseek-v4-pro)',
+      JSON.stringify(listed?.efforts?.['deepseek-v4-pro']) === '["low","medium","high","max"]',
+      JSON.stringify(listed?.efforts?.['deepseek-v4-pro']))
+
+    // 宿主 Effort 选择器的数据源 = settings.yaml 镜像里的 reasoningEfforts。
+    const mirror = readFileSync(join(process.env.DSH_HOME, 'settings.yaml'), 'utf8')
+    check('mirror carries reasoningEfforts for the catalog model (host Effort picker)',
+      /glm-5\.3-flash[\s\S]{0,400}?reasoningEfforts/.test(mirror)
+        && /reasoningEfforts:[\s\S]{0,200}?high: high/.test(mirror), mirror.slice(0, 0))
+
+    writeLayer({ effortByModel: { 'glm-5.3-flash': 'max' } })
+    let before = arrivals.length
+    await chat({ model: 'glm-5.3-flash', stream: false, messages: [] })
+    check('catalog tier max → reasoning_effort injected upstream',
+      arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"max"')),
+      arrivals.slice(before).map((a) => a.raw).join(' | ').slice(0, 200))
+
+    writeLayer({ effortByModel: { 'glm-5.3-flash': 'medium', 'hy4-preview': 'high', 'mock-legacy': 'high' } })
+    before = arrivals.length
+    await chat({ model: 'glm-5.3-flash', stream: false, messages: [] })
+    await chat({ model: 'hy4-preview', stream: false, messages: [] })
+    await chat({ model: 'mock-legacy', stream: false, messages: [] })
+    const tail = arrivals.slice(before)
+    check('undeclared level (medium) injects nothing',
+      !tail[0].raw.includes('reasoning_effort'), tail[0].raw.slice(0, 160))
+    check('declared single tier still injects (hy4-preview high)',
+      tail[1].raw.includes('"reasoning_effort":"high"'), tail[1].raw.slice(0, 160))
+    check('legacy catalog model without a table injects nothing',
+      !tail[2].raw.includes('reasoning_effort'), tail[2].raw.slice(0, 160))
+
+    writeLayer({ effortByModel: { 'glm-5.3-flash': 'off' } })
+    before = arrivals.length
+    await chat({ model: 'glm-5.3-flash', stream: false, messages: [] })
+    check('off is not a declared tier → injects nothing (no invented disable wire)',
+      !arrivals.slice(before).some((a) => a.raw.includes('reasoning_effort')))
+
+    // 收尾：关闸并清层（本节之后没有其它断言，仍保持测试自净的纪律）。
+    catalogMode = 'off'
+    writeLayer({})
   }
 
   console.log(failures === 0 ? '\nall bridge checks passed' : `\n${failures} check(s) FAILED`)

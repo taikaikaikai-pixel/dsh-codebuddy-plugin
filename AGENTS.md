@@ -33,6 +33,8 @@ CodeBuddy 通道：
 
 - pi-ai 会把推理模型的 system prompt 序列化成 `role:"developer"`，触发网关审核 `content_filter`——桥出站一律重写 developer→system → docs/rules/dev-role-boundary.md
 
+- **思考强度（`reasoning_effort`）档位表两代来源**：目录 `/v3/config` 旧形态只给默认档（`effort`），新形态给能力清单（`supportedEfforts`/`canDisableThinking`/`defaultEffort`；2026-09-22 实测仅 glm-5.3-flash+kimi-k2.8-preview=`["low","high","max"]`、hy4-preview(-x)=`["high"]`）——带清单者由 `catalogReasoningEfforts` 自动出表并进 settings.yaml 镜像（宿主 Model/Effort 选择器据此出档），其余仍走 `cordis.patch.yml` 静态表；误拼报 **11150** `invalid_reasoning_effort`；`canDisableThinking` **无可靠的关思考拼写**故不出 off 档，`hy3`/`hy3-preview` 的 off 已撤（省略参数照常思考）；**目录有 ≠ /v2 可路由**（glm-4.6v/kimi-k2-thinking/minimax-m2.5/hy4-preview-x 恒 11102，不进静态清单）→ 复跑 `node scripts/probe-codebuddy-efforts.mjs`（`--catalog` / `--summarize <证据>`）→ docs/rules/gateway-facts.md
+
 - 提示缓存**按内容寻址、自动生效**，亲和头/`prompt_cache_key` 对命中零影响；**分模型策略**：v4-pro/v4-flash/kimi-k2.7/hy3 有缓存，glm-5.x 条目秒-分钟级失效（"命中率只有 40%"多源于此），deepseek-v3 恒 0 → docs/rules/prompt-cache.md + docs/diagnosis-cache-quota.md
 
 - **v4-flash 网关缓存本身稳定**（直连 24 发全 99.3%、TTL ≥600s）；存量"经桥命中率下降快/40k+ 不稳/命中波动"根因是**桥 `rawBody += c` 逐分片解码损坏出站前缀**（跨分片中文→U+FFFD 且位置逐请求随机），**0.9.2 已修复**（Buffer.concat 一次解码，verify-bridge [10] 回归锁定案）→ docs/diagnosis-cache-decline.md（踩坑 #28）
@@ -104,6 +106,7 @@ Qoder CN 通道：
 39. pi-ai 丢弃 `stopReason=error/aborted` 的 assistant **但保留其 toolResult** → 出站孤儿 `role:"tool"` → 严格上游 400（Qoder `provider_error` 的**次**因，主因见 #41）；翻译网关出站前必须做消息配对体检（`sanitizeToolPairing`，verify-qoder [18] 锁定案）
 40. 客户端 transcript 里的 usage 是 enrich 后的记录不是线缆帧；计费判别要让"实验量级 × 计数器分辨率"匹配——整数读数吞小额探测曾致"裸 body 不记账"假阴性（臂 9 大额复测推翻：配额实时入账）；能聊天/被记账/进统计视图是三条独立链路
 41. **严格上游把 `content:null`/缺键的消息当"不存在"**——宿主对每个工具轮都发 `assistant{content:null,tool_calls}` ⇒ dsh 在 dmodel/kmodel/mmodel 上第一次调工具就必 400（Qoder `provider_error` **主因**）；补桩/合成消息也必须用 `''`（首版修复的 null 桩让"修完仍报同一个错"）；在容错家族（qmodel/auto）上验修复等于没验；`role:"developer"` 另在反序列化阶段整请求被拒 → 出站折叠为 system（`probe-qoder-null-content.mjs` 单变量差分定案）
+42. **上游"能力声明"字段 ≠ 存在对应线值**——`canDisableThinking:true` 的模型省略参数照常思考、`off`/`disabled`/`auto` 被接受却无效（`minimal`/`none` 跨模型不一致）⇒ 插件不出 off 档不臆造线值；档位拼写接受面逐模型不一致（11150 只在部分模型触发）；目录有 ≠ /v2 可路由（四条目恒 11102）；`off` 判据 = "省略参数时无 reasoning_content"（推理长度是弱信号，必须重复采样）
 
 ## 常用命令
 
@@ -113,6 +116,8 @@ node scripts/verify-models.mjs --list           # 离线自检模型解析
 node scripts/verify-models.mjs                  # 在线探测模型可用性（读 CODEBUDDY_API_KEY）
 node scripts/verify-models.mjs --sync           # 对比 /v3/config 目录漂移
 node scripts/verify-models.mjs --efforts [id…]  # 探测 reasoning_effort 档位
+node scripts/probe-codebuddy-efforts.mjs [--catalog] [--models a,b] [--repeat N] [--summarize <证据.json>]  # 思考强度现状探测 + 档位表决策表（证据落 docs/probes/codebuddy-efforts-*.json）
+node scripts/probe-codebuddy-tier-wiring.mjs     # 【真实上游】档位全链路联调：目录声明→档位表→镜像→桥出站注入（经本地捕获代理，临时 DSH_HOME 隔离）
 node scripts/verify-bridge.mjs                  # 离线桥回归（mock 网关，断言响应完成）
 node scripts/verify-rotation.mjs                # 离线多 Key 轮询回归（mock 网关按 Key 行为表）
 node scripts/verify-core-generic.mjs            # core/ 通用性证伪（静态纯净扫描 + 第二上游全链路）

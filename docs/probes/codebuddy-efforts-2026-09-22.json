@@ -1,0 +1,386 @@
+{
+  "expect": {
+    "P1": "无参（omit）就产 reasoning_content 的模型：kimi-k2.7/k3/k3-1/minimax-m2.7 —— 这四家档位表不含 off",
+    "P2": "off/low/medium/high/max 五种拼写对思考型模型全部 HTTP 200 可接受（不出现 400/11102 类拒绝）",
+    "P3": "目录新 CLI 模型（glm-5.3 / glm-5.3-flash / kimi-k2.8-preview / hy3-x / hy4-preview / deepseek-v4.1-flash）同样接受五档拼写",
+    "P4": "各档 reasoning 长度自适应、非严格单调（off < max 不必然成立）",
+    "P5": "目录 reasoning.effort 只给默认档，不含档位清单（即档位表无法从目录派生）"
+  },
+  "catalog": {
+    "fetchedAt": "2026-09-22T02:48:11.315Z",
+    "models": [
+      {
+        "id": "default",
+        "name": "Default",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 24000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "deepseek-v4-pro",
+        "name": "Deepseek-V4-Pro",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 128000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v4-flash",
+        "name": "Deepseek-V4-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 50000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v4.1-flash",
+        "name": "Deepseek-V4.1-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 128000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v3-2-volc",
+        "name": "DeepSeek-V3.2",
+        "maxInputTokens": 96000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m2.5",
+        "name": "MiniMax-M2.5",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m3",
+        "name": "MiniMax-M3",
+        "maxInputTokens": 512000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m2.7",
+        "name": "MiniMax-M2.7",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.3",
+        "name": "GLM-5.3",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.3-flash",
+        "name": "GLM-5.3-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": true,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "low",
+            "high",
+            "max"
+          ]
+        }
+      },
+      {
+        "id": "glm-5.2",
+        "name": "GLM-5.2",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.1",
+        "name": "GLM-5.1",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.0",
+        "name": "GLM-5.0",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-5.0-turbo",
+        "name": "GLM-5.0-Turbo",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5v-turbo",
+        "name": "GLM-5v-Turbo",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-4.7",
+        "name": "GLM-4.7",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-4.6",
+        "name": "GLM-4.6",
+        "maxInputTokens": 168000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-4.6v",
+        "name": "GLM-4.6V",
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k3-1",
+        "name": "Kimi-K3",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.8-preview",
+        "name": "Kimi-K2.8-Preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": true,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "low",
+            "high",
+            "max"
+          ]
+        }
+      },
+      {
+        "id": "kimi-k2.7",
+        "name": "Kimi-K2.7-Code",
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.6",
+        "name": "Kimi-K2.6",
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.5",
+        "name": "Kimi-K2.5",
+        "maxInputTokens": 164000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2-thinking",
+        "name": "Kimi-K2-Thinking",
+        "maxInputTokens": 164000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy3",
+        "name": "Hy3",
+        "maxInputTokens": 192000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy3-x",
+        "name": "Hy3",
+        "maxInputTokens": 192000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy4-preview",
+        "name": "Hy4 preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": false,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "high"
+          ]
+        }
+      },
+      {
+        "id": "hy4-preview-x",
+        "name": "Hy4 preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "canDisableThinking": false,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "high"
+          ]
+        }
+      },
+      {
+        "id": "hunyuan-chat",
+        "name": "Hunyuan-Turbos",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 8192,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "hunyuan-image-alpha",
+        "name": "Hunyuan Image Alpha",
+        "maxInputTokens": null,
+        "maxOutputTokens": null,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "hunyuan-image-alpha-edit",
+        "name": "Hunyuan Image Alpha Edit",
+        "maxInputTokens": null,
+        "maxOutputTokens": null,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      }
+    ]
+  },
+  "arms": []
+}

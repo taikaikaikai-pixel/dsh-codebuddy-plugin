@@ -29,6 +29,11 @@ export const ERROR_CODES = {
   11217: 'oauth state not ready (indistinguishable)',
   /** refresh token 无效（HTTP 401 伴随）。docs/rules/oauth-handshake.md */
   12153: 'refresh token invalid',
+  /** reasoning_effort 档位拼写不被该模型接受（extError.code =
+   *  invalid_reasoning_effort）。2026-09-22 实测：deepseek-v4-pro 拒绝
+   *  off/disabled/auto（11150），同一拼写在 glm-5.3-flash 上被静默接受——
+   *  档位表只列实测/目录声明过的拼写。证据 docs/probes/codebuddy-efforts-*.json */
+  11150: 'invalid_reasoning_effort',
 }
 
 /**

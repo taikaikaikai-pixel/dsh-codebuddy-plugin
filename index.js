@@ -290,32 +290,92 @@ function assertSafeModelId(id) {
  */
 let dynamicCatalog = null // { profiles: [...], fetchedAt, count }
 
-/** 目录条目 → 模型 profile（目录只给尺寸/图像/默认档位，不给档位清单）。 */
+/**
+ * 思考档位的规范顺序（选择器/卡片展示用；pi-ai 自己按 THINKING_LEVELS 排，
+ * 目录声明的键序不必与之一致）。
+ */
+const EFFORT_TIER_ORDER = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']
+const effortRank = (level) => {
+  const i = EFFORT_TIER_ORDER.indexOf(level)
+  return i === -1 ? EFFORT_TIER_ORDER.length : i
+}
+
+/**
+ * 目录声明的"关思考"线值——**实测为 null（没有这样的拼写）**，故
+ * `canDisableThinking:true` 的模型不出 off 档（不臆造线值）。依据
+ * docs/probes/codebuddy-efforts-{disable,offconfirm}-2026-09-22.json：
+ * 这类模型**省略参数照常思考**（与 defaultEffort 一致），显式
+ * off/disabled/auto 被 200 接受但推理量不变，minimal/none 跨模型不一致
+ * （glm-5.3-flash≈0 / kimi-k2.8-preview≈140，基线≈1k）。哪天定论了真正的
+ * 关思考线值，把这里改成该拼写即可（表里会自动多出 off 档）。
+ */
+const CATALOG_OFF_WIRE = null
+
+/**
+ * 目录思考强度声明 → 档位表（键 = 档位名，值 = 出站线值；null = 省略参数）。
+ * 只有带 `supportedEfforts` 的新形态声明才产出表——legacy 形态
+ * （{"effort":"high"}）只声明默认档，不构成能力清单，档位表继续由
+ * cordis.patch.yml 静态清单提供（合并优先级见 computeBaseModels）。
+ */
+function catalogReasoningEfforts(m) {
+  const supported = Array.isArray(m?.supportedEfforts)
+    ? m.supportedEfforts.filter((s) => typeof s === 'string' && s)
+    : []
+  if (!supported.length) return null
+  const table = {}
+  if (m.canDisableThinking === true && CATALOG_OFF_WIRE) table.off = CATALOG_OFF_WIRE
+  for (const level of [...supported].sort((a, b) => effortRank(a) - effortRank(b))) table[level] = level
+  return table
+}
+
+/** 目录条目 → 模型 profile（尺寸/图像来自目录；思考档位表见上）。 */
 function catalogToProfile(m) {
   const p = { id: m.id, name: typeof m.name === 'string' && m.name ? m.name : m.id }
   if (m.maxInputTokens != null) p.contextWindow = m.maxInputTokens
   if (m.maxOutputTokens != null) p.maxTokens = m.maxOutputTokens
   if (m.images === true) p.input = ['text', 'image']
+  const efforts = catalogReasoningEfforts(m)
+  if (efforts) p.reasoningEfforts = efforts
   return p
 }
 
 /**
- * G8：模型当前该注入的 reasoning_effort 线值。文件层的 effortByModel 只存
- * 档位名，线值查静态清单的 reasoningEfforts 表——off 的线值是 null（=
- * 省略参数，不注入）；目录条目本就不含该键，无表模型/非法档位同样不注入。
- * 表 Map 懒构建一次（patch 静态清单运行期不变）。
+ * 某模型可用的档位表 = 基清单（静态清单 ∪ 动态目录）里的 reasoningEfforts。
+ * 目录声明优先（computeBaseModels 的展开顺序），静态表兜底。
+ * 缓存以 dynamicCatalog 引用为键（每次同步换新；静态清单运行期不变）。
  */
-let effortTables = null
+let effortTableCache = null
+function effortTableFor(model) {
+  if (!effortTableCache || effortTableCache.source !== dynamicCatalog) {
+    const map = new Map()
+    for (const m of computeBaseModels()) {
+      if (m.reasoningEfforts && typeof m.reasoningEfforts === 'object') map.set(m.id, m.reasoningEfforts)
+    }
+    effortTableCache = { source: dynamicCatalog, map }
+  }
+  return effortTableCache.map.get(model) ?? null
+}
+
+/** 档位名 → 展示用清单：过滤掉"off 但线值为空"（那是省略参数 = 默认态）。 */
+function effortTiersFor(model) {
+  const table = effortTableFor(model)
+  if (!table) return []
+  return Object.entries(table)
+    .filter(([level, wire]) => (level === 'off' ? typeof wire === 'string' && wire : true))
+    .map(([level]) => level)
+    .sort((a, b) => effortRank(a) - effortRank(b))
+}
+
+/**
+ * G8：模型当前该注入的 reasoning_effort 线值。文件层的 effortByModel 只存
+ * 档位名，线值查该模型的档位表（静态 reasoningEfforts ∪ 目录声明）——
+ * off 的线值可能是 null（= 省略参数，不注入），也可能是显式"关思考"拼写；
+ * 无表模型/非法档位同样不注入（UI 之外的写入路径不会把脏档位送上线）。
+ */
 function effortWireFor(model) {
   const level = Config({ ...readFileLayer() }).effortByModel[model]
   if (!level) return undefined
-  if (!effortTables) {
-    effortTables = new Map()
-    for (const m of readStaticModels()) {
-      if (m.reasoningEfforts && typeof m.reasoningEfforts === 'object') effortTables.set(m.id, m.reasoningEfforts)
-    }
-  }
-  const wire = effortTables.get(model)?.[level]
+  const wire = effortTableFor(model)?.[level]
   return typeof wire === 'string' && wire ? wire : undefined
 }
 
@@ -1297,9 +1357,16 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
                     effectiveIds: computeEffectiveModels().map((m) => m.id),
                     profiles,
                     ceilings,
-                    // id → reasoning tier keys from cordis.patch.yml (e.g.
-                    // ["off","low","medium","high","max"]); the card renders
-                    // these on static rows.
+                    // id → 档位名清单，卡片据此给任意行出档位 select。
+                    // `efforts` = 基清单（patch 静态 reasoningEfforts ∪ 目录
+                    // supportedEfforts 声明）——目录声明优先；"off 但线值为空"
+                    // （= 省略参数 = 默认态）不进清单。`staticEfforts` 保留为
+                    // patch 静态表视图（旧契约）。
+                    efforts: Object.fromEntries(
+                      computeBaseModels()
+                        .map((m) => [m.id, effortTiersFor(m.id)])
+                        .filter(([, tiers]) => tiers.length > 0),
+                    ),
                     staticEfforts: Object.fromEntries(
                       readStaticModels()
                         .filter((m) => m.reasoningEfforts && typeof m.reasoningEfforts === 'object')

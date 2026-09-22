@@ -2,7 +2,7 @@
 
 > 本文是网关事实摘要总表（2026-08-29 自 AGENTS.md 同名章节逐字迁入）。逐字段裁判细节见同目录专题文件：routing.md / ua-validation.md / quota-signals.md / prompt-cache.md / content-moderation.md / dev-role-boundary.md / trae-surface.md / oauth-handshake.md / extra-providers.md；Trae 协议细节另见 docs/reverse/traework-cn.md + trae-cloud-api.md。新实测事实追加在本文，并在 AGENTS.md「关键网关事实速查」加一行。
 
-- `/v2/chat/completions`：**仅流式**（非流式报 `code 11101`）；`reasoning_effort` 接受 low/medium/high/max，各模型思考量自适应非严格单调
+- `/v2/chat/completions`：**仅流式**（非流式报 `code 11101`）；`reasoning_effort` 接受 low/medium/high/max，各模型思考量自适应非严格单调（逐模型档位表与 2026-09-22 复查见下方「CodeBuddy 思考强度事实」节）
 
 - `/agenttool/v1/search`、`/agenttool/v1/webfetch`：专用搜索/抓取端点，`ck_` Key 直调可用；**UA 必须是 CLI 形态**（如 `CLI/unknown CodeBuddy/2.136.0`，`CodeBuddyCode/1.0` 被拒 12403）
 
@@ -56,4 +56,15 @@
 - **逐模型 billable 标志**（2026-09-22 官方 transcript 统计）：qfmodel 帧 `billable:false`（免费预览档，烧多少都不计 credits）、dfmodel 帧 `billable:true`；插件侧裸请求所有模型均回 `billable:true`（但不落计数器，见下条归因）。"官方今天用了却没统计"的先查是不是用的免费档模型
 - **用量记账两链路分离：配额计数实时且与形态无关，统计视图（热力图/汇总/明细）是延迟批处理且由归因链驱动**（2026-09-22 臂9 定论，证据 docs/probes/qoder-attribution-arm9-*.json）：①**额度扣减**（`quota/usage` 的 `addOnQuota.used`）对**裸 OpenAI body 同样实时入账**（两发大输出各 ~0.9 credits，45s 内整数读数 197→199）——早前"裸 body 不记账"的判定是**整数取整读数吞掉 0.002 级小额探测**的假象（踩坑 #40 的预警实证）；官方 GUI 客户端聊天（Max，5.04 credits）同样 ~1 分钟内 192→197。②**统计视图**（`credits-heatmap`/`credits-summary`/网页明细）对官方客户端自己的聊天 20 分钟内也不动——属延迟批处理；要让插件用量进入该层，需官方归因链：聊天 body 归因信封 + business 块 + 收尾 business/finish（mode auth）+ /api/v1/tracking（mode sign）双上报（bundle `A6e`/`g4i`/`aPl` 原文实证，字段全表在 wiki/10-provider-qoder.md）。插件网关 0.9.9 起全部对齐（verify-qoder [19] 12 断言锁定案）；上报 fire-and-forget 不影响主链路
 - **客户端 transcript 里的 usage 是加工记录不是线缆帧**（2026-09-22，踩坑 #40）：transcript 里的 usage 带 `request_id`/`speed`/`inference_geo`/`context_usage_ratio` 且 `billable:false`，而真实线缆帧（我们抓的 SSE 原文）只有 tokens/credits 且 `billable:true`——客户端落盘前做了 enrich，逆向时不能以 transcript 字段为线缆真相
+
+### CodeBuddy 思考强度事实（2026-09-22 实测；复跑 `node scripts/probe-codebuddy-efforts.mjs`，证据 docs/probes/codebuddy-efforts-\*.json）
+
+- **目录 `reasoning` 声明有两代形态**（`GET /v3/config`）：legacy `{"effort":"high","summary":"auto"}` 只声明**默认档**；current `{"supportedEfforts":["low","high","max"],"canDisableThinking":true,"defaultEffort":"high","summary":"auto"}` 是**能力清单**。2026-09-22 实测带清单的只有 4 个：`glm-5.3-flash` / `kimi-k2.8-preview`（`["low","high","max"]` + canDisableThinking **true**）、`hy4-preview` / `hy4-preview-x`（`["high"]` + **false**）。插件侧：带清单者由目录驱动档位表（`catalogReasoningEfforts`），legacy 者继续用 `cordis.patch.yml` 的静态表 —— 清单是"该模型有哪些档"，`effort`/`defaultEffort` 只是"默认在哪档"
+- **误拼档位有专用错误码 `11150`**（`extError.code = invalid_reasoning_effort`，"the reasoning effort value is not supported by the current model"）：`deepseek-v4-pro` 显式发 `off`/`disabled`/`auto` 三拼写即 11150；而**同一拼写在 `glm-5.3-flash` 上被静默接受**（HTTP 200、行为同默认档）——**拼写接受面逐模型不一致**，所以档位表只列实测可接受/目录声明过的拼写，不臆造同义词
+- **"关思考"拼写未定论 ⇒ `canDisableThinking:true` 不等于有可发的线值**：两个 canDisableThinking=true 的模型**省略参数照常思考**（`omit` 臂 reason≈1.2k，与 `defaultEffort` 一致），显式 `off`/`disabled`/`auto` 被接受但推理量不变（≈1.2–1.4k）；只有 `minimal`/`none` 表现出量级下降，但**两模型不一致**（glm-5.3-flash：minimal 三次 0/11/0、none 0/101/0；kimi-k2.8-preview：minimal ≈112–167、none ≈749–1140 仍照常思考），基线 omit 在两者都是 ≈0.2–1.4k。没有跨模型可靠的关思考拼写 ⇒ 插件**不给这些模型出 off 档**（宿主选择器里的 `Off` 映射为"省略参数"，对它们就是假开关）
+- **`off` 档的语义 = 省略参数，且只在该模型"省略即不思考"时才是真开关**：2026-09-22 复查把 `hy3` / `hy3-preview` 的 `off` 撤掉——两模型六臂实测**每臂都出 ~510–625 字推理**（旧结论"off=省略参数已验证无 reasoning_content"已过期，模型侧行为变了）；`deepseek-v3.2` / r1 家族 / v4-pro / v4-flash / GLM 5.1/5.2/5v-turbo / Kimi k2.5/k2.6 / minimax-m3 的 omit 臂仍为 0，`off` 保留
+- **目录里有 ≠ /v2 可路由**（同 2026-09-22 矩阵，routing.md R-R3 再证）：`glm-4.6v` / `kimi-k2-thinking` / `minimax-m2.5` / `hy4-preview-x` 四个条目在 `/v3/config` 里齐全，但 `/v2/chat/completions` 六臂全部 `11102 service info not found` ⇒ **不进静态清单**（否则选择器出一个永远失败的模型）
+- **`auto` 是路由器、响应 `model` 字段才是真身**：请求 `auto` 六臂全部回显 `model:"hy4-preview"`（当前账号的 auto 落点），故 auto 不出档位表；判读响应时别拿请求 id 当路由证据（v4-pro 家族 11150 同理按响应码断言）
+- **推理长度只是弱信号**：各档长度自适应、非严格单调（glm-5.1：low 662 / medium 666 / high 1101 / max 338），"长度没变"不等于"参数没生效"——档位表判据取"HTTP 200 + 无带内错误"，`off` 判据取"省略参数时 reasoning_content 为 0"
+- **插件侧全链路（真实上游联调，2026-09-22）**：`node scripts/probe-codebuddy-tier-wiring.mjs` —— 临时 DSH_HOME（不碰用户配置）起插件桥 → 本地捕获代理 → 真实网关，12 断言全绿：目录声明 → `model-list` 的 `efforts` 档位表 → settings.yaml 镜像带 `reasoningEfforts`（宿主 Model/Effort 选择器数据源）→ 真实 chat 出站体带被注入的 `reasoning_effort`（`max`）且上游 200；负例（未声明档位 `medium`、无表模型 `auto`）出站体不带该键。证据 docs/probes/codebuddy-tier-wiring-2026-09-22.json
 
