@@ -484,8 +484,10 @@ console.log('\n[14] 翻译网关：COSY 信封 ↔ OpenAI 流式/非流式翻译
   infer.close()
 }
 
-// ── [18] tool 配对修复：pi-ai 孤儿 tool 消息 → 出站前修好（2026-09-22 实测根因）──
-console.log('\n[18] 出站 tool 配对修复（sanitizeToolPairing + 网关接线）')
+// ── [18] 出站 tool 配对 + 可见性体检（sanitizeToolPairing + developer 重写 + 网关接线）
+//     根因两次修正：① pi-ai 删 error/aborted 的 assistant 留 toolResult（孤儿 tool）；
+//     ② 宿主每个工具轮都发 content:null，严格上游把它当"不存在的消息"（主触发）。
+console.log('\n[18] 出站 tool 配对 + 可见性修复（sanitizeToolPairing + 网关接线）')
 {
   const { sanitizeToolPairing, createQoderGateway } = await import('../providers/qoder/gateway.js')
 
@@ -534,14 +536,55 @@ console.log('\n[18] 出站 tool 配对修复（sanitizeToolPairing + 网关接�
   ok(dup.repaired.duplicates === 1 && dup.messages.filter((m) => m.role === 'tool').length === 1,
     '同 id 重复 tool 结果 → 只留第一个', JSON.stringify(dup.messages.map((m) => m.role)))
 
-  // 纯函数：合法历史零改动（修复不能碰正常请求）
+  // 纯函数：**主触发形态**——合法工具环但 assistant content:null（宿主对每个工具轮
+  // 都这么发，见 providers/tool-pairing.js 文件头 P-A）→ 必须补成 ''，且补完配对仍合法
+  const invisible = sanitizeToolPairing([
+    { role: 'system', content: 'sys' },
+    { role: 'user', content: '现在几点？' },
+    { role: 'assistant', content: null, tool_calls: [{ id: 'call_n1', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'tool', tool_call_id: 'call_n1', content: 'r' },
+  ])
+  ok(invisible.repaired.invisible === 1 && invisible.repaired.orphans === 0,
+    'assistant content:null → 计入 invisible 修复', JSON.stringify(invisible.repaired))
+  ok(invisible.messages[2].content === '' && pairOk(invisible.messages) === true,
+    'null 载体补成空串后工具环合法', JSON.stringify(invisible.messages[2]))
+  ok(JSON.stringify(Object.keys(invisible.messages[2])) === JSON.stringify(['role', 'content', 'tool_calls']),
+    '键序不变（spread 原位覆盖，不产生重排）')
+
+  // 纯函数：tool 结果自身 content:null 同样不可见（上游报"insufficient tool messages"）
+  const invisibleTool = sanitizeToolPairing([
+    { role: 'user', content: 'hi' },
+    { role: 'assistant', content: '', tool_calls: [{ id: 'call_n2', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'tool', tool_call_id: 'call_n2', content: null },
+  ])
+  ok(invisibleTool.messages[2].content === '' && invisibleTool.repaired.invisible === 1,
+    'tool 消息 content:null → 补空串', JSON.stringify(invisibleTool.messages[2]))
+
+  // 纯函数：content 缺失（连键都没有）同样归一
+  const absent = sanitizeToolPairing([
+    { role: 'user', content: 'hi' },
+    { role: 'assistant', tool_calls: [{ id: 'call_n3', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'tool', tool_call_id: 'call_n3', content: 'r' },
+  ])
+  ok(absent.messages[1].content === '' && absent.repaired.invisible === 1, 'content 键缺失 → 补空串')
+
+  // 纯函数：修复桩自身必须用 ''——用 null 会把修复变成新的坏体（09-22 首版翻车点）
+  const stubShape = sanitizeToolPairing([
+    { role: 'user', content: 'hi' },
+    { role: 'tool', tool_call_id: 'call_s', content: 'r' },
+  ])
+  ok(stubShape.messages[1].content === '' && 'content' in stubShape.messages[1],
+    '孤儿桩 content 为空串而非 null', JSON.stringify(stubShape.messages[1]))
+
+  // 纯函数：合法（content 为非空串）历史零改动——修复不得碰正常请求
   const clean = [
     { role: 'user', content: 'hi' },
-    { role: 'assistant', content: null, tool_calls: [{ id: 'call_ok', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'assistant', content: '我查一下', tool_calls: [{ id: 'call_ok', type: 'function', function: { name: 'f', arguments: '{}' } }] },
     { role: 'tool', tool_call_id: 'call_ok', content: 'result' },
   ]
   const untouched = sanitizeToolPairing(clean)
   ok(untouched.repaired.orphans === 0 && untouched.repaired.synthesized === 0
+    && untouched.repaired.invisible === 0 && untouched.repaired.duplicates === 0
     && JSON.stringify(untouched.messages) === JSON.stringify(clean), '合法历史逐字节不变')
 
   // 网关接线：stub cosy（捕获签名前的**明文** body，避开 WASM 密文）
@@ -577,8 +620,23 @@ console.log('\n[18] 出站 tool 配对修复（sanitizeToolPairing + 网关接�
   const seen = signedBodies.at(-1)?.body
   ok(seen?.messages?.[1]?.role === 'assistant' && seen?.messages?.[2]?.role === 'tool',
     '网关出站前插入 assistant 桩（明文可见）', JSON.stringify(seen?.messages?.map((m) => m.role)))
+  ok(seen?.messages?.[1]?.content === '', '出站桩 content 为 ""（严格上游不认 null 载体）', JSON.stringify(seen?.messages?.[1]?.content))
   ok(seen?.stream === true && seen?.stream_options?.include_usage === true, '强制流式与 usage 语义未被修复流程破坏')
   ok(seen?.model === 'qmodel', 'model 字段原样')
+
+  // 宿主真实出站形态（developer 系统提示 + null content 工具轮）经网关后必须双双纠正
+  await call([
+    { role: 'developer', content: '你是编码助手' },
+    { role: 'user', content: '现在几点？' },
+    { role: 'assistant', content: null, tool_calls: [{ id: 'call_live_2', type: 'function', function: { name: 'f', arguments: '{}' } }] },
+    { role: 'tool', tool_call_id: 'call_live_2', content: 'r' },
+  ], false).then((r) => r.text())
+  const seen2 = signedBodies.at(-1)?.body
+  ok(seen2?.messages?.[0]?.role === 'system', 'developer → system 出站重写（明文可见）', JSON.stringify(seen2?.messages?.[0]?.role))
+  ok(seen2?.messages?.[2]?.content === '' && seen2?.messages?.[2]?.tool_calls?.[0]?.id === 'call_live_2',
+    'null content 工具轮 → 出站补成 ""，tool_calls 原样保留', JSON.stringify(seen2?.messages?.[2]))
+  ok(JSON.stringify(seen2?.messages?.map((m) => m.role)) === JSON.stringify(['system', 'user', 'assistant', 'tool']),
+    '修复不增删消息（该形态本就配对合法）', JSON.stringify(seen2?.messages?.map((m) => m.role)))
 
   await stopGw2()
 }

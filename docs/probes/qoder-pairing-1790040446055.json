@@ -1,0 +1,512 @@
+{
+  "ts": "2026-09-22T01:27:26.050Z",
+  "model": {
+    "id": "dmodel",
+    "name": "DeepSeek-V4-Pro",
+    "provider": "qoder",
+    "api": "openai-completions",
+    "baseUrl": "http://127.0.0.1:3903/v1",
+    "reasoning": true,
+    "input": [
+      "text",
+      "image"
+    ],
+    "contextWindow": 200000,
+    "maxTokens": 32768
+  },
+  "cases": [
+    {
+      "name": "normal_tool_round",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "has_tool_calls": [
+            "call_A"
+          ],
+          "content": null
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_A",
+          "has_tool_calls": null,
+          "content": "file content"
+        },
+        {
+          "role": "assistant",
+          "has_tool_calls": null,
+          "content": "内容如上"
+        }
+      ],
+      "sequenceBefore": "developer user assistant[call_A] tool[call_A] assistant",
+      "sequenceAfter": "developer user assistant[call_A] tool[call_A] assistant",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "raw": [],
+        "strict": []
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    },
+    {
+      "name": "aborted_carrier",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_B",
+          "has_tool_calls": null,
+          "content": "b content"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "sequenceBefore": "developer user tool[call_B] user",
+      "sequenceAfter": "developer user assistant[call_B] tool[call_B] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "raw": [
+          "L2: 孤儿 tool call_B（更早历史里没有声明它的 assistant）"
+        ],
+        "strict": [
+          "L2: 孤儿 tool call_B（更早历史里没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    },
+    {
+      "name": "error_carrier",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_E",
+          "has_tool_calls": null,
+          "content": "e content"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "再来"
+            }
+          ]
+        }
+      ],
+      "sequenceBefore": "developer user tool[call_E] user",
+      "sequenceAfter": "developer user assistant[call_E] tool[call_E] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "raw": [
+          "L2: 孤儿 tool call_E（更早历史里没有声明它的 assistant）"
+        ],
+        "strict": [
+          "L2: 孤儿 tool call_E（更早历史里没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    },
+    {
+      "name": "mixed_multi_turn",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "step1"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "has_tool_calls": [
+            "call_A"
+          ],
+          "content": null
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_A",
+          "has_tool_calls": null,
+          "content": "ok"
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_B",
+          "has_tool_calls": null,
+          "content": "ran anyway"
+        },
+        {
+          "role": "assistant",
+          "has_tool_calls": [
+            "call_C"
+          ],
+          "content": null
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_C",
+          "has_tool_calls": null,
+          "content": "hits"
+        },
+        {
+          "role": "assistant",
+          "has_tool_calls": null,
+          "content": "完成"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "next"
+            }
+          ]
+        }
+      ],
+      "sequenceBefore": "developer user assistant[call_A] tool[call_A] tool[call_B] assistant[call_C] tool[call_C] assistant user",
+      "sequenceAfter": "developer user assistant[call_A] tool[call_A] assistant[call_B] tool[call_B] assistant[call_C] tool[call_C] assistant user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "raw": [
+          "L4: 孤儿 tool call_B（更早历史里没有声明它的 assistant）"
+        ],
+        "strict": [
+          "L4: 孤儿 tool call_B（更早历史里没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    },
+    {
+      "name": "parallel_partial",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "parallel"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "has_tool_calls": [
+            "call_A",
+            "call_B"
+          ],
+          "content": null
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_A",
+          "has_tool_calls": null,
+          "content": "only A"
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_B",
+          "has_tool_calls": null,
+          "content": "No result provided"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "换个问题"
+            }
+          ]
+        }
+      ],
+      "sequenceBefore": "developer user assistant[call_A+call_B] tool[call_A] tool[call_B] user",
+      "sequenceAfter": "developer user assistant[call_A+call_B] tool[call_A] tool[call_B] user",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "raw": [],
+        "strict": []
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    },
+    {
+      "name": "aborted_no_result",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "重来"
+            }
+          ]
+        }
+      ],
+      "sequenceBefore": "developer user user",
+      "sequenceAfter": "developer user user",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "raw": [],
+        "strict": []
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    },
+    {
+      "name": "two_aborted_carriers",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_B",
+          "has_tool_calls": null,
+          "content": "b"
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_C",
+          "has_tool_calls": null,
+          "content": "c"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "sequenceBefore": "developer user tool[call_B] tool[call_C] user",
+      "sequenceAfter": "developer user assistant[call_B] tool[call_B] assistant[call_C] tool[call_C] user",
+      "repaired": {
+        "orphans": 2,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "raw": [
+          "L2: 孤儿 tool call_B（更早历史里没有声明它的 assistant）",
+          "L3: 孤儿 tool call_C（更早历史里没有声明它的 assistant）"
+        ],
+        "strict": [
+          "L2: 孤儿 tool call_B（更早历史里没有声明它的 assistant）",
+          "L3: 孤儿 tool call_C（更早历史里没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    },
+    {
+      "name": "duplicate_result",
+      "hostOutbound": [
+        {
+          "role": "developer",
+          "has_tool_calls": null,
+          "content": "You are a coding agent. Use tools when h"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_B",
+          "has_tool_calls": null,
+          "content": "first"
+        },
+        {
+          "role": "tool",
+          "tool_call_id": "call_B",
+          "has_tool_calls": null,
+          "content": "second"
+        },
+        {
+          "role": "user",
+          "has_tool_calls": null,
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "sequenceBefore": "developer user tool[call_B] tool[call_B] user",
+      "sequenceAfter": "developer user assistant[call_B] tool[call_B] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 1
+      },
+      "violationsBefore": {
+        "raw": [
+          "L2: 孤儿 tool call_B（更早历史里没有声明它的 assistant）",
+          "L3: 孤儿 tool call_B（更早历史里没有声明它的 assistant）"
+        ],
+        "strict": [
+          "L2: 孤儿 tool call_B（更早历史里没有声明它的 assistant）",
+          "L3: 孤儿 tool call_B（更早历史里没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "raw": [],
+        "strict": []
+      },
+      "stillBroken": false
+    }
+  ]
+}

@@ -162,12 +162,17 @@ flowchart TB
     REPORT --> DONE(["done"])
 ```
 
-## 出站 tool 配对修复（sanitizeToolPairing，2026-09-22）
+## 出站 tool 配对 + 可见性修复（sanitizeToolPairing，2026-09-22）
 
 **症状**：工具轮之后的下一次请求报
 `qoder upstream error: {"code":"provider_error","message":"Error in upstream response","request_id":"…","type":"provider_error","details":"{\"error\":{\"message\":\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\"…}}"}`。
 
-**根因（宿主侧的一半 + 上游严格校验的另一半）**：`@earendil-works/pi-ai` 的 `transform-messages.js` 第二遍处理里，`stopReason==='error'||'aborted'` 的 assistant 消息会被**整条丢弃**（注释理由：中断轮次含半截推理/工具调用，重放会触发 API 错误），但它产出的 `toolResult` 消息照旧进 params——`openai-completions.js` 的 `convertMessages` 于是产出 `[system, user, tool, user]`，第三条 `role:"tool"` 没有前置 `assistant.tool_calls`。上游 OpenAI 兼容面严格校验该不变量即回 400（Qoder 归一为 `provider_error`）。
+**根因（两个独立触发，同一条报错文案；2026-09-22 单变量差分批正首版定案，踩坑 #41 为主因、#39 为次因）**：严格家族（dmodel/kmodel/mmodel）的上游校验器**把 `content` 为 `null`/缺键的消息整条当"不存在"**。
+
+1. **主因（每个工具轮必炸）**：宿主 `@earendil-works/pi-ai` 的 `convertMessages`（openai-completions.js:961）在 `compat.requiresAssistantAfterToolResult=false`（我们这种自定义 provider 走 `detectCompat` 的默认判定）下，把**每一个纯工具轮**序列化成 `{role:'assistant', content:null, tool_calls:[…]}`——声明在校验器眼里蒸发，紧随的 `role:"tool"` 就成了孤儿。所以 dsh 在 dmodel 上**第一次调用工具就必报**，与是否发生过中断无关。
+2. **次因（失败/中断之后）**：`transform-messages.js` 把 `stopReason==='error'||'aborted'` 的 assistant **整条丢弃**、却保留其 `toolResult` → 出站 `[system, user, tool, user]` 真孤儿（踩坑 #39 的原始观察，离线用真实 `convertMessages` 100% 复现）。
+
+**首版修复为什么没用**：#39 补孤儿时插的桩是 `content:null` —— 桩自己在校验器眼里同样不存在，于是"修完仍报同一条错"（实测 `B_orphan_stub_null` ❌ / `B_orphan_stub_empty` ✅）。而且首版验证跑在**容错家族 `qmodel`** 上（它对一切坏体静默容忍），等于没验。
 
 **触发场景与自续循环**：一次失败/中断的工具轮（上游 400、5xx、用户 Esc、流中断）会把当轮 assistant 写成 `stopReason=error/aborted`（`dsh-llm-pi-ai` 的 `case "error"` → `mapStopReason(event.error)`），**这条消息留在会话历史里**——于是此后**每一次**请求都带孤儿 tool 结果，直到该会话被丢弃。这解释了现场"第一次报错后怎么重试都是同一个错"。
 
@@ -175,11 +180,25 @@ flowchart TB
 
 | 出站形态 | 处理 |
 |---|---|
-| 孤儿 `role:"tool"`（前置 assistant 被删） | 补一条**仅含该 tool_call 的 assistant 桩**（id 取原 `tool_call_id`，name 取 tool 消息的 `name` 或 `'tool'`）后原样保留结果——比丢弃结果更保上下文（实测上游放行两态） |
+| assistant / tool 的 `content` 为 `null` 或缺键 | 补成 `''`（**可见性归一**，主因修复；`repaired.invisible` 计数）——OpenAI 方言里 null 与 `''` 语义等价，但严格上游只认非 null |
+| 孤儿 `role:"tool"`（前置 assistant 被删） | 补一条**仅含该 tool_call 的 assistant 桩**（id 取原 `tool_call_id`，name 取 tool 消息的 `name` 或 `'tool'`，**content 用 `''`**）后原样保留结果——比丢弃结果更保上下文（实测上游放行两态） |
 | assistant 声明了 tool_call 但缺结果（会话尾 / user 插在结果前） | 补 `(tool result unavailable: previous attempt was interrupted)` 结果，保住配对 |
-| 合法历史 | **逐字节不变**（修复不碰正常请求） |
+| 同 id 的重复结果 | 丢弃第二条（上游会当孤儿） |
+| `content` 非空的合法历史 | **逐字节不变**（修复不碰正常请求；键序也不变——spread 原位覆盖） |
+| `role:"developer"`（pi-ai 对 reasoning 模型序列化 system prompt 的产物） | 网关出站折叠为 `system`（上游在**反序列化阶段**整请求拒绝 developer：`Failed to deserialize the JSON body...`；同 codebuddy 桥策略） |
 
-修复只动 `messages`，字段白名单、prefs 补默认、签名/加密、计量路径全不受影响；取证日志出站行带 `repaired=orphans=N synthesized=M` 便于观察触发频率。
+**上游拒绝面按模型家族分裂**（同一条坏体，只切一个字段实测）：
+
+| assistant.content | dmodel | kmodel | mmodel | auto/qmodel/qmodel_38max/gmodel |
+|---|---|---|---|---|
+| `null` / 缺键 | ❌ `Messages with role 'tool' must be a response to…` | ❌ `Invalid request: tool_call_id is not found` | ❌ `invalid params, tool result's tool id(…) not found (2013)` | ✅ 静默容忍（多为空正文） |
+| `''` / 非空文本 | ✅ | ✅ | ✅ | ✅ |
+
+`role:"tool"` 自身 `content:null` 另报 `An assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'`（结果被当成没回）。
+
+**为什么官方 Qoder CN 客户端从不触发**（本机取证，非推断）：`~/.qoder-cn/projects/**/*.jsonl` 105 份 transcript 里 `tool_use`/`tool_result` **孤儿 result 恒 0**（计数不等时缺的永远是「结果」，不是「声明」）；按 `message.id` 归并的 **879 个工具回合中 93.3% 带非空 thinking、52.8% 带非空 text，裸 tool_use（≈`content:null`）仅 2.73%**；252 份 `qodercli.log` 显示官方同样在客户端重放全量历史（`request_message_count` 一路涨到 **457**），却**零条** `provider_error`/配对 400。即差异不在端点、不在服务端校验，而在**客户端历史构造纪律**：官方几乎总给工具轮带上非空正文，且中断时删的是「结果」而非「声明」。
+
+修复只动 `messages`，字段白名单、prefs 补默认、签名/加密、计量路径全不受影响；取证日志出站行带 `repaired=orphans=N synthesized=M duplicates=K invisible=J` 便于观察触发频率（`QODER_GATEWAY_LOG` 开启时）。复现与复核：`node scripts/probe-qoder-pairing.mjs --offline`（宿主真实序列化器复现 + 严格校验器）、`node scripts/probe-qoder-null-content.mjs --models dmodel --gw-local`（单变量差分 + 修复前后端到端）；证据 docs/probes/qoder-null-content-\*.json、qoder-pairing-\*.json。
 
 **上游容错面按模型家族分裂（差分矩阵实测，docs/probes/qoder-matrix-1790023075879.json）**：孤儿 tool 在 **dmodel/kmodel/mmodel 上 400**（内层文案三家各一：`Messages with role 'tool' must be a response…` / `Invalid request: tool_call_id  is not found` / `invalid params, tool result's tool id(…) not found`），在 **auto/qmodel_38max/qmodel/gmodel 上被静默当文本处理**——所以"换成 auto 能跑"不能证伪协议问题，诊断必须按模型家族取样。
 

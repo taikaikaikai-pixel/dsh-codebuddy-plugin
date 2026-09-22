@@ -9,7 +9,7 @@
 | 报错 | 归属 | 机制 |
 |---|---|---|
 | `{"code":"400","message":"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null"}` | **上游侧**（Qoder 后端节点内部异常） | qfmodel 被路由到推理节点 `oa_qwen-plus-main`，该节点对任何请求抛 `Execution failed: null`（形似 Java 侧 NPE）；HTTP 仍是 200，错误藏在 SSE 信封的 body 里（"带内失败帧"） |
-| `{"code":"provider_error","message":"Error in upstream response","request_id":"…","details":"{…\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'…}"}` | **宿主侧真 bug，插件已修**（踩坑 #39） | 宿主 pi-ai 丢弃 `stopReason=error/aborted` 的 assistant 消息却保留其 tool 结果 → 出站出现孤儿 `role:"tool"`；上游 OpenAI 兼容面严格校验即回 400，Qoder 归一为 `provider_error` |
+| `{"code":"provider_error","message":"Error in upstream response","request_id":"…","details":"{…\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'…}"}` | **宿主侧真 bug，插件已修**（踩坑 #41 为主因、#39 为次因） | 严格家族（dmodel/kmodel/mmodel）的配对校验器把 **`content` 为 `null`/缺键的消息当"不存在"**：宿主 pi-ai 对**每个纯工具轮**都发 `{role:'assistant',content:null,tool_calls:[…]}`（openai-completions.js:961），声明因此蒸发、其后的 `role:"tool"` 被判孤儿 → 400。次因：pi-ai 还会丢弃 `stopReason=error/aborted` 的 assistant 却保留其 tool 结果（#39），产出真孤儿。首版修复补的桩自己也是 `content:null`，所以"修完仍报同一条错"；0.9.9 起网关出站做可见性归一（null/缺键 → `''`）+ developer→system，实测四形态全部 400 → 200（证据 docs/probes/qoder-null-content-*.json） |
 
 ## 2. qfmodel：为什么能断定是上游侧（逐变量排除）
 
@@ -40,7 +40,7 @@
 
 ## 4. 插件侧本轮实际修了什么（都不改变"Flash 属上游故障"的结论）
 
-1. **出站 tool 配对修复**（`providers/tool-pairing.js`，踩坑 #39）：修掉第二类 `provider_error`（孤儿 tool 消息）。**修复前/后对比实测**：孤儿 tool 复现体 400 → 200 正常出文本；两条对照（完整工具环 / tool_calls 缺结果）行为不变。两个翻译网关（Qoder :3903、Trae :3902）共用该体检。
+1. **出站 tool 配对 + 可见性体检**（`providers/tool-pairing.js`，踩坑 #39 → #41）：第一版只修"孤儿 tool"，且在**容错家族 qmodel** 上验证 → 上线后同一条 `provider_error` 照旧。第二版（0.9.9）用单变量差分定出真因：严格家族的校验器把 `content:null`/缺键的消息**当不存在**，而宿主对每个纯工具轮都发 `content:null`，首版补的桩也是 `content:null`（修复自身即坏体）。修法 = 可见性归一（assistant/tool 的 null/缺键 content → `''`，桩用 `''`）+ 孤儿补桩 + 缺结果合成 + 重复结果丢弃，另加出站 developer→system 折叠。**修复前/后对比实测（真实 dmodel 上游，用当前代码起的临时网关）**：`A_call_content_null` / `B_orphan_plain` / `B_orphan_stub_null` / `C_tool_content_null` 四形态全部 400 → 200 出正文；`""`/文本/纯聊天对照行为不变。两个翻译网关（Qoder :3903、Trae :3902）共用该体检。复现与差分：`node scripts/probe-qoder-pairing.mjs --offline`（宿主真实序列化器，不花额度）、`node scripts/probe-qoder-null-content.mjs --models dmodel --gw-local`。
 2. **带内失败帧上抛**（0.9.9 早前提交）：HTTP 200 里的业务错误不再被静默吞，流式给错误 chunk + `[DONE]`、非流式 502 `qoder_upstream_error` 带上游详情——这正是 Flash 故障的**可读表现**。
 3. **`Cosy-ClientType` 头保真**：官方 wasm 恒出 `5`，插件旧值 `'qoder'` 会在所有请求上留下第三方客户端指纹；已改为 `5`（与模型可用性无关，两种值下 Flash 都失败）。
 

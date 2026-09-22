@@ -254,9 +254,16 @@ export function createQoderGateway(deps) {
       for (const f of CHAT_FIELDS) {
         if (payload[f] !== undefined && payload[f] !== null) upstream[f] = payload[f]
       }
-      // tool 配对修复（实测根因：pi-ai 丢弃 error/aborted 的 assistant 但保留其
-      // toolResult → 上游 400 "role 'tool' must be a response to a preceding
-      // message with 'tool_calls'"）。只动 messages，字段与其余语义不碰。
+      // developer → system：宿主 pi-ai 对带 reasoning 的模型把 system prompt 序列化成
+      // `role:"developer"`（docs/rules/dev-role-boundary.md 同族），而 Qoder 上游在
+      // **反序列化阶段**就整请求拒绝（2026-09-22 实测 dmodel：details 内层
+      // "Failed to deserialize the JSON body..."，HTTP 200 信封带内错误）。两者指令
+      // 语义等价，出站折叠为 system（同 codebuddy 桥 transformChatPayload 的策略）。
+      // 只换 role、不原地改调用方对象。
+      upstream.messages = upstream.messages.map((m) => (m && m.role === 'developer' ? { ...m, role: 'system' } : m))
+      // tool 配对 + 可见性体检（真根因见 providers/tool-pairing.js 头注释：严格上游
+      // 把 content 为 null 的 assistant/tool 消息从配对校验里当不存在，宿主对**每一个**
+      // 工具回合都发 content:null → 该家族上工具必 400）。只动 messages。
       const pair = sanitizeToolPairing(upstream.messages)
       upstream.messages = pair.messages
       const repairedNote = describeRepair(pair.repaired)

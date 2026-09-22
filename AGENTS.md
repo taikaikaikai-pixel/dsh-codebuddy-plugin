@@ -1,6 +1,6 @@
 # AGENTS.md — dsh-tap 开发指南
 
-面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#39）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
+面向在本仓库工作的 AI 编码 agent（以及未来的你自己）。本文只放"每次都要的"：项目定位、架构、速查、命令、文档地图。**网关事实全表在 docs/rules/gateway-facts.md，踩坑全本（#1–#41）在 docs/pitfalls.md，版本史在 CHANGELOG.md**——所有"为什么"都在那里，别凭记忆改，按文末文档地图去读。
 
 ## 项目是什么
 
@@ -59,6 +59,8 @@ Qoder CN 通道：
 
 - **用量记账两链路分离**（臂 9 定论）：配额扣减（quota/usage 的 addOnQuota.used）对裸 OpenAI body 也**实时入账**（整数读数，小额探测会被取整吞掉）；统计视图（heatmap/summary/明细）是延迟批处理、由官方归因链驱动——网关已对齐（聊天归因信封+business 块+business/finish mode auth +/api/v1/tracking mode sign，verify-qoder [19] 锁定案）→ docs/rules/gateway-facts.md Qoder 节
 
+- **严格家族（dmodel/kmodel/mmodel）的配对校验器把 `content:null`/缺键的消息当"不存在"**——宿主对每个工具轮都发 `assistant{content:null,tool_calls}`，故网关出站必须做可见性归一（null→`''`）+ developer→system；容错家族（auto/qmodel/gmodel）对坏体静默容忍，**不能在它们上面验修复** → docs/rules/gateway-facts.md Qoder 节 + 踩坑 #41
+
 ## 踩坑速查（全本含代价与修复：docs/pitfalls.md；改代码前按编号查相关条）
 
 1. bundle 入口必须 `insert`，否则 dsh 只应用 patch、不执行 `apply()`
@@ -99,8 +101,9 @@ Qoder CN 通道：
 36. wasm-bindgen 的 RequestResult.headers 是 JS Map——`{...map}` 展开得空头组（服务器断连无报错），必须 Object.fromEntries；手写胶水位运算永远加括号（`ptr >>> 0 + len` ≡ `ptr >>> len`）
 37. 未知模型 key 被上游**静默改派 auto**——响应 model 字段 + billable:false 是哨兵，探测必须用真实目录 key
 38. 测试 fixture 禁写绝对日期（"未来时间"到期即必红）；"昨天绿今天红"先查 fixture 时钟
-39. pi-ai 丢弃 `stopReason=error/aborted` 的 assistant **但保留其 toolResult** → 出站孤儿 `role:"tool"` → 严格上游 400（Qoder `provider_error` 根因）；翻译网关出站前必须做消息配对体检（`sanitizeToolPairing`，verify-qoder [18] 锁定案）
+39. pi-ai 丢弃 `stopReason=error/aborted` 的 assistant **但保留其 toolResult** → 出站孤儿 `role:"tool"` → 严格上游 400（Qoder `provider_error` 的**次**因，主因见 #41）；翻译网关出站前必须做消息配对体检（`sanitizeToolPairing`，verify-qoder [18] 锁定案）
 40. 客户端 transcript 里的 usage 是 enrich 后的记录不是线缆帧；计费判别要让"实验量级 × 计数器分辨率"匹配——整数读数吞小额探测曾致"裸 body 不记账"假阴性（臂 9 大额复测推翻：配额实时入账）；能聊天/被记账/进统计视图是三条独立链路
+41. **严格上游把 `content:null`/缺键的消息当"不存在"**——宿主对每个工具轮都发 `assistant{content:null,tool_calls}` ⇒ dsh 在 dmodel/kmodel/mmodel 上第一次调工具就必 400（Qoder `provider_error` **主因**）；补桩/合成消息也必须用 `''`（首版修复的 null 桩让"修完仍报同一个错"）；在容错家族（qmodel/auto）上验修复等于没验；`role:"developer"` 另在反序列化阶段整请求被拒 → 出站折叠为 system（`probe-qoder-null-content.mjs` 单变量差分定案）
 
 ## 常用命令
 
@@ -118,6 +121,8 @@ node scripts/verify-trae-provider.mjs           # Trae 通道离线回归（mock
 node scripts/verify-qoder-provider.mjs          # Qoder CN 离线回归（mock 设备流全流程 + 翻译网关信封 + 目录投影）
 node scripts/probe-qoder-live.mjs --login       # Qoder CN 真实设备流登录（浏览器授权；令牌存 ~/.dsh/qoder-plugin-auth.json）
 node scripts/probe-qoder-live.mjs --chat "文本" # Qoder CN 真实对话（cosy 签名路径，证据落 docs/probes/）
+node scripts/probe-qoder-null-content.mjs [--models dmodel,kmodel] [--gw-local]  # content 可见性单变量差分（provider_error 真根因判别；--gw-local 用当前代码起临时网关做前后对比）
+node scripts/probe-qoder-pairing.mjs [--live] [--model dmodel]  # 宿主真实序列化器离线复现 tool 配对/可见性坏体 + 真实上游重放
 node scripts/probe-qoder-matrix.mjs --suite flash|tools|reject|repair  # Qoder 差分矩阵（逐变量隔离上游报错，证据 docs/probes/qoder-matrix-*.json）
 node scripts/probe-qoder-flash-confirm.mjs      # Qwen3.8-Flash 上游节点状态确认（3×Flash + 2×对照，恢复即翻绿）
 node scripts/probe-qoder-quota.mjs              # 用量计数器差分（quota/heatmap/summary 前后对比，--read-only 只读）
