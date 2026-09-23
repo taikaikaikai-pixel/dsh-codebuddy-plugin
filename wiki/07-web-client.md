@@ -97,7 +97,7 @@ details.cbc-adv（高级组）/ details.cbc-help（使用说明）。
 
 | 脚本 | 覆盖 | 实测 |
 |---|---|---|
-| `card-accordion.js` | **设置卡唯一回归套件**（接替 2026-09-23 退役的 `card-regression.js`）：四区块顺序/默认全收、状态行**独立预言机**双向对齐、展开才挂载与收起保留、多开独立、头部开关 1 POST、无注意条无徽标、挂载取样与收起停轮询、键盘可达（可信按键）、浅色与 `color-scheme`、mock GET/POST 通道（含踩坑 #45 退避补拉） | **117 通过 / 0 失败**（静态 `check(` 站点 115，`[B2]` 的 forEach 单处执行 3 次） |
+| `card-accordion.js` | **设置卡唯一回归套件**（接替 2026-09-23 退役的 `card-regression.js`）：四区块顺序/默认全收、状态行**独立预言机**双向对齐、展开才挂载与收起保留、多开独立、头部开关 1 POST、无注意条无徽标、挂载取样与收起边界重采恰一次与收起停轮询、键盘可达（可信按键）、浅色与 `color-scheme`、mock GET/POST 通道（含踩坑 #45 退避补拉） | **119 通过 / 0 失败**（静态 `check(` 站点 116 + `[B2]` 的 forEach 多跑 2 次 + `[C2]` 的 forEach 多跑 1 次） |
 | `qoder-slot-check.js` | 槽迁移 + Qoder CN 区块（入口必须点卡片 `cardTitle` 按钮，不是侧栏会话树同名行） | 13 / 13 |
 | `qoder-tab-phase2.js` | Qoder CN 区块：头部开关 / 目录同步条 / 模型启停组 / 端口行 / `details.cbc-adv` 真查元素 | 11 / 11 |
 | `qoder-prefs-check.js` | Qoder 模型行思考强度 + 上下文变体 select（含镜像生效与快照式复原） | 37 通过 / 0 失败 / 跳过 0（静态 39 站点，2 条在未触发分支）；**真实写盘**级 |
