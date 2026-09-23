@@ -26,7 +26,7 @@ window.__ModuleLoader__.load({
 3. **展开才挂载、收起不卸载**：`openBlocks` / `mountedBlocks` 两张状态表——首次展开才渲染该区块的分区，之后收起只置 `hidden`（DOM 与组件状态都留着）：草稿、滚动位置、已拉目录跨收起与保存保留。重活因此保持惰性（`model-list` / `trae-model-list` / `qoder-model-list` 在所属区块首次展开才拉）。
 4. **区块内固定分组**（三家同构，标题类 `cbc-group-title`）：`凭据 → 模型 → [工具] → 网关 → 高级`——只有 CodeBuddy 多一个「工具」组（搜索/抓取、生图，都走 CodeBuddy 网关）。模型组三家共用一条操作条 `.cbc-syncbar`：单按钮「同步目录」+ 上次同步状态文字 + 筛选框同行（筛选谓词 `matchesModelFilter` 三家共享，只过滤渲染、不发请求）。
 5. **两种 `<details>` 的分工**：`details.cbc-adv`（summary「高级」）= 纯工程项（域名族 / `baseURL` / `qoderClientId` / 认证与聊天域…）；`details.cbc-help`（`HelpNote`，summary「使用说明」）= >60 字的背景说明。两者都是原生 `<details>`、零 JS 状态、父组件重渲染不复位；短的就地点提示直显、不进折叠。
-6. **通用区块头取样**：「额度 / 服务商数」不在 GET 视图里 ⇒ 卡片挂载时各做一次 `action:'usage'` 与 `provider-list`（一次性、不轮询；取到前显示 `额度 — · 服务商 —`）。**api-key 模式不编数字**：`quota.numericQuota` 为假（数值额度是 OAuth 专享）时落「额度 估算（累计 x）」分支，OAuth 声明了数值额度却读取失败（`resourceError`）时只显 `额度 —`（`generalSummary` 三分支）。用量 10s 轮询**严格随区块展开启停**（`sectionProps.usage.active = !!openBlocks.general`）；`credential-scan` **不上移**——仍在通用区块首次挂载才做（它会扫本机文件，不该每次开卡都触发）。
+6. **通用区块头取样**：「额度 / 服务商数」不在 GET 视图里 ⇒ 卡片挂载时各做一次 `action:'usage'` 与 `provider-list`（取到前显示 `额度 — · 服务商 —`）。**取样口径两句分明（spec §3 终审措辞更正——旧写法「一次性、不轮询」会被下游读成「永不更新」）**：① **不做周期轮询**（头部四行常驻，定时打 usage = 每次开卡都多付一份上游额度只读，成本考虑）② **「通用」区块由展开转收起时重采一次**（`sampleGeneralHead()` + `useRef` 记前值、deps `[!!openBlocks.general]`；头部是"区块头 = 状态单一真源"的载体，只采挂载那一刻会让它停在"打开页面那一瞬"的快照、与正下方每 10s 轮询的正文自相矛盾；展开时不采——正文自己会拉）。**api-key 模式不编数字**：`quota.numericQuota` 为假（数值额度是 OAuth 专享）时落「额度 估算（累计 x）」分支，OAuth 声明了数值额度却读取失败（`resourceError`）时只显 `额度 —`（`generalSummary` 三分支）。用量 10s 轮询**严格随区块展开启停**（`sectionProps.usage.active = !!openBlocks.general`）；`credential-scan` **不上移**——仍在通用区块首次挂载才做（它会扫本机文件，不该每次开卡都触发）。
 7. **保存反馈落点**：`save(patch, blockId)` → `saved = {block, at}`，「已保存 ✓」flash（`cbc-saveflash`）出现在**触发该次保存的区块头**，1.8s 自愈；它是常驻占位、用 `visibility` 切换，所以出现/消失不会挤压同行 checkbox 的水平位置。
 
 | 区块 | 分区（`BLOCK_SECTIONS`） | 展开后内容 |
@@ -97,7 +97,7 @@ details.cbc-adv（高级组）/ details.cbc-help（使用说明）。
 
 | 脚本 | 覆盖 | 实测 |
 |---|---|---|
-| `card-accordion.js` | **设置卡唯一回归套件**（接替 2026-09-23 退役的 `card-regression.js`）：四区块顺序/默认全收、状态行**独立预言机**双向对齐、展开才挂载与收起保留、多开独立、头部开关 1 POST、无注意条无徽标、挂载取样与收起边界重采恰一次与收起停轮询、键盘可达（可信按键）、浅色与 `color-scheme`、mock GET/POST 通道（含踩坑 #45 退避补拉） | **119 通过 / 0 失败**（静态 `check(` 站点 116 + `[B2]` 的 forEach 多跑 2 次 + `[C2]` 的 forEach 多跑 1 次） |
+| `card-accordion.js` | **设置卡唯一回归套件**（接替 2026-09-23 退役的 `card-regression.js`）：四区块顺序/默认全收、状态行**独立预言机**双向对齐、展开才挂载与收起保留、多开独立、头部开关 1 POST、无注意条无徽标、挂载取样与收起边界重采恰一次与收起停轮询、键盘可达（可信按键）、浅色与 `color-scheme`、mock GET/POST 通道（含踩坑 #45 退避补拉两枚锁：`[B4]` 续跑自愈 / `[B5]` 补拉链**启动点**在竞争包作废时照旧启动，后者兼作 A2 请求代次门的时序锁） | **129 通过 / 0 失败**（静态 `check(` 站点 126 + `[B2]` 的 forEach 多跑 2 次 + `[C2]` 的 forEach 多跑 1 次） |
 | `qoder-slot-check.js` | 槽迁移 + Qoder CN 区块（入口必须点卡片 `cardTitle` 按钮，不是侧栏会话树同名行） | 13 / 13 |
 | `qoder-tab-phase2.js` | Qoder CN 区块：头部开关 / 目录同步条 / 模型启停组 / 端口行 / `details.cbc-adv` 真查元素 | 11 / 11 |
 | `qoder-prefs-check.js` | Qoder 模型行思考强度 + 上下文变体 select（含镜像生效与快照式复原） | 37 通过 / 0 失败 / 跳过 0（静态 39 站点，2 条在未触发分支）；**真实写盘**级 |

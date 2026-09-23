@@ -1551,8 +1551,8 @@ cd /c/Users/21613/dev/dsh-tap && git status --short && git add lib/client.js \
 
 - [x] **Step 0: 前 8 个任务路由至此的收口项（控制方裁定，逐条做完）**
 
-  1. **数字口径（Task 7/8 实测；CHANGELOG 与 wiki 一律从这里取，不许沿用文档旧数）**：`card-accordion.js` **119 断言全绿**（静态 `check(` 站点 116 + `[B2]` 循环多跑 2 次 + `[C2]` 循环多跑 1 次；三段口径 = 迁移期 117 → 跨分支终审轮 118（`[C2]` 补 Qoder 半边）→ 终审残余修复轮 119（`[F9]` 补「收起边界重采恰一次」的正向锁）——Task 7/8 当时实测值就是那条历史里的 117，不改写）；`qoder-slot-check.js` 13/13、`qoder-tab-phase2.js` 11/11、`qoder-prefs-check.js` 37 通过 / 0 失败 / 跳过 0（静态 39 站点，2 条在未触发分支）、`shots-baseline.js` 十张元素级基线 0 失败、`debug-inputs.js` 实跑 exit 0。**`qoder-e2e.js` 未跑**（会真实发消息消耗用户额度，控制方裁定跳过）⇒ CHANGELOG 必须如实写"未跑（额度考虑）"，不得声称通过。
-  2. **用户可见文案（Task 6 审查 Minor 11 路由至此）**：`UsageSection` 仍写「本页可见时每 10 秒自动刷新」，而语义自 Task 1 起是「通用区块展开时」（`grep -n '本页可见时' lib/client.js`）⇒ 改成「通用区块展开时每 10 秒自动刷新」，改完重跑 `card-accordion.js` 确认仍 117/117（该步当时的实况；现口径 119，见上一条）。
+  1. **数字口径（Task 7/8 实测；CHANGELOG 与 wiki 一律从这里取，不许沿用文档旧数）**：`card-accordion.js` **129 断言全绿**（静态 `check(` 站点 126 + `[B2]` 循环多跑 2 次 + `[C2]` 循环多跑 1 次；四段口径 = 迁移期 117 → 跨分支终审轮 118（`[C2]` 补 Qoder 半边）→ 终审残余修复轮 119（`[F9]` 补「收起边界重采恰一次」的正向锁）→ 复审修复轮 129（`[B5]` 十断言：退避链**启动点**在竞争包作废时照旧要启动，兼作 A2 请求代次门的时序锁）——Task 7/8 当时实测值就是那条历史里的 117，不改写）；`qoder-slot-check.js` 13/13、`qoder-tab-phase2.js` 11/11、`qoder-prefs-check.js` 37 通过 / 0 失败 / 跳过 0（静态 39 站点，2 条在未触发分支）、`shots-baseline.js` 十张元素级基线 0 失败、`debug-inputs.js` 实跑 exit 0。**`qoder-e2e.js` 未跑**（会真实发消息消耗用户额度，控制方裁定跳过）⇒ CHANGELOG 必须如实写"未跑（额度考虑）"，不得声称通过。
+  2. **用户可见文案（Task 6 审查 Minor 11 路由至此）**：`UsageSection` 仍写「本页可见时每 10 秒自动刷新」，而语义自 Task 1 起是「通用区块展开时」（`grep -n '本页可见时' lib/client.js`）⇒ 改成「通用区块展开时每 10 秒自动刷新」，改完重跑 `card-accordion.js` 确认仍 117/117（该步当时的实况；现口径 129，见上一条）。
   3. **CHANGELOG 要记两条反复，不能只记结果**：① 键盘激活补丁 `48329a7` 加了又 revert（`4dd9f52`）——起因是回归锁用 `dispatchEvent` 派发**不可信** keydown 测出伪缺陷；② 浅色原生控件配色缺陷（宿主无条件 `color-scheme: dark`）由截图基线**人工看图**发现、`a421d35` 修复。
   4. **新增踩坑三条**（`docs/pitfalls.md` 取新编号 #46/#47/#48，并在 AGENTS.md「踩坑速查」各加一行——这是对 Step 3 里"本轮无新坑"那句的更正，本轮确实踩到三条，每条都付了一轮 fix 的学费）：
      - **#46 键盘可达性断言必须用可信按键**：`dispatchEvent(new KeyboardEvent(...))` 不触发原生 `<button>` 的默认激活 ⇒ 测出的"不翻转"是 harness 伪缺陷；曾为此在产品代码加 7 行 `onKeyDown` 又撤销。正解 = `page.keyboard.press(...)`。
@@ -1659,7 +1659,7 @@ git commit -m "feat(client)!: 设置卡改通道手风琴（v0.10.0）——4 �
 | §3 状态行真源（沿用 `buildChips`、删 `tabBadge`） | Task 1（`blockStatus`）+ Task 2（去前缀、删 `tab`/`tabTitle`） |
 | §3 通用区块头取样 + api-key 降级 + `credential-scan` 不上移 | Task 6 |
 | §3 删注意条/折叠三芯片/标签徽标；旧槽按需单芯片 | Task 2 |
-| §3 硬修复清单 11 条（`settleGateways`/`fetchWithTimeout`/`PanelBoundary`/同步开窗/图标候选/幽灵输入/同值去重/模块级编辑器/`e.message`/脱敏/失焦即保存） | 贯穿 Task 1–6；`settleGateways` 由 `[B4]` 锁定，`PanelBoundary` 粒度在 Task 1 Step 6e，同值去重与模块级编辑器为"不动即保留"（Task 3/5 明确沿用） |
+| §3 硬修复清单 **12 条**（`settleGateways`/`fetchWithTimeout`/`PanelBoundary`/同步开窗/图标候选/幽灵输入/同值去重/模块级编辑器/`e.message`/脱敏/失焦即保存 + 终审补的第 12 条「写后读必须带请求代次」） | 贯穿 Task 1–6；`settleGateways` 由 `[B4]`（补拉自愈）+ `[B5]`（补拉链**启动点**在竞争包作废时照旧启动）锁定，第 12 条的代次门由 `[B5]` 的"迟到包不得覆写新态"时序断言锁定，`PanelBoundary` 粒度在 Task 1 Step 6e，同值去重与模块级编辑器为"不动即保留"（Task 3/5 明确沿用） |
 | §4 通道内 5 分组 + `details.cbc-adv` | Task 4 |
 | §4 模型组同构（同步合并 + 三家筛选） | Task 5 |
 | §4 区块头开关（Trae/Qoder 唯一落点） | Task 3 |
