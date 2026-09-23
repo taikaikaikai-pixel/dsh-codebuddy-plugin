@@ -82,7 +82,7 @@ npm run verify:bridge && npm run verify:core && npm run verify:providers \
   - DOM 契约：`.cbc-acc[data-block=<id>]`（区块根）、`.cbc-acc.cbc-open`（展开态）、`.cbc-acc-toggle[data-block=<id>]`（展开按钮）、`.cbc-acc-title`、`.cbc-acc-status`、`.cbc-acc-body[data-block=<id>]#cbc-block-<id>`（`hidden` 表示收起）
   - CSS 类：`.cbc-acc`、`.cbc-acc-head`、`.cbc-acc-toggle`、`.cbc-acc-title`、`.cbc-acc-status`、`.cbc-acc-body`
 
-- [ ] **Step 1: 写失败的回归脚本（新套件，从零建）**
+- [x] **Step 1: 写失败的回归脚本（新套件，从零建）**
 
 创建 `C:/Users/21613/dev/dsh-ui-test/card-accordion.js`，完整内容：
 
@@ -251,7 +251,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 })().catch((e) => { console.error("ERROR", e); process.exit(1); });
 ```
 
-- [ ] **Step 2: 跑一次确认红**
+- [x] **Step 2: 跑一次确认红**
 
 ```bash
 cd /c/Users/21613/dev/dsh-launcher && ./node_modules/.bin/dsh web > /c/Users/21613/dev/dsh-ui-test/dsh-web.log 2>&1 &
@@ -261,7 +261,7 @@ cd /c/Users/21613/dev/dsh-ui-test && node card-accordion.js "http://127.0.0.1:30
 
 Expected: `[A1]`–`[A6]` 全 FAIL（`.cbc-acc*` 尚不存在，`st.ids` 为 `[]`），`[0]` 两条 ok，退出码 1。
 
-- [ ] **Step 3: 加 CSS（追加到 `CSS_TEXT` 数组末尾，锚点 `".cbc-help summary:hover{...}"` 之后）**
+- [x] **Step 3: 加 CSS（追加到 `CSS_TEXT` 数组末尾，锚点 `".cbc-help summary:hover{...}"` 之后）**
 
 ```js
 			// ---- 通道手风琴（0.10.0 交互模型）----
@@ -276,7 +276,7 @@ Expected: `[A1]`–`[A6]` 全 FAIL（`.cbc-acc*` 尚不存在，`st.ids` 为 `[]
 			".cbc-acc-body[hidden]{display:none}",
 ```
 
-- [ ] **Step 4: 用区块定义替换标签定义（锚点 `var TAB_DEFS = [`，`:363`–`:373`）**
+- [x] **Step 4: 用区块定义替换标签定义（锚点 `var TAB_DEFS = [`，`:363`–`:373`）**
 
 把 `TAB_DEFS` 与 `var PANEL_RENDERERS = {};` 整体替换为：
 
@@ -303,7 +303,7 @@ Expected: `[A1]`–`[A6]` 全 FAIL（`.cbc-acc*` 尚不存在，`st.ids` 为 `[]
 
 然后把 8 处 `PANEL_RENDERERS.xxx = YyySection;` 改名为 `SECTION_RENDERERS.xxx = YyySection;`（键不变：`login`/`models`/`usage`/`tools`/`providers`/`trae`/`qoder`/`bridge`）。
 
-- [ ] **Step 5: 加状态行与区块头（放在 `buildChips` 之后、`LoginSection` 之前；同时删掉 `tabBadge` 整个函数 `:682`–`:712`）**
+- [x] **Step 5: 加状态行与区块头（放在 `buildChips` 之后、`LoginSection` 之前；同时删掉 `tabBadge` 整个函数 `:682`–`:712`）**
 
 ```js
 		// 区块头状态行：判定口径沿用 buildChips（唯一真源）。每个区块取自己那几枚
@@ -363,7 +363,7 @@ Expected: `[A1]`–`[A6]` 全 FAIL（`.cbc-acc*` 尚不存在，`st.ids` 为 `[]
 			".cbc-chevronwrap{flex:0 0 auto;display:inline-flex}",
 ```
 
-- [ ] **Step 6: 重写 `CodeBuddyCard` 的状态与渲染（`:381`–`:611`）**
+- [x] **Step 6: 重写 `CodeBuddyCard` 的状态与渲染（`:381`–`:611`）**
 
 改动点（其余逻辑——`load`/`post`/`save`/`settleGateways`/`prevOpenRef` 副作用——原样保留）：
 
@@ -485,7 +485,7 @@ Expected: `[A1]`–`[A6]` 全 FAIL（`.cbc-acc*` 尚不存在，`st.ids` 为 `[]
 
 （`strip` 本任务**保留**，Task 2 删；`headChips` 同样保留到 Task 2。）
 
-- [ ] **Step 7: 跑回归确认绿**
+- [x] **Step 7: 跑回归确认绿**
 
 ```bash
 cd /c/Users/21613/dev/dsh-ui-test && node card-accordion.js "http://127.0.0.1:3080/?token=<TOKEN>"
@@ -493,7 +493,7 @@ cd /c/Users/21613/dev/dsh-ui-test && node card-accordion.js "http://127.0.0.1:30
 
 Expected: `[A1]`–`[A7]` 全 ok（14 通过 / 0 失败），退出码 0。刷新页面即生效（profile 已 link 本仓库）；若断言全红先确认没有浏览器缓存（脚本已带 `--disable-http-cache`）。
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap
@@ -515,7 +515,7 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
 - Consumes: Task 1 的 `blockStatus`/`BlockHead`/`.cbc-acc-*` DOM 契约、`settleGateways`/`GATEWAY_SETTLE_DELAYS`
 - Produces: `buildChips(data)` 的 `text` 去掉品牌前缀（`"Trae 运行中"` → `"运行中"`）并删除 `tab`/`tabTitle` 字段（消费者已消失）；`attentionCount(data)` → `number`（warn/err 芯片个数，旧槽折叠态按需芯片用）；`blockStatus(data, generalText)` 签名不变
 
-- [ ] **Step 1: 追加失败断言（插在 `card-accordion.js` 的 `await browser.close();` 之前）**
+- [x] **Step 1: 追加失败断言（插在 `card-accordion.js` 的 `await browser.close();` 之前）**
 
 ```js
   // ---- [B] 状态收敛：三套状态展示退役，warn 只出现在区块头 ----
@@ -648,11 +648,11 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
   await page2.close();
 ```
 
-- [ ] **Step 2: 跑一次确认红**
+- [x] **Step 2: 跑一次确认红**
 
 Expected: `[B1]` 无注意条 FAIL（`strip` 仍在）、`[B2]` 品牌前缀 FAIL、`[B3]`/`[B4]` 相关项 FAIL；退出码 1。
 
-- [ ] **Step 3: 删三套状态展示 + 去品牌前缀**
+- [x] **Step 3: 删三套状态展示 + 去品牌前缀**
 
 3a. `buildChips` 内：删掉每个芯片的 `tab`/`tabTitle` 包装（`Object.assign({ tab: ..., tabTitle: ... }, login)` → 直接 `login`），并把 trae/qoder 的 `text` 去掉品牌前缀：
 
@@ -700,11 +700,11 @@ Expected: `[B1]` 无注意条 FAIL（`strip` 仍在）、`[B2]` 品牌前缀 FAI
 
 3f. CSS 清理：删 `".cbc-strip{...}"`（注意条已无），并删掉 Task 1 留下的死规则 `.cbc-tabs` / `.cbc-tab` / `.cbc-tab:hover` / `.cbc-tab:focus-visible` / `.cbc-tab.cbc-active` / `.cbc-tabcount` / `.cbc-tabcount.cbc-ok` / `.cbc-tabcount.cbc-warn` / `.cbc-panel` / `.cbc-panel[hidden]`（删前 grep 确认 JS 侧零引用）。**必须保留** `.cbc-saveflash`（`BlockHead` 的「已保存 ✓」在用）、`.cbc-chip` 与 `button.cbc-chip*`（折叠态按需芯片 + 用量页账户/流式桥行内芯片在用）、`.cbc-dot*`。
 
-- [ ] **Step 4: 跑回归确认绿**
+- [x] **Step 4: 跑回归确认绿**
 
 Expected: 全部 ok（Task 1 的 14 条 + `[B1]`–`[B4]` 共 12 条 = 26 通过 / 0 失败）。
 
-- [ ] **Step 5: 哈希对账（mock 通道零写入）**
+- [x] **Step 5: 哈希对账（mock 通道零写入）**
 
 ```bash
 md5sum ~/.dsh/codebuddy-plugin.json
@@ -712,7 +712,7 @@ md5sum ~/.dsh/codebuddy-plugin.json
 
 Expected: 与跑前一致（`[B3]`/`[B4]` 全走 mock，不应有任何真实写入）。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap && git add lib/client.js
@@ -731,7 +731,7 @@ git commit -m "feat(client): 状态收敛到区块头——删注意条/折叠�
 - Consumes: `BlockHead` 的 `control` 槽、`saveIn(blockId)`、`data.value.traeEnabled`/`qoderEnabled`、`overriddenFor(data)`
 - Produces: DOM 契约 `.cbc-acc-head input.cbc-check[data-field=traeEnabled|qoderEnabled]`；`BlockHead` 的 `control` 用法固定为「checkbox + 文案 + ResetButton」
 
-- [ ] **Step 1: 追加失败断言（插在 `[B4]` 组之后、`await browser.close();` 之前）**
+- [x] **Step 1: 追加失败断言（插在 `[B4]` 组之后、`await browser.close();` 之前）**
 
 ```js
   // ---- [C] 区块头启用开关（Trae/Qoder 唯一落点）----
@@ -794,11 +794,11 @@ git commit -m "feat(client): 状态收敛到区块头——删注意条/折叠�
   await page3.close();
 ```
 
-- [ ] **Step 2: 跑一次确认红**
+- [x] **Step 2: 跑一次确认红**
 
 Expected: `[C1]`–`[C3]` FAIL（头部还没有开关），退出码 1。
 
-- [ ] **Step 3: 在 `blocks` 构造里给 Trae/Qoder 传 `control`**
+- [x] **Step 3: 在 `blocks` 构造里给 Trae/Qoder 传 `control`**
 
 在 Task 1 Step 6e 的 `blocks` map 内，`createElement(BlockHead, {...})` 的参数对象上加 `control`：
 
@@ -829,17 +829,17 @@ Expected: `[C1]`–`[C3]` FAIL（头部还没有开关），退出码 1。
 								: null,
 ```
 
-- [ ] **Step 4: 删掉两个分区里的「启用通道」行**
+- [x] **Step 4: 删掉两个分区里的「启用通道」行**
 
 `TraeSection`：删除 `createElement("div", { className: "cbc-row" }, createElement("div", { className: "cbc-row-label" }, "启用通道"), ...)` 整段（`:1628`–`:1635`，含其中的 `ResetButton`）。原行内那句"翻译网关已上线（:3902，运行中/未监听）"的信息不丢——它已由区块头状态行 + 网关组承载（Task 4 会在网关组补一行状态文字）。
 
 `QoderSection`：同样删除「启用通道」整段（`:1897`–`:1904`）。
 
-- [ ] **Step 5: 跑回归确认绿**
+- [x] **Step 5: 跑回归确认绿**
 
 Expected: 全部 ok（26 + 6 = 32 通过 / 0 失败）。
 
-- [ ] **Step 6: 哈希对账 + 提交**
+- [x] **Step 6: 哈希对账 + 提交**
 
 ```bash
 md5sum ~/.dsh/codebuddy-plugin.json   # 必须与跑前一致
@@ -859,7 +859,7 @@ git commit -m "feat(client): Trae/Qoder 启用开关上移到区块头（收起�
 - Consumes: 各分区组件现有 props（不变）
 - Produces: DOM 契约 `.cbc-acc-body[data-block=X] .cbc-group-title` 文本序列；`高级` 组统一用 `<details className="cbc-adv">`（`summary` 文本 `高级`），与说明用的 `details.cbc-help`（`summary` 文本 `使用说明`）区分开
 
-- [ ] **Step 1: 追加失败断言**
+- [x] **Step 1: 追加失败断言**
 
 ```js
   // ---- [D] 通道内部分组：固定顺序 + 高级折叠 ----
@@ -899,11 +899,11 @@ git commit -m "feat(client): Trae/Qoder 启用开关上移到区块头（收起�
   await page.screenshot({ path: "shots/acc-task4-groups.png" });
 ```
 
-- [ ] **Step 2: 跑一次确认红**
+- [x] **Step 2: 跑一次确认红**
 
 Expected: `[D1]`–`[D3]` FAIL（分组标题与 `details.cbc-adv` 尚不存在）。
 
-- [ ] **Step 3: 加 CSS 与各分区的组标题**
+- [x] **Step 3: 加 CSS 与各分区的组标题**
 
 CSS 追加：
 
@@ -926,7 +926,7 @@ CSS 追加：
 - `UsageSection`：返回体最前插 `createElement("p", { className: "cbc-group-title" }, "额度与用量"),`
 - `ProvidersSection`：返回体最前插 `createElement("p", { className: "cbc-group-title" }, "服务商"),`
 
-- [ ] **Step 4: 拆 `BridgeAdvancedSection` 为「网关」+「高级」**
+- [x] **Step 4: 拆 `BridgeAdvancedSection` 为「网关」+「高级」**
 
 把函数体重排为（保留全部字段与 `ResetButton`，只改分组与容器）：
 
@@ -950,7 +950,7 @@ CSS 追加：
 
 （`/* … */` 处是把现有 `:1940`–`:1976` 的 5 个 `cbc-row` 与 `:1980`–`:1984` 的 baseURL 行**原样剪切**过来，不改字段、不改文案、不改 `ResetButton`；删掉中间的 `hr.cbc-divider` 与旧的 `"流式桥"`/`"高级"` 两个 `cbc-group-title`。）
 
-- [ ] **Step 5: Trae/Qoder 的域名组统一为 `details.cbc-adv`**
+- [x] **Step 5: Trae/Qoder 的域名组统一为 `details.cbc-adv`**
 
 `TraeSection`：把「连接域名」那一行 `cbc-toggle` 按钮 + `advOpen ? ... : null` 的两段（`:1673`–`:1683`）替换为：
 
@@ -967,17 +967,17 @@ CSS 追加：
 
 `QoderSection`：同样替换 `:1916`–`:1927`，四个字段 `qoderLoginHost`/`qoderOpenapiBaseURL`/`qoderInferBaseURL`/`qoderClientId` 原样搬进 `details.cbc-adv`，删掉 `advOpenState`/`advOpen`/`setAdvOpen`。
 
-- [ ] **Step 5b: 网关组补失败原因出口（Task 3 审查 Minor 2 路由至此）**
+- [x] **Step 5b: 网关组补失败原因出口（Task 3 审查 Minor 2 路由至此）**
 
 Trae/Qoder 的网关组内加一行状态文字，取 `props.trae.bridge` / `props.qoder.bridge` 的 `running`/`port`/`lastError`：未监听时把 `lastError`（如 `EADDRINUSE`）显示出来——踩坑 #7「错误提示要带原因」，Task 3 删「启用通道」行后它是 :3902/:3903 失败原因的唯一可能出口。口径照 CodeBuddy 流式桥行（`bridgeView.lastError` 那段）写。
 
 断言 `[D4]`：mock 视图给 `trae.bridge = {running:false, port:null, lastError:"mock-eaddrinuse"}`（qoder 同），展开 Trae/Qoder 后其网关组文案含 `mock-eaddrinuse`。
 
-- [ ] **Step 6: 跑回归确认绿**
+- [x] **Step 6: 跑回归确认绿**
 
 Expected: 全部 ok（32 + 7 = 39 通过 / 0 失败）。
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap && git add lib/client.js
@@ -996,7 +996,7 @@ git commit -m "feat(client): 通道内分组（凭据/模型/工具/网关/高�
 - Consumes: `post({action:'model-sync'})` / `post({action:'model-list'})` / `post({action:'trae-model-sync'})` / `post({action:'trae-model-list'})` / `post({action:'qoder-model-sync'})` / `post({action:'qoder-model-list'})`（全部现有 action，不改）
 - Produces: DOM 契约 `.cbc-acc-body[data-block=X] .cbc-syncbar`（操作条：1 个 `button` + `.cbc-muted` 状态文字 + 筛选 `input[placeholder*="过滤"]`）
 
-- [ ] **Step 1: 追加失败断言**
+- [x] **Step 1: 追加失败断言**
 
 ```js
   // ---- [E] 模型组统一 ----
@@ -1066,11 +1066,11 @@ git commit -m "feat(client): 通道内分组（凭据/模型/工具/网关/高�
   await page4.close();
 ```
 
-- [ ] **Step 2: 跑一次确认红**
+- [x] **Step 2: 跑一次确认红**
 
 Expected: `[E1]`/`[E2]` FAIL（`.cbc-syncbar` 不存在；CodeBuddy 仍是两个按钮）。
 
-- [ ] **Step 3: CodeBuddy 模型组——两按钮合并 + 操作条容器**
+- [x] **Step 3: CodeBuddy 模型组——两按钮合并 + 操作条容器**
 
 把 `ModelsSection` 的「目录同步」行与「筛选」行（`:1281`–`:1291`）合并成一个 `.cbc-syncbar`：
 
@@ -1113,7 +1113,7 @@ CSS 追加：
 			".cbc-syncbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px}",
 ```
 
-- [ ] **Step 4: Trae/Qoder 模型组同构（加 `.cbc-syncbar` + 筛选）**
+- [x] **Step 4: Trae/Qoder 模型组同构（加 `.cbc-syncbar` + 筛选）**
 
 两个分区各加一个 `filter` 本地态与同款操作条。`TraeSection`（把「模型目录」行 `:1646`–`:1650` 换掉，并在 `tmodelRows` 的列表渲染前按 filter 过滤）：
 
@@ -1147,18 +1147,18 @@ CSS 追加：
 
 **注意**：Trae/Qoder 的操作条要在「通道未启用」时也渲染（现在模型组整体在 `value.xxxEnabled === true` 才出现）——把 `.cbc-syncbar` 提到该条件之外，只有**列表**部分保留条件；未启用时状态文字后面追加一句「（通道未启用）」，避免用户对着一个不生效的按钮发愣。
 
-- [ ] **Step 4b: 模型子标题降一级 + [D1] 收紧 + 高级 summary 补 title + adv 输入计数（Task 4 审查 Minor 2/3/4/5 路由至此）**
+- [x] **Step 4b: 模型子标题降一级 + [D1] 收紧 + 高级 summary 补 title + adv 输入计数（Task 4 审查 Minor 2/3/4/5 路由至此）**
 
   1. 新增 CSS `.cbc-subtitle{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary,inherit);margin:8px 0 4px}`；把模型列表的子标题（ModelsSection 的「当前可用（N）」「未启用（N）」、Trae/Qoder 的「X 模型（选择器内 n/m）」）从 `.cbc-group-title` 改为 `.cbc-subtitle`——一级序列契约（`.cbc-group-title` = 凭据/模型/工具/网关/高级）由此恢复逐字成立，视觉层级也不再与一级标题平级。
   2. `[D1]` 由 isSubsequence 收紧为**直接子元素逐字全等**：`.cbc-section > .cbc-group-title` 与 `.cbc-section > details.cbc-adv > summary` 的并集序列 == 期望序列（乱序/缺组/一级标题进错分区都必须红）。
   3. 两处 `details.cbc-adv` 的 `summary` 加 `title` 属性复述旧折叠按钮携带的提示（Trae：「认证 / 聊天 / 登录域」；Qoder：「登录域 / OpenAPI / infer / client_id」）；可见文本仍为「高级」，断言不变。
   4. `[D2]` 补输入计数断言：qoder 的 `details.cbc-adv input` 数 === 4、codebuddy 的 === 1（trae 的 === 3 已有）。
 
-- [ ] **Step 5: 跑回归确认绿**
+- [x] **Step 5: 跑回归确认绿**
 
 Expected: 全部 ok（Task 4 收尾 56 通过 + 本任务 [E1]×2 + [E2]×4 + Step 4b [D2]×2 = 64 通过 / 0 失败；实际数目若不符，须在报告里解释差额）。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap && git add lib/client.js
@@ -1177,7 +1177,7 @@ git commit -m "feat(client): 三家模型组同构——「同步目录」单按
 - Consumes: `post({action:'usage'})` → `{ok,usage,bridge,quota}`；`post({action:'provider-list'})` → `{ok,providers,presets}`；`blockStatus(data, generalText)`
 - Produces: `generalSummary(usageRes, providersRes)` → `string`（区块头文案）；`useGeneralSample(post)` → `{text, usage, providers}`（卡片级一次性取样，不轮询）
 
-- [ ] **Step 1: 追加失败断言**
+- [x] **Step 1: 追加失败断言**
 
 **变量名裁定（落盘时改，其余逐字照抄）**：下面代码里的 `page5` / `pageErrors5` / `page6` 与 Task 5 已落地的 `[E2]` 组 `const page5`（`card-accordion.js:516`）**同作用域重名**，直接落盘会 SyntaxError ⇒ 统一改名为 `pageF1` / `pageErrorsF1` / `pageF6`。
 
@@ -1274,11 +1274,11 @@ git commit -m "feat(client): 三家模型组同构——「同步目录」单按
   await page6.close();
 ```
 
-- [ ] **Step 2: 跑一次确认红**
+- [x] **Step 2: 跑一次确认红**
 
 Expected: `[F1]`–`[F6]` FAIL（挂载时没有取样，通用头部还是占位文案）。
 
-- [ ] **Step 3: 卡片级一次性取样 + `generalText`**
+- [x] **Step 3: 卡片级一次性取样 + `generalText`**
 
 在 `CodeBuddyCard` 里（`load` 之后）加：
 
@@ -1329,16 +1329,16 @@ Expected: `[F1]`–`[F6]` FAIL（挂载时没有取样，通用头部还是占�
 
 **注意 `post()` 的返回形状**：现有 `post` 解析成 `{ok, status, d}`，所以取样读 `res.d.quota` / `res.d.providers`（上面代码已按此写）。
 
-- [ ] **Step 4: 确认 `UsageSection` 的轮询条件已是"区块展开"**
+- [x] **Step 4: 确认 `UsageSection` 的轮询条件已是"区块展开"**
 
 Task 1 已把 `usage` 的 `active` 接到 `!!openBlocks.general`；本步只做核对：`UsageSection` 内 `useEffect(..., [active])` 在 `active === false` 时 `return undefined`（不设 interval），且分区**只在通用区块首次展开时才挂载** ⇒ `[F4]`/`[F5]` 的语义成立。若发现挂载即轮询（`active` 默认 `true`），改为 `props.active === true`。
 
-- [ ] **Step 4b: general 一级标题契约对齐（控制器指派，承接 Task 5 的 `.cbc-subtitle` 裁定）**
+- [x] **Step 4b: general 一级标题契约对齐（控制器指派，承接 Task 5 的 `.cbc-subtitle` 裁定）**
 
   1. `UsageSection` 里两处**子标题**从 `.cbc-group-title` 降为 `.cbc-subtitle`：资源包表头（`grep -n 'key: "pkh"' lib/client.js`）与「最近轮次（按间隔聚类，近似）」（`grep -n '最近轮次' lib/client.js`）。general 的一级标题只留「额度与用量」（`UsageSection`）与「服务商」（`ProvidersSection`）。
   2. 套件追加 `[F7]` **两条**断言：`.cbc-acc-body[data-block=general]` 内每个 `.cbc-section` 的**直接子级** `.cbc-group-title` 文本序列逐字全等——`UsageSection` === `["额度与用量"]`、`ProvidersSection` === `["服务商"]`。选择器不中时必须红（不许 `[].every()` 型恒真）。general 是懒挂载，**复用 `[F4]` 已展开的 `pageF1`**（在 `[F5]` 收起之前读），别新开页面。
 
-- [ ] **Step 4c: 审查路由至此的加固（Task 6 审查 Minor 2/3/6/7/9）**
+- [x] **Step 4c: 审查路由至此的加固（Task 6 审查 Minor 2/3/6/7/9）**
 
   1. `generalSummary`：`numericQuota` 为真但带 `resourceError`（分区自己会渲染「数值额度读取失败」）时，头部**不得**落进「估算（累计 …）」分支——`q.resourceError` 存在即出 `额度 —`。理由：已声明数值额度却读失败时给一个累计估算数字，语义偏（spec §3 的意图是不编数字）。
   2. 卡片层取样的外层 `.catch` 补 `console.warn`（两个输入各自 `.catch(() => null)` ⇒ 外层只可能捕到 `generalSummary`/`setGenSample` 自己的 bug，静默置 null 会让头部永远停在占位文案且无线索，违踩坑 #7）。
@@ -1347,11 +1347,11 @@ Task 1 已把 `usage` 的 `active` 接到 `!!openBlocks.general`；本步只做�
   5. `[F7]` 的两处内联 `JSON.stringify(…) === JSON.stringify(…)` 改用套件既有的 `sameSeq` helper。
   6. 新增 `[F8]` mock 组（**独立 `newPage(installer)`**，主 page 不装 mock）：`action:'usage'` 返回 `{ok:true, quota:{numericQuota:true, resourceError:"mock-quota-401"}, usage:{totalCredit:7,…}}`、`provider-list` 返回 1 条 ⇒ 断言头部含 `额度 —`、**不含** `估算`/`累计`/任何数字额度。这是 4c-1 的覆盖测试：改前必须红。两条断言（mock 通道可开 + 头部不编数字）。
 
-- [ ] **Step 5: 跑回归确认绿**
+- [x] **Step 5: 跑回归确认绿**
 
 Expected: 全部 ok（Task 5 收尾 **70** 通过 + `[F1]`×3 + `[F2]`×1 + `[F3]`×1 + `[F4]`×2 + `[F5]`×2 + `[F6]`×2 + `[F7]`×3 + `[F8]`×2 = **86 通过 / 0 失败**；实际数目若不符须在报告里解释差额，**不许改断言凑数**）。注意 `[F3]`/`[F4]`/`[F5]` 合计约 37s 等待，整套耗时约 2 分钟。
 
-- [ ] **Step 6: 哈希对账 + 提交**
+- [x] **Step 6: 哈希对账 + 提交**
 
 ```bash
 md5sum ~/.dsh/codebuddy-plugin.json   # 必须与跑前一致
@@ -1372,7 +1372,7 @@ git commit -m "feat(client): 通用区块头挂载取样（额度/服务商数�
 - Consumes: 前 6 个任务的全部 DOM 契约
 - Produces: `card-accordion.js` 成为设置卡唯一回归套件（承接 `card-regression.js` 的全部仍然有效的不变式）
 
-- [ ] **Step 1: 逐条移植（把 `card-regression.js` 里下列断言改选择器后追加到新套件）**
+- [x] **Step 1: 逐条移植（把 `card-regression.js` 里下列断言改选择器后追加到新套件）**
 
 | 老断言（实测标签，共 14 组 28 条） | 移植后的选择器/做法 |
 |---|---|
@@ -1421,9 +1421,9 @@ git commit -m "feat(client): 通用区块头挂载取样（额度/服务商数�
   check("[G2] 无悬空 aria-controls", dangling === 0, "dangling=" + dangling);
 ```
 
-- [ ] **Step 1b: 套件卫生（Task 2/4/6 审查路由至此）**：① `[B4]` 的 after 断言补 `after.probe.posts === prePosts + 1` 复核（关死"mid→after 窗口内第二次保存导致自愈"的假说）；② `card-accordion.js` 的 `pageerror` 采集里 `turnTail` 过滤加注释说明理由（宿主已知噪声）或收窄匹配面；③ **补 `console` 采集**——套件目前只监听 `pageerror`，而 Task 6 的 Step 4c-2 给取样失败加了 `console.warn("dsh-tap: …")` 却无回归锁：给主 page 与 `newPage` 开的每个 mock 页都挂 `console` 监听，**只收**匹配 `/dsh-tap:/` 前缀的 `warning`/`error` 级消息（宽匹配会被宿主噪声打成 flaky），在真实视图阶段与各 mock 组收尾各断言一次「无 dsh-tap 自身告警」。
+- [x] **Step 1b: 套件卫生（Task 2/4/6 审查路由至此）**：① `[B4]` 的 after 断言补 `after.probe.posts === prePosts + 1` 复核（关死"mid→after 窗口内第二次保存导致自愈"的假说）；② `card-accordion.js` 的 `pageerror` 采集里 `turnTail` 过滤加注释说明理由（宿主已知噪声）或收窄匹配面；③ **补 `console` 采集**——套件目前只监听 `pageerror`，而 Task 6 的 Step 4c-2 给取样失败加了 `console.warn("dsh-tap: …")` 却无回归锁：给主 page 与 `newPage` 开的每个 mock 页都挂 `console` 监听，**只收**匹配 `/dsh-tap:/` 前缀的 `warning`/`error` 级消息（宽匹配会被宿主噪声打成 flaky），在真实视图阶段与各 mock 组收尾各断言一次「无 dsh-tap 自身告警」。
 
-- [ ] **Step 1c: 抽 fetch-mock installer 工厂（Task 6 审查 Important 1，plan-mandated 债务）**
+- [x] **Step 1c: 抽 fetch-mock installer 工厂（Task 6 审查 Important 1，plan-mandated 债务）**
 
 `card-accordion.js` 现有 **8 份**逐字复制的 fetch-mock 骨架（`:206`、`:235`、`:317`、`:435`、`:495`、`:572`、`:677`、`:712`，每份约 12 行：`/dsh-tap/settings` URL 过滤、method 推断、`json()` 构造 `Response`、GET 透传真实视图）。7~8 份各自独立变绿 = 分叉不可见，harness 级教训要改就得改 8 处 ⇒ 抽一个 Node 侧工厂，变化全部走**可序列化参数**：
 
@@ -1445,16 +1445,16 @@ git commit -m "feat(client): 通用区块头挂载取样（额度/服务商数�
 - general 区块头文案已**动态化**（取样落地后才有数字）⇒ 不要钉静态占位文案。
 - 重构后**逐组比对**：8 组的响应体与计数语义必须与重构前逐字等价；跑一次全套件，断言数只允许因 Step 1/1b 的新增而上升，任何下降或意外变化都要在报告里解释。
 
-- [ ] **Step 1d: 审查裁定（Task 7 审查 2 Important 的最终形态，覆盖上面 Step 1 的两处写法）**
+- [x] **Step 1d: 审查裁定（Task 7 审查 2 Important 的最终形态，覆盖上面 Step 1 的两处写法）**
 
   1. **`[G1]` 的 Enter 必须用可信按键**：上面代码块里的 `t.dispatchEvent(new KeyboardEvent("keydown", …))` 派发的是**不可信**事件——不可信事件不触发原生 `<button>` 的默认激活行为，因此测出的"不翻转"是 harness 手法造成的伪缺陷（真实键盘用户一直可用）。最终写法：`focus()` 后 `await page.keyboard.press("Enter")`（CDP 受信任事件）。**本任务据此零产品代码改动**（曾加的 `onKeyDown` 7 行已 revert）。
   2. **`[H6]` 浅色主题必须先立 dark 基线**：只设 `prefers-color-scheme: light` 没有鉴别力——headless Chrome 默认即 light，那条 `matchMedia` 守卫无论仿真是否生效都为真（死断言）；且宿主的暗色实际由 `body[data-ds-dark-theme]` 驱动。最终写法：先仿真 `dark` 并断言 dark 基线命中，再切 `light` 断言翻转，同时把 `document.body.hasAttribute("data-ds-dark-theme")` 读进失败详情；截图名不暗示"浅色基线"（`acc-task7-h6-theme-switch.png`）。
 
-- [ ] **Step 2: 跑新套件确认绿**
+- [x] **Step 2: 跑新套件确认绿**
 
 Expected: 全部 ok，退出码 0；记录总断言数（写进 Task 9 的 CHANGELOG 条目）。
 
-- [ ] **Step 3: 删除老套件**
+- [x] **Step 3: 删除老套件**
 
 ```bash
 cd /c/Users/21613/dev/dsh-ui-test && rm card-regression.js && ls *.js
@@ -1462,7 +1462,7 @@ cd /c/Users/21613/dev/dsh-ui-test && rm card-regression.js && ls *.js
 
 Expected: 列出 `card-accordion.js`、`debug-dom.js`、`debug-inputs.js`、`qoder-e2e.js`、`qoder-prefs-check.js`、`qoder-slot-check.js`、`qoder-tab-phase2.js`、`shots-baseline.js`。
 
-- [ ] **Step 4: 提交（仅当本任务改了 `lib/client.js`）**
+- [x] **Step 4: 提交（仅当本任务改了 `lib/client.js`）**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap && git status --short
@@ -1484,7 +1484,7 @@ git add lib/client.js && git commit -m "fix(client): 回归移植暴露的缺陷
 - Consumes: Task 1–6 的 DOM 契约（`.cbc-acc[data-block]`、`.cbc-acc-toggle[data-block]`、`.cbc-acc-body[data-block]`、`.cbc-syncbar`、`details.cbc-adv`、`.cbc-acc-head input[data-field]`）
 - Produces: 全部脚本跑绿的证据（写进 Task 9 的 CHANGELOG）
 
-- [ ] **Step 0: 环境事实与写盘纪律（2026-09-23 实施期更新，覆盖下面所有步骤里的地址）**
+- [x] **Step 0: 环境事实与写盘纪律（2026-09-23 实施期更新，覆盖下面所有步骤里的地址）**
 
   - **测试地址已换**：控制方自有的 `dsh web`（3080）于 10:06 被外部终止；用户的 dsh-launcher 起了**托管实例** `dsh web --no-open --port 3090`（Edge 正连着它）。本任务一律用 `http://127.0.0.1:3090/?token=<launcher 日志里的 token>`（token 见 `dsh-launcher/native-web-3090.log`）。**不许启停 dsh、不许另起实例、不许占端口**——第二个实例会抢 3901/3902/3903 桥端口，启动期的目录镜像写入还会触发宿主 profile 重载，干扰用户会话。
   - **md5 基线已重立**为 `~/.dsh/codebuddy-plugin.json` = `7127964e84619be3ef21ea371516f575`（10:07 被外部合法改写，新增 `qoderEnabled:true` + qoderModelPrefs）。旧值 `be0b8864…` 作废，**不许回滚用户这次改动**。
@@ -1492,7 +1492,7 @@ git add lib/client.js && git commit -m "fix(client): 回归移植暴露的缺陷
   - **Task 7 路由至此的套件卫生**（都在 `dsh-ui-test/`，不进 git）：①`card-accordion.js:954` 的 general 收尾复位只收布局不收焦点 ⇒ 补一次 `document.activeElement.blur()`，否则全页截图 `acc-task4-groups.png` 带 focus ring、Task 8 的明暗基线会撞上；②`shots/` 孤儿清理：`acc-task7-light.png`（已废弃写法的产物，现无写者）与老套件遗留的 `reg-*.png` ×5 删掉，`tmp-h6-{default,dark,light}.png` ×3 是 `[H6]` 结论的物证，**本轮结束前保留**；③三处失效指针：`:793-794` 仍指仓库外报告、`:874` 引用已删除的 `tmp-h6-probe` 脚本、`:20`/`:45`/`:961` 的"10 条 `warns===0`"与实况（9 条同型 + `[H6]`/主 page 各 1 条）不符 ⇒ 一次改齐。
   - **浅色可读性人工核验项**（Step 4 一并看）：fix round 后的浅色截图里 **TraeWork CN 区块头未勾选的启用 checkbox 呈实心深方块**，浅底上对比度可疑——若确认不可读，报为缺陷（这是 Task 3 把开关上移到区块头后在浅色下才暴露的组合），不要在本任务里顺手堆 UI 改动。
 
-- [ ] **Step 1: 统一驱动改法（每个脚本同一套替换）**
+- [x] **Step 1: 统一驱动改法（每个脚本同一套替换）**
 
 | 老写法 | 新写法 |
 |---|---|
@@ -1505,7 +1505,7 @@ git add lib/client.js && git commit -m "fix(client): 回归移植暴露的缺陷
 | 「连接域名」折叠组（`cbc-toggle` 按钮点开） | `details.cbc-adv` 的 `summary`（点开方式：`d.open = true` 或 `summary.click()`） |
 | 模型组两个按钮（刷新列表 / 立即同步） | 单按钮「同步目录」（在 `.cbc-syncbar` 内） |
 
-- [ ] **Step 2: 逐脚本跑绿**
+- [x] **Step 2: 逐脚本跑绿**
 
 ```bash
 cd /c/Users/21613/dev/dsh-ui-test
@@ -1517,7 +1517,7 @@ node qoder-e2e.js "http://127.0.0.1:3080/?token=<TOKEN>"
 
 Expected: 四个脚本各自 `0 失败`，退出码 0。`qoder-e2e.js` 会真实发消息（消耗额度）——若不希望消耗，跳过并在 CHANGELOG 注明"e2e 未跑（额度考虑）"，其余三个必须绿。
 
-- [ ] **Step 3: 重拍明暗基线**
+- [x] **Step 3: 重拍明暗基线**
 
 ```bash
 cd /c/Users/21613/dev/dsh-ui-test && node shots-baseline.js "http://127.0.0.1:3080/?token=<TOKEN>" acc
@@ -1526,11 +1526,11 @@ ls shots/ | grep '^acc' | head -20
 
 `shots-baseline.js` 顶部有 `const TABS = ["登录","模型","额度与用量","工具","服务商","TraeWork CN","Qoder CN","桥与高级"];`（实测现状）——改为四区块驱动：把 `TABS` 换成 `const BLOCKS = ["codebuddy","trae","qoder","general"];`，逐个点 `.cbc-acc-toggle[data-block=<id>]` 展开后截图。第二个参数 `acc` 是脚本已有的 out-prefix，实测命名规则为 `shots/<OUT>-<NN>-<名称>.png` ⇒ 输出 `shots/acc-00-overview.png`、`shots/acc-01-codebuddy.png` … `shots/acc-04-general.png`；暗色由脚本现有的 `document.body.setAttribute("data-ds-dark-theme","true")` 切换，收尾图 `shots/acc-dark-active-tab.png`。
 
-- [ ] **Step 4: 人工核验截图**
+- [x] **Step 4: 人工核验截图**
 
 用 Read 工具看 `shots/acc-01-codebuddy.png` 与 `shots/acc-04-general.png`（以及 `shots/acc-dark-active-tab.png`）：确认区块头状态行不溢出、幽灵输入边框在 hover/focus 才出现、`details.cbc-adv` 折叠标记正常、浅色主题下无不可读对比。发现问题回到对应任务修（不要在此任务里堆积 UI 修改）。
 
-- [ ] **Step 5: 提交（仅当改了 `lib/client.js`）**
+- [x] **Step 5: 提交（仅当改了 `lib/client.js`）**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap && git status --short && git add lib/client.js \
@@ -1549,7 +1549,7 @@ cd /c/Users/21613/dev/dsh-tap && git status --short && git add lib/client.js \
 - Consumes: Task 1–8 的实测结果（断言数、脚本清单、截图名）
 - Produces: 0.10.0 发版所需的文档一致性
 
-- [ ] **Step 0: 前 8 个任务路由至此的收口项（控制方裁定，逐条做完）**
+- [x] **Step 0: 前 8 个任务路由至此的收口项（控制方裁定，逐条做完）**
 
   1. **数字口径（Task 7/8 实测；CHANGELOG 与 wiki 一律从这里取，不许沿用文档旧数）**：`card-accordion.js` **117 断言全绿**（静态 `check(` 站点 115 + `[B2]` 循环多跑 2 次）；`qoder-slot-check.js` 13/13、`qoder-tab-phase2.js` 11/11、`qoder-prefs-check.js` 37 通过 / 0 失败 / 跳过 0（静态 39 站点，2 条在未触发分支）、`shots-baseline.js` 十张元素级基线 0 失败、`debug-inputs.js` 实跑 exit 0。**`qoder-e2e.js` 未跑**（会真实发消息消耗用户额度，控制方裁定跳过）⇒ CHANGELOG 必须如实写"未跑（额度考虑）"，不得声称通过。
   2. **用户可见文案（Task 6 审查 Minor 11 路由至此）**：`UsageSection` 仍写「本页可见时每 10 秒自动刷新」，而语义自 Task 1 起是「通用区块展开时」（`grep -n '本页可见时' lib/client.js`）⇒ 改成「通用区块展开时每 10 秒自动刷新」，改完重跑 `card-accordion.js` 确认仍 117/117。
@@ -1564,11 +1564,11 @@ cd /c/Users/21613/dev/dsh-tap && git status --short && git add lib/client.js \
   8. **Step 8 作废**：控制方自有的 3080 实例早已不在，现在跑的是**用户 launcher 托管的 3090**（Edge 连着）⇒ **不要杀它、不要动任何端口**。改为：`netstat -ano | grep ':3080'` 确认 3080 本就空闲，并在收尾里写明"测试服务由用户侧 launcher 管理，本流程未启停"。
   9. `docs/probes/qoder-quota-1790135931035.json`（未跟踪、非本流程产物）**不入库、不删除**，收尾时向用户报来源待认。
 
-- [ ] **Step 1: 重写 `wiki/07-web-client.md` 的"卡片结构"节**
+- [x] **Step 1: 重写 `wiki/07-web-client.md` 的"卡片结构"节**
 
 把"状态芯片 + 8 标签页"整节换成通道手风琴的描述（4 区块、区块头状态行 = 单一真源、展开才挂载/收起不卸载、通道内 5 分组、`details.cbc-adv` 与 `details.cbc-help` 的分工、通用区块头挂载取样与轮询条件）。保留"请求契约"与"React 纪律"两节，并在纪律节补一条：**区块头是 `div` + 两个独立交互元素（展开 button + 启用开关），不要把开关嵌进 button**。
 
-- [ ] **Step 2: 修掉文档漂移并写清回归驱动**
+- [x] **Step 2: 修掉文档漂移并写清回归驱动**
 
 同文件"改 UI 后的回归"节：删掉不存在的 `window.__cbc.tab('分区名')` 说法（实测 `lib/client.js` 与 `dsh-ui-test/*.js` 均无此钩子），改为实测驱动方式：
 
@@ -1585,17 +1585,17 @@ profile ~/.dsh/profiles/web 已 link 本仓库 ⇒ 改 lib/client.js 刷新页�
 
 （`N` 用 Task 7 Step 2 记录的真实数字。）
 
-- [ ] **Step 3: 更新 `AGENTS.md`**
+- [x] **Step 3: 更新 `AGENTS.md`**
 
 架构表"浏览器半 `lib/client.js`"那一行的职责描述：把"折叠态状态芯片 + 8 标签页懒挂载隐藏不卸载"改为"4 区块通道手风琴（区块头常显状态行 = 单一真源）+ 展开才挂载/收起不卸载"。踩坑速查节**不新增条目**（本轮无新坑；若实施中真踩到新坑，按纪律取新编号追加到 `docs/pitfalls.md` 并在此加一行）。
 
 同一步里 grep 全仓文档的旧口径并修正（Task 3 交接）：`grep -rn "启用通道" README.md wiki/ AGENTS.md` —— `README.md:50/62` 与 `wiki/09-run-and-test.md:33` 仍写"分区内启用通道"，实际已上移到区块头；一并改口径。
 
-- [ ] **Step 4: 写 `CHANGELOG.md` 0.10.0 段**
+- [x] **Step 4: 写 `CHANGELOG.md` 0.10.0 段**
 
 按仓库既有风格（驱动 → 逐条改 → 验证）写：用户"交互有点麻烦、不够简单"驱动；痛点定位 = 找不到/太散；4 区块手风琴取代 8 标签；删三套状态展示；模型组同构（同步目录单按钮 + 统一筛选）；Trae/Qoder 启用开关上移区块头；通用区块头挂载取样 + api-key 估算降级；工程项收进 `details.cbc-adv`；后端契约零变化。验证段填实测数字：`card-accordion.js` N 断言全绿、`qoder-slot-check` / `qoder-prefs-check` / `qoder-tab-phase2` 各自断言数与结果、离线七套件全绿、截图基线重拍。
 
-- [ ] **Step 5: 版本号与设计文档状态**
+- [x] **Step 5: 版本号与设计文档状态**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap
@@ -1605,7 +1605,7 @@ grep -n '"version"' package.json
 
 Expected: `"version": "0.10.0"`。再把 `docs/goals/settings-card-ux-redesign.md` 头部状态行改为"已实施（0.10.0，2026-09-23）"，并把标题的"（待评审）"去掉。
 
-- [ ] **Step 6: 全量离线回归**
+- [x] **Step 6: 全量离线回归**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap
@@ -1616,7 +1616,7 @@ npm run verify:bridge && npm run verify:core && npm run verify:providers \
 
 Expected: 七个命令全部退出码 0（纯前端改动，预期零影响；任何一个红都说明误改了宿主半）。
 
-- [ ] **Step 7: 在线探测（可选，取决于凭据）**
+- [ ] **Step 7: 在线探测 —— 未执行（控制方裁定跳过，非遗漏）**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap && npm run verify
@@ -1624,7 +1624,9 @@ cd /c/Users/21613/dev/dsh-tap && npm run verify
 
 Expected: 18/18（需 `CODEBUDDY_API_KEY` 或已登录 OAuth）。若环境无凭据导致失败，**如实记录跳过原因**到 CHANGELOG 验证段，不得声称通过。
 
-- [ ] **Step 8: 杀掉测试服务**
+**实况**：`npm run verify` 会向网关发 18 次真实请求消耗用户额度，与 `qoder-e2e.js` 同一口径 ⇒ 本轮不跑，CHANGELOG 验证段已如实记「未跑 + 原因」；纯前端改动由离线七套件覆盖（全 exit 0，见 Task 9 报告）。
+
+- [ ] **Step 8: 杀掉测试服务 —— 作废（本流程未启停测试服务）**
 
 ```bash
 netstat -ano | grep ':3080' | head -3     # 取 PID
@@ -1632,7 +1634,9 @@ taskkill //PID <PID> //F
 netstat -ano | grep ':3080' | head -1     # 确认已释放（无输出）
 ```
 
-- [ ] **Step 9: 提交**
+**实况**：控制方自有的 3080 实例于 10:06 被外部终止；测试改跑在**用户 launcher 托管的 3090 实例**上（Edge 正连着）⇒ 不杀、不动任何端口。已确认 3080 本就空闲（Step 0.8）。
+
+- [x] **Step 9: 提交**
 
 ```bash
 cd /c/Users/21613/dev/dsh-tap
