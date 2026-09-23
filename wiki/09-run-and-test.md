@@ -25,12 +25,13 @@ dsh web
 
 ## 登录（首次使用）
 
-设置卡路径：Settings → 插件配置 → CodeBuddy → 登录区
+设置卡路径（dsh ≥ 0.1.6）：侧栏「插件」→ dsh-tap → 展开 **CodeBuddy** 区块 → 「凭据」组
+（旧宿主：Settings → 插件配置 → dsh-tap → CodeBuddy 区块）
 
 - **OAuth（推荐）**：浏览器授权一次，覆盖主聊天/搜索/抓取/生图全部路径；
 - **API Key**：卡内管理多 Key（≥2 自动轮询），或环境变量 `CODEBUDDY_API_KEY` 兜底。
 
-TraeWork CN 分区：启用通道 → 登录（自持设备密钥的浏览器授权）→ 模型自动进选择器。
+TraeWork CN / Qoder CN：各自区块的**区块头右侧勾选框**就是启用开关（唯一落点，收起态也能启停）→ 展开区块在「凭据」组登录（Trae 走自持设备密钥的浏览器授权）→ 模型自动进选择器。
 
 ## 离线回归（无需网络/凭据，改动后必跑）
 
@@ -40,12 +41,13 @@ TraeWork CN 分区：启用通道 → 登录（自持设备密钥的浏览器授
 | `node scripts/verify-core-generic.mjs` | core/ 通用性证伪：静态纯净扫描 + 第二 OpenAI 兼容上游全链路（含 developer 角色不被 core 改写的另一半证明） | — |
 | `node scripts/verify-rotation.mjs` | 多 Key 轮询（mock 网关按 Key 行为表；`?case=provider/bridge` 双实例隔离） | 25 项断言 |
 | `node scripts/verify-providers.mjs` | 多服务商骨架：/models 404 兜底 + 认证方言 | — |
-| `node scripts/verify-trae-provider.mjs` | Trae 通道：mock OAuth 全流程（**用我们注册的公钥验 DeviceProof 签名**）/ 目录映射 / 翻译网关 | 81 项断言 |
-| `node scripts/verify-qoder-provider.mjs` | Qoder CN 通道：mock 设备流全流程（PKCE/404 轮询/drt- 刷新/门禁/代际守卫）+ 翻译网关信封 + 目录投影 | 83 项断言 |
+| `node scripts/verify-trae-provider.mjs` | Trae 通道：mock OAuth 全流程（**用我们注册的公钥验 DeviceProof 签名**）/ 目录映射 / 翻译网关 | **89 项断言**（2026-09-23 实测） |
+| `node scripts/verify-qoder-provider.mjs` | Qoder CN 通道：mock 设备流全流程（PKCE/404 轮询/drt- 刷新/门禁/代际守卫）+ 翻译网关信封 + 目录投影 + tool 配对/可见性与归因上报锁定案 | **154 项断言**（2026-09-23 实测） |
+| `node scripts/verify-host-config.mjs` | 宿主配置层：0.1.7+ forms seam 选路/写前比对/`SETTINGS_CONFLICT` 重试/不可写降级 + ≤0.1.6 settings.yaml 回退 | **36 项断言**（2026-09-23 实测） |
 | `node scripts/verify-models.mjs` | 模型解析离线自检 / 在线探测可用性 / 目录漂移对比 | — |
 | `node scripts/verify-trae-model-catalog.mjs` | 目录提取器回归 | — |
 
-`npm run verify` = 在线模型探测；另有 `verify:bridge` / `verify:core` / `verify:providers` / `verify:trae` / `verify:trae-provider` 快捷方式。
+`npm run verify` = 在线模型探测（18 次真实请求，消耗额度）；离线快捷方式齐了 `verify:bridge` / `verify:core` / `verify:providers` / `verify:trae` / `verify:trae-provider` / `verify:qoder` / `verify:host-config`。
 
 **断言纪律**：验证队列/代理行为必须断言"响应完成"（EOF），不是首字节；跨层测试先想清楚轮转游标在第几个请求上。
 
@@ -78,12 +80,12 @@ CODEBUDDY_BRIDGE_DUMP=/tmp/dump dsh web           # 叠加请求体明文（仅�
 
 ## 浏览器回归（UI 改动后）
 
-脚本位于**仓库外**本地目录 `dsh-ui-test/`（puppeteer-core + 系统 Chrome，不进仓库）：
+脚本位于**仓库外**本地目录 `dsh-ui-test/`（puppeteer-core + 系统 Chrome，不进仓库）。0.10.0 手风琴重设计后驱动换成区块（`card-regression.js` 同日退役删除，详见 [07](07-web-client.md) §改 UI 后的回归）：
 
-- `card-regression.js`：**设置卡 28 断言**（2026-09-23 重建，接替已丢失的 step20/22）——注意条与**独立预言机**双向对齐（直接从 GET 视图算应有的 warn/err 集合，避免 `.cbc-strip` 缺席时 `[].every()` 恒真的空洞通过）、8 标签齐全、面板懒挂载与隐藏、模型筛选计数、幽灵输入、HelpNote 折叠、用量刷新按钮与时间戳、标签键盘导航（roving tabIndex / tabpanel 双向引用 / 方向键从聚焦处起算）、浅色主题、无 pageerror；另有两组 **mock GET/POST** 通道：[12]「启用+未监听 → warn 芯片带端口」正向回归、[14]「保存后退避补拉自愈」（踩坑 #45）——都不写真实设置，跑前跑后对 `~/.dsh/codebuddy-plugin.json` 取哈希对账；
-- `qoder-slot-check.js`（槽迁移 + Qoder CN 标签 10 断言）、`qoder-e2e.js`（选择器出模→发消息→收回复）、`qoder-prefs-check.js`（模型行思考强度/上下文 select）、`qoder-tab-phase2.js`（启用开关/目录同步/模型启停/端口行）、`shots-baseline.js`（8 标签明暗基线截图）、`debug-dom.js` / `debug-inputs.js`（宿主原语真实 DOM dump，选择器校准）；
-- 跑前 `dsh web`（建议 `--disable-http-cache` 对抗浏览器缓存），跑后杀 3080；
-- 选择器一律按 `.cbc-*` 类与行内单元格精确匹配（已丢失的 step20 曾因模糊匹配误删 Key）；基线从 GET /settings 实况读取并收尾复原，不硬编码起始模式。
+- `card-accordion.js`：**设置卡唯一回归套件，117 断言**（静态 `check(` 站点 115 + `[B2]` forEach 多跑 2 次）——四区块顺序与默认全收、区块头状态行与**独立预言机**双向对齐（直接从 GET 视图算应有片段，避免 `.cbc-acc-status` 缺席时 `[].every()` 恒真的空洞通过）、展开才挂载 + 收起保留（草稿/滚动）、多开独立、头部开关恰 1 POST、无注意条无徽标、通用区块挂载取样 + 收起停轮询、区块头键盘可达（`page.keyboard.press` **可信按键**，踩坑 #46）、浅色与卡片根 `color-scheme`（#47）、无 tablist 残留、无 pageerror/dsh-tap 告警；另含 **mock GET/POST** 通道：「启用+未监听 → warn 落区块头带端口」与「保存后退避补拉自愈」（踩坑 #45）——都不写真实设置；
+- `qoder-slot-check.js`（槽迁移 + Qoder CN 区块，**13 断言**）、`qoder-tab-phase2.js`（头部开关 / `.cbc-syncbar` 同步条 / 模型启停组 / 端口行 / `details.cbc-adv` 真查元素，**11 断言**）、`qoder-prefs-check.js`（模型行思考强度与上下文变体，**37 通过 / 静态 39 站点**；真实写盘级 = 基线从实况读 + 收尾复原到实况）、`qoder-e2e.js`（选择器出模→发消息→收回复，8 断言——**跑它就消耗用户额度，默认不跑**）、`shots-baseline.js`（明/暗 × 总览+四区块 = **10 张元素级基线**；`fullPage` 在本宿主是空操作故弃用，踩坑 #48）、`debug-dom.js` / `debug-inputs.js`（宿主原语真实 DOM dump，选择器校准）；
+- 跑法：`node <脚本>.js "http://127.0.0.1:<port>/?token=..."`（0.1.5 起 web 入口要 token，踩坑 #30；profile 已 link 本仓库 ⇒ 改 `lib/client.js` 刷新页面即生效，建议 `--disable-http-cache`）。每轮 tee 原始输出到 `dsh-ui-test/logs/` 且日志首行回显完整 URL；**测试服务由用户侧 launcher 管理（本机现为 :3090），回归轮次不启停它、不占端口**；
+- 零真实写入可复验：跑前跑后对 `~/.dsh/codebuddy-plugin.json` 取 md5 对账；选择器一律按 `.cbc-*` 类与行内单元格精确匹配（已丢失的 step20 曾因模糊匹配误删 Key）。
 
 ## 依赖关系图（模块级）
 

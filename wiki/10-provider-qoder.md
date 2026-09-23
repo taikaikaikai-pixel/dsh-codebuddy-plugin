@@ -234,10 +234,10 @@ flowchart TB
 
 | 命令 | 覆盖 |
 |------|------|
-| `node scripts/verify-qoder-provider.mjs` | 离线 **122 断言**：PKCE 形态/normalizeExpiry 三态/设备流快乐路径/授权 URL 门禁/刷新回写与 needsRelogin/临期自动刷新/logout 代际守卫/machine_id 自持/视图脱敏 + mock 上游的网关翻译（流式逐帧/聚合/计量归一/错误帧/**带内失败帧两态**/401 透传/Host 门//v1/models）+ 目录投影 + **prefs 出站注入 9 断言** + **组合根端到端 23 断言**（真 apply 起网关，prefs→镜像→注入全链） |
+| `node scripts/verify-qoder-provider.mjs` | 离线 **154 断言**（2026-09-23 实测）：PKCE 形态/normalizeExpiry 三态/设备流快乐路径/授权 URL 门禁/刷新回写与 needsRelogin/临期自动刷新/logout 代际守卫/machine_id 自持/视图脱敏 + mock 上游的网关翻译（流式逐帧/聚合/计量归一/错误帧/**带内失败帧两态**/401 透传/Host 门//v1/models）+ 目录投影 + **prefs 出站注入 9 断言** + **组合根端到端 23 断言**（真 apply 起网关，prefs→镜像→注入全链）+ **[18] tool 配对与 `content` 可见性归一**（踩坑 #39/#41 锁定案）+ **[19] 用量归因上报**（business/finish 与 /api/v1/tracking 的 join key 同源） |
 | `node scripts/probe-qoder-live.mjs --login` | 真实设备流登录（浏览器授权；令牌只打掩码，存 `~/.dsh/qoder-plugin-auth.json`） |
 | `node scripts/probe-qoder-live.mjs --chat "文本" [--model <key>]` | 真实对话（cosy 签名路径；证据落 docs/probes/）。**key 必须用目录真实值**（`--catalog` 或 settings.yaml 镜像块查）——臆造 key 被上游静默改派 auto（踩坑 #37） |
-| `dsh-ui-test/qoder-prefs-check.js`（仓库外） | 浏览器端到端 30 断言：渲染/变体条件渲染/持久化往返/完整替换语义/镜像生效/回默认/去抖/跨标签保留 |
+| `dsh-ui-test/qoder-prefs-check.js`（仓库外） | 浏览器端到端 **37 通过 / 静态 39 站点 / 跳过 0**（2026-09-23 实测）：渲染/变体条件渲染/持久化往返/完整替换语义/镜像生效/回默认/去抖/跨折叠保留（0.10.0 起驱动 = 展开 `.cbc-acc-toggle[data-block=qoder]` 区块，不再是切标签） |
 
 ## 已知边界（诚实标注）
 

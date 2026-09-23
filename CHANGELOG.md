@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.10.0 (2026-09-23)
+
+- **设置卡交互模型换代：8 标签页 → 4 区块通道手风琴**（驱动 = 用户"这个项目的前端页面的交互，有点麻烦。不够简单"；痛点定位轮结论 = **找不到、太散**；设计与逐条证据 `docs/goals/settings-card-ux-redesign.md`，实施计划 `docs/goals/settings-card-ux-redesign-plan.md`。**后端契约零变化**——GET/POST `/dsh-tap/settings` 的全部 action 与响应结构不动、槽位双注册不动；纯 `lib/client.js` 重写）
+  - **顶层 4 区块、固定顺序、默认全收**：`BLOCK_DEFS` = CodeBuddy → TraeWork CN → Qoder CN → 通用；首屏即四条状态行（= 总览）。归类原则"谁提供归谁"（工具组只在 CodeBuddy——搜索/抓取/生图都走它的网关；两家订阅通道只有 凭据/模型/网关/高级）
+  - **状态展示从三处收敛为单一真源**：删 0.9.11 的三层补偿机制（折叠态三芯片 / 展开态注意条 / 标签徽标 `tabBadge`）与整套 tablist（`role="tab"`、roving tabIndex、←/→ 方向键与相关断言）。区块头状态行直接沿用 `buildChips` 的判定口径与文案，`tone` = 该区块最差的一枚芯片（`worstTone`）⇒ **warn/err 就地出现在所属区块头**，不展开也读得到；旧槽（≤0.1.5）折叠态只留**按需单枚**「n 项需处理」芯片（`attentionCount`），全绿不出现
+  - **展开才挂载、收起不卸载**：`openBlocks`/`mountedBlocks` 两张表 + `hidden`——草稿、滚动位置、已拉目录跨收起与保存保留（语义平移自原懒挂载纪律）；重活保持惰性（三家 model-list 在所属区块首次展开才拉）
+  - **区块内五分组 + 工程项折叠**：`凭据 → 模型 → [工具] → 网关 → 高级`（标题类 `cbc-group-title`）；域名族 / `baseURL` / `qoderClientId` / 端口与超时等纯工程项收进 `details.cbc-adv`（summary「高级」），与 `details.cbc-help`（`HelpNote`「使用说明」）分工——两者都是原生 `<details>`、零 JS 状态。`PanelBoundary` 粒度从"每标签"改为**每分区**（模型组塌落不影响同区块的凭据组）
+  - **三家模型组同构**：CodeBuddy 原「刷新列表 + 立即同步」两按钮合并为单按钮「同步目录」（一次点按顺序 `model-sync` → `model-list`，两侧失败原因仍分别可见）；操作条 `.cbc-syncbar` = 同步按钮 + 上次同步状态 + 筛选框同行，筛选谓词 `matchesModelFilter` 三家共享（只过滤渲染、不发请求）
+  - **Trae/Qoder 启用开关上移到区块头**（收起态一眼可看可启停，展开区不再重复）；区块头是 `div.cbc-acc-head` + 两个**彼此独立**的交互元素（展开 `button.cbc-acc-toggle` 与右侧开关），不构成嵌套交互。键盘/ARIA：区块头是普通 button（`aria-expanded`，挂载后才给 `aria-controls`）
+  - **通用区块头挂载取样**：「额度 / 服务商数」不在 GET 视图里 ⇒ 卡片挂载时各做一次 `action:'usage'` 与 `provider-list`（一次性、不轮询，取到前显示 `额度 — · 服务商 —`）；**api-key 模式不编数字**（`generalSummary` 三分支：OAuth 有值→真实周期余量、OAuth 声明了却读失败→`额度 —`、api-key→`额度 估算（累计 x）`）；用量 10s 轮询**严格随「通用」区块展开**启停；`credential-scan` **不上移**（扫本机文件，仍在通用区块首次挂载才做）
+  - **保存反馈**落**触发该次保存的区块头**（`save(patch, blockId)` → `saved={block,at}`，「已保存 ✓」flash 常驻占位、`visibility` 切换，不挤压同行 checkbox）；0.9.11 的硬修复清单逐条迁移不丢：`settleGateways` 1s/2s/4s 退避补拉（踩坑 #45）、`fetchWithTimeout`、`pickComponent` 图标候选表（#44③）、幽灵输入双路径、同值去重 + 失败销账（#27/#32）、字段编辑器模块级定义、catch 带 `e.message`、Key 只回脱敏（#26）、失焦即保存
+  - **两条反复（教训比结果值钱，如实记）**：① 键盘激活补丁 `48329a7` 加了又撤回 `4dd9f52`——起因是回归锁照 brief 用 `dispatchEvent` 派发**不可信** keydown，测出"区块头 Enter 不翻转"的 **harness 伪缺陷**，产品侧白白复制了一遍浏览器默认行为；改 `page.keyboard.press` 后当轮 115/115 绿 ⇒ 踩坑 **#46**。② 浅色主题下**未勾选的原生 checkbox/radio 呈深色实心块**（看着像已开启，而通道开关正处在区块头收起态第一眼位置）——宿主在 html/body 无条件声明 `color-scheme:dark` 且该属性不继承，插件零声明即跟随；由截图基线**人工看图**发现（断言全绿）、`a421d35` 把配色显式绑到宿主主题属性上 ⇒ 踩坑 **#47**（附带事实：`prefers-color-scheme` 媒体仿真对本宿主零效果，三种仿真截图 md5 互等）。另记 **#48**：`page.screenshot({fullPage:true})` 在本宿主是**空操作**（产出恒 1440×900；"尺寸对 ≠ 内容在"），截图基线因此改走元素句柄 + 逐张看图 + fit 机器核对
+  - **回归资产换代**：`card-regression.js`（8 标签时代 28 断言）退役删除，存活断言逐条移植进 **`card-accordion.js`**（处置表落在套件头部注释，才是长期凭据）；其余五个脚本 + `shots-baseline.js` + `debug-inputs.js` 全换区块驱动；`shots/` 里 31 张误导性产物**移动**归档（不是删除，可逆）到 `shots/_archive-2026-09-23/`
+  - **验证**：`card-accordion.js` **117 通过 / 0 失败 / exit 0**（静态 `check(` 站点 115，`[B2]` 的 forEach 单处执行 3 次）；`qoder-slot-check.js` **13/13**；`qoder-tab-phase2.js` **11/11**；`qoder-prefs-check.js` **37 通过 / 0 失败 / 跳过 0**（静态 39 站点，2 条在未触发分支；该脚本真实写盘，基线从实况读 + 收尾复原到实况）；`qoder-e2e.js` 8 断言**未跑**（会真实发消息消耗用户额度，控制方裁定跳过）；`shots-baseline.js` **10 张元素级基线**（明/暗 × 总览 + 四区块）0 处失败（实测尺寸 960×275 / 926×1371 / 926×423 / 926×622 / 926×1157，逐张人工看过）；`debug-inputs.js` 实跑 exit 0。**零真实写入纪律**：`~/.dsh/codebuddy-plugin.json` 的 md5 在每轮跑前/跑后恒为 `7127964e84619be3ef21ea371516f575`。测试实例为用户 launcher 托管的 `:3090`（本流程未启停 dsh、未占端口）。**离线七套件全绿（退出码全 0，2026-09-23 复跑）**：`verify:bridge`（107 个 ok 行，末行 `all bridge checks passed`）/ `verify:core`（末行 `core/ generality proven…`，27 ok）/ `verify:providers`（末行 `all green`）/ `verify:trae-provider` **89** / `verify:qoder` **154** / `verify:host-config` **36** / `verify-models.mjs --list`（**23 模型**）；另跑 `verify:rotation`（24 ok）亦绿。**`npm run verify`（在线 18 模型真实探测）本轮未跑**：它会向网关发 18 次真实请求消耗用户额度，而本轮是纯前端改动、离线七套件已覆盖"误改宿主半"的风险——按裁定跳过，**不声称通过**
+
 ## 0.9.11 (2026-09-23)
 
 - **设置卡前端刷新（轮 1：简洁/健壮/信息展示/美观/功能）**：基线截图（dsh-ui-test `shots-baseline.js`，8 标签全拍）→ 逐条改 → 复拍对照 → `qoder-slot-check.js` 10/10 回归绿

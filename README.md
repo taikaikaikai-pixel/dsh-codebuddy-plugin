@@ -9,11 +9,11 @@ CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提
 - **协议**：OpenAI Chat Completions（`openai-completions`），流式（stream-only）
 - **端点**：`https://copilot.tencent.com/v2`（经本地桥转发）
 - **默认模型**：`deepseek-v3`
-- **凭据**：设置卡"登录"区选择 OAuth（浏览器授权，推荐）或 API Key（卡内管理 / 环境变量兜底），插件文件不含密钥
+- **凭据**：设置卡 CodeBuddy 区块「凭据」组选择 OAuth（浏览器授权，推荐）或 API Key（卡内管理 / 环境变量兜底），插件文件不含密钥
 
 ## 模型列表
 
-下表是插件静态兜底清单（2026-08-16 实测全部可用，全部支持 tool_calls；参数与网关自有目录 `GET /v3/config` 核对）。**v0.8 起清单默认动态化**：启动时自动从 `/v3/config` 同步网关目录并入对话选择器（目录新模型自动出现，同名静态条目尺寸随目录刷新），静态清单只在网关不可达时兜底；设置卡"模型"分区可手动再同步、逐模型启停、逐模型调节上下文/输出上限。
+下表是插件静态兜底清单（2026-08-16 实测全部可用，全部支持 tool_calls；参数与网关自有目录 `GET /v3/config` 核对）。**v0.8 起清单默认动态化**：启动时自动从 `/v3/config` 同步网关目录并入对话选择器（目录新模型自动出现，同名静态条目尺寸随目录刷新），静态清单只在网关不可达时兜底；设置卡 CodeBuddy 区块「模型」组可手动再同步（单按钮「同步目录」）、逐模型启停、逐模型调节上下文/输出上限。
 
 | 模型 | 厂商 | contextWindow | maxTokens | reasoningEfforts | 图片 |
 |------|------|---------------|-----------|------------------|------|
@@ -47,9 +47,9 @@ CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提
 - **凭据**：插件用**自持 ECDSA P-256 设备密钥**走完整 OAuth 设备流（浏览器授权一次），refresh 的 DeviceProof 由自己签名——不读取、不提取官方 IDE 的任何凭据；令牌只存 `~/.dsh/trae-plugin-auth.json`
 - **翻译网关**：`127.0.0.1:3902`（`traeBridgePort` 可调）把 OpenAI Chat Completions 翻译成 Trae 云端协议（`trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat`，SSE 互转），dsh 主聊天选择 trae 模型即走此通道
 - **模型目录**：从本机 TRAE SOLO CN 的缓存数据库（state.vscdb）只读提取（24 个 preset 模型：DeepSeek-V4、GLM-5.x、Kimi-K3、Doubao-Seed、Qwen3.8 等），启用通道自动同步进选择器；提取器带敏感字段 scrub（详见 `docs/reverse/trae-model-catalog.md`）
-- **使用**：设置卡 → 插件配置 → CodeBuddy → `TraeWork CN（订阅额度）` 分区：启用通道 → 登录（浏览器授权）→ 模型自动出现在选择器
+- **使用**：设置卡 → `TraeWork CN` 区块 → 区块头右侧勾选框启用通道 → 展开后在「凭据」组登录（浏览器授权）→ 模型自动出现在选择器
 - **首次联调**：聊天信封/SSE 语法来自二进制逆向（置信度中），换机器或协议变动后跑一次 `node scripts/probe-trae-live.mjs --login` 再 `--chat "你好"` 校准（证据与依据见 `docs/reverse/trae-cloud-api.md`）
-- 回归：`npm run verify:trae-provider`（43 断言，mock 全链路）+ 浏览器 step31（12 断言）
+- 回归：`npm run verify:trae-provider`（**89 断言**，mock 全链路）+ 浏览器套件 `qoder-slot-check.js` / `qoder-tab-phase2.js`（仓库外 `dsh-ui-test/`，区块驱动、零真实写入）
 
 ## Qoder CN 订阅额度通道（v0.9.7/v0.9.8）
 
@@ -59,8 +59,8 @@ CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提
 - **聊天签名**：官方 `api2-v2` OpenAI 兼容面裸 Bearer 恒 401（已废弃）——真实聊天面走 `QoderContext.prepareInferRequest` 签名 + WASM 加密 body，POST 到 region 发现给出的 infer 节点（CN = `gateway.qoder.com.cn`）的 `agent_chat_generation`；签名器 = `qoder_auth.wasm` 官方原字节 + 手写 wasm-bindgen 胶水
 - **翻译网关**：`127.0.0.1:3903`（`qoderBridgePort` 可调）把 OpenAI Chat Completions 翻译成 COSY 加密信封、SSE 信封拆封回标准 OpenAI chunk（单轮/多轮/模型切换/tools 全通）；`usage.credits` 进同一张用量计量表
 - **模型目录**：签名 `GET /algo/api/v2/model/list`（14 个 openai 条目，Qwen3.8-Max/Flash、DeepSeek-V4、GLM-5.3、Kimi-K3、auto 等），启用通道自动同步进选择器；逐模型启停
-- **使用**：设置卡 → 插件配置 → CodeBuddy → `Qoder CN` 分区：登录（浏览器授权）→ 启用通道 → 模型自动出现在选择器
-- 回归：`node scripts/verify-qoder-provider.mjs`（83 断言，mock 设备流全流程 + 网关翻译 + 目录投影）；换机器或协议变动后 `node scripts/probe-qoder-live.mjs --login` 再 `--chat "你好"` 校准（证据落 `docs/probes/`，依据 `docs/goals/qoder-cn-provider-design.md`）
+- **使用**：设置卡 → `Qoder CN` 区块 → 展开后在「凭据」组登录（浏览器授权）→ 区块头右侧勾选框启用通道 → 模型自动出现在选择器
+- 回归：`node scripts/verify-qoder-provider.mjs`（**154 断言**，mock 设备流全流程 + 网关翻译 + 目录投影 + 配对/归因锁定案）；换机器或协议变动后 `node scripts/probe-qoder-live.mjs --login` 再 `--chat "你好"` 校准（证据落 `docs/probes/`，依据 `docs/goals/qoder-cn-provider-design.md`）
 
 ## 网络搜索与网页抓取
 
@@ -81,15 +81,15 @@ describe-image:
   apiStyle: chat-completions
 ```
 
-桥只监听回环地址，端口在设置卡「流式桥」分区修改（`bridgePort`，默认 3901）。`chat/completions` 之外的路径（如 `/agenttool/*`）原样透传。
+桥只监听回环地址，端口在设置卡 CodeBuddy 区块「网关」组修改（`bridgePort`，默认 3901）。`chat/completions` 之外的路径（如 `/agenttool/*`）原样透传。
 
-## 可选设置（Settings → 插件配置 → CodeBuddy）
+## 可选设置（dsh ≥ 0.1.6：侧栏「插件」→ dsh-tap；旧宿主：Settings → 插件配置 → dsh-tap）
 
-设置卡按插件功能分八区（登录 / 模型 / 额度与用量 / 工具 / 服务商 / TraeWork CN / Qoder CN / 桥与高级），顶部有功能概览行，修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
+设置卡自 0.10.0 起是**四区块通道手风琴**：**CodeBuddy → TraeWork CN → Qoder CN → 通用**，默认全部收起，首屏即四条状态行（登录态 / 模型数 / 网关端口 / 额度与服务商数；warn·err 就地出现在所属区块头）。展开某区块后按 `凭据 → 模型 → [工具] → 网关 → 高级` 分组（只有 CodeBuddy 有「工具」组；纯工程项收在「高级」折叠里），修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
 
 ### 模型
 
-模型清单**默认跟网关目录走**：启动时自动同步 `/v3/config`（设置卡"目录同步"行可手动再同步，显示上次同步时间与目录规模）；网关拉不到时无感回落静态清单，选择器绝不变空。列表中每个模型：
+模型清单**默认跟网关目录走**：启动时自动同步 `/v3/config`（设置卡各区块「模型」组的单按钮「同步目录」可手动再同步，旁边显示上次同步时间与目录规模）；网关拉不到时无感回落静态清单，选择器绝不变空。列表中每个模型：
 
 - **勾选启用/禁用**：勾选状态 = 是否出现在对话模型选择器（写入 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.codebuddy.models` 覆盖层，下次请求生效，无需重启）
 - **行内调节上下文/输出上限**：ctx 与输出两栏可直接改（覆盖值存 `modelState.overrides`），不得超过目录给定的该模型实际上限；清空输入框即恢复目录默认
@@ -132,11 +132,11 @@ key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark
 | 会话头格式 `sessionHeaderFormat` | openai | `openai`（session_id/x-client-request-id/x-session-affinity）或 `openrouter`（x-session-id） |
 | 每会话并发上限 `maxConcurrentPerSession` | 4 | 同会话超额请求 FIFO 排队；无会话 id 不限流 |
 
-桥在 127.0.0.1 作为统一网关出口与**唯一凭据入口**：主聊天（`llm-pi-ai` 的 codebuddy 路由即指向此桥）、describe-image、tools 的请求都由桥按登录方式（OAuth/Key）解析凭据，调用方发的哨兵 Authorization 从不出宿主机。chat/completions 走会话归因 + 并发管理，流式入站（`stream:true`）透传 SSE、非流式入站（`stream:false` 或缺省）聚合为标准 `chat.completion` JSON；其余路径（如 `/agenttool/*`）直接透传。端口被占用时（如另一个 dsh 实例已在运行）插件只告警不崩溃，桥状态在"额度与用量"分区可见。
+桥在 127.0.0.1 作为统一网关出口与**唯一凭据入口**：主聊天（`llm-pi-ai` 的 codebuddy 路由即指向此桥）、describe-image、tools 的请求都由桥按登录方式（OAuth/Key）解析凭据，调用方发的哨兵 Authorization 从不出宿主机。chat/completions 走会话归因 + 并发管理，流式入站（`stream:true`）透传 SSE、非流式入站（`stream:false` 或缺省）聚合为标准 `chat.completion` JSON；其余路径（如 `/agenttool/*`）直接透传。端口被占用时（如另一个 dsh 实例已在运行）插件只告警不崩溃，桥状态在 CodeBuddy 区块头状态行（以及通用区块「额度与用量」分区末行）可见。
 
 ### 额度与用量
 
-实时（分区打开时 10s 轮询）显示：
+实时（「通用」区块展开时 10s 轮询；收起即停）显示：
 
 - **消耗量（精确）**：桥对每个 chat 请求的网关 `usage.credit` 恒开计量（搜索/抓取/生图路径同样入账），持久化在 `~/.dsh/codebuddy-plugin-usage.json`；展示今日/累计 credit 与请求数、最近轮次（按 >45s 间隔聚类的近似口径，含缓存命中率）
 - **账户额度信号**：套餐类型与企业名（`GET /v2/accounts`）、额度不足时网关的告警文案（`get-dosage-notify`，官方 CLI 同源）。额度是账户级的，与 WorkBuddy 共用
@@ -178,7 +178,7 @@ dsh plugin --profile web add dsh-tap
 
 ## 凭据配置
 
-两种方式（设置卡"登录"区切换）：
+两种方式（设置卡 CodeBuddy 区块「凭据」组切换）：
 
 - **OAuth 登录**（推荐）：浏览器完成官方登录页授权即可，无需任何环境变量；令牌自动续期，覆盖模型对话、搜索、抓取、识图全部路径。
 - **API Key**：设置卡内添加一个或多个 Key（多把自动轮询 + 失败冷却）；或在 `~/.dsh/.credentials.yaml` 写入 `CODEBUDDY_API_KEY: "ck_你的key"`（或同名环境变量）作为兜底引用。

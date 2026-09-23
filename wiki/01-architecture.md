@@ -15,7 +15,7 @@
 | 上游适配器（v0.8.x） | `providers/trae/` | 全部 TraeWork CN 事实：自持设备密钥 OAuth、state.vscdb 目录、OpenAI↔Trae 翻译网关 :3902、remote 会话传输、错误信封 | 网关端口/域名/路由块全部热生效（settings.yaml 镜像整块铺/删） |
 | 上游适配器（v0.9.7+） | `providers/qoder/` | 全部 Qoder CN 事实：PKCE S256 设备流 OAuth、COSY WASM 签名运行时、签名目录、OpenAI↔COSY 加密信封翻译网关 :3903 | 网关端口/域名热生效；patch 路由改动重启 dsh |
 | 多服务商 | `providers/openai-compat.js` + presets | key 型 OpenAI 兼容上游注册表（共享骨架 + 每上游 preset） | 免重启（settings.yaml 热加载） |
-| 浏览器半 | `lib/client.js` | Settings → 插件配置 的设置卡（状态芯片 + 8 标签页，懒挂载隐藏不卸载） | 刷新页面 |
+| 浏览器半 | `lib/client.js` | 设置卡（dsh ≥ 0.1.6 = 侧栏「插件」→ dsh-tap；旧宿主 = Settings → 插件配置）：**4 区块通道手风琴**（CodeBuddy / TraeWork CN / Qoder CN / 通用，区块头常显状态行 = 单一真源，展开才挂载、收起不卸载） | 刷新页面 |
 
 ### 架构总览图
 
@@ -30,7 +30,7 @@ flowchart TB
     end
 
     subgraph BROWSER["浏览器"]
-        CARD["lib/client.js 设置卡（状态芯片 + 8 标签页）"]
+        CARD["lib/client.js 设置卡（4 区块通道手风琴）"]
     end
 
     subgraph PLUGIN["dsh-tap"]
@@ -170,7 +170,7 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    CARD["设置卡 lib/client.js（状态芯片 + 8 标签页）"]
+    CARD["设置卡 lib/client.js（4 区块通道手风琴）"]
     CARD -->|"GET /dsh-tap/settings"| VIEW["settingsView()（脱敏视图）"]
     CARD -->|"POST patch（保存）"| MERGE["SETTINGS_FIELDS 白名单过滤<br/>+ Config schema 校验"]
     CARD -->|"POST action（动作）"| ACT["oauth-* / model-list / model-sync /<br/>provider-* / credential-* / trae-* / qoder-* / usage"]

@@ -27,7 +27,7 @@
 
 ```mermaid
 flowchart TB
-    STATIC["静态 18 模型<br/>cordis.patch.yml（单一事实源）"] --> UNION["computeBaseModels()"]
+    STATIC["静态 23 模型<br/>cordis.patch.yml（单一事实源）"] --> UNION["computeBaseModels()"]
     DYN["动态目录 /v3/config<br/>（启动 + 手动同步，失败回落静态）"] -->|成功| UNION
     UNION --> APPLY["− disabled（modelState.disabled）<br/>+ extra（目录新增且启用）<br/>+ overrides（contextWindow / maxTokens）"]
     APPLY --> EFF["computeEffectiveModels()"]
