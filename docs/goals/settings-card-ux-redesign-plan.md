@@ -1484,6 +1484,14 @@ git add lib/client.js && git commit -m "fix(client): 回归移植暴露的缺陷
 - Consumes: Task 1–6 的 DOM 契约（`.cbc-acc[data-block]`、`.cbc-acc-toggle[data-block]`、`.cbc-acc-body[data-block]`、`.cbc-syncbar`、`details.cbc-adv`、`.cbc-acc-head input[data-field]`）
 - Produces: 全部脚本跑绿的证据（写进 Task 9 的 CHANGELOG）
 
+- [ ] **Step 0: 环境事实与写盘纪律（2026-09-23 实施期更新，覆盖下面所有步骤里的地址）**
+
+  - **测试地址已换**：控制方自有的 `dsh web`（3080）于 10:06 被外部终止；用户的 dsh-launcher 起了**托管实例** `dsh web --no-open --port 3090`（Edge 正连着它）。本任务一律用 `http://127.0.0.1:3090/?token=<launcher 日志里的 token>`（token 见 `dsh-launcher/native-web-3090.log`）。**不许启停 dsh、不许另起实例、不许占端口**——第二个实例会抢 3901/3902/3903 桥端口，启动期的目录镜像写入还会触发宿主 profile 重载，干扰用户会话。
+  - **md5 基线已重立**为 `~/.dsh/codebuddy-plugin.json` = `7127964e84619be3ef21ea371516f575`（10:07 被外部合法改写，新增 `qoderEnabled:true` + qoderModelPrefs）。旧值 `be0b8864…` 作废，**不许回滚用户这次改动**。
+  - **写盘分级**（先 `grep` 核自己手上的脚本）：`card-accordion.js` / `qoder-slot-check.js` / `shots-baseline.js` = **只读**（真实页面只 GET，写入组一律 page-local mock）⇒ 可直接在 3090 上跑。`qoder-prefs-check.js` / `qoder-tab-phase2.js` = **经 UI 触发真实 `POST {patch}`**，且按 AGENTS.md 的"收尾复原（含文件层擦除）"纪律会把文件层擦回 pristine ⇒ 在用户实例上跑**有抹掉其 10:07 改动的风险**，须先备份 `~/.dsh/codebuddy-plugin.json` 再跑、跑完从备份还原，或由人类 partner 明确放弃这批改动。`qoder-e2e.js` 额外**真实发消息消耗额度** ⇒ 默认跳过，CHANGELOG 记"e2e 未跑（额度考虑）"，除非人类 partner 明确要求跑。
+  - **Task 7 路由至此的套件卫生**（都在 `dsh-ui-test/`，不进 git）：①`card-accordion.js:954` 的 general 收尾复位只收布局不收焦点 ⇒ 补一次 `document.activeElement.blur()`，否则全页截图 `acc-task4-groups.png` 带 focus ring、Task 8 的明暗基线会撞上；②`shots/` 孤儿清理：`acc-task7-light.png`（已废弃写法的产物，现无写者）与老套件遗留的 `reg-*.png` ×5 删掉，`tmp-h6-{default,dark,light}.png` ×3 是 `[H6]` 结论的物证，**本轮结束前保留**；③三处失效指针：`:793-794` 仍指仓库外报告、`:874` 引用已删除的 `tmp-h6-probe` 脚本、`:20`/`:45`/`:961` 的"10 条 `warns===0`"与实况（9 条同型 + `[H6]`/主 page 各 1 条）不符 ⇒ 一次改齐。
+  - **浅色可读性人工核验项**（Step 4 一并看）：fix round 后的浅色截图里 **TraeWork CN 区块头未勾选的启用 checkbox 呈实心深方块**，浅底上对比度可疑——若确认不可读，报为缺陷（这是 Task 3 把开关上移到区块头后在浅色下才暴露的组合），不要在本任务里顺手堆 UI 改动。
+
 - [ ] **Step 1: 统一驱动改法（每个脚本同一套替换）**
 
 | 老写法 | 新写法 |
