@@ -624,6 +624,10 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
     /桥未监听 :3901/.test(before.text), JSON.stringify(before));
   check("[B4] 展开 CodeBuddy", await openBlock(page2, "codebuddy"));
   await sleep(2000);
+  // 基线：展开区块时 ModelsSection 挂载即发 model-list POST（与保存无关），
+  // posts 绝对值恒 ≥2 —— 断言保存动作的增量恰为 1（绝对值 posts===1 在
+  // oauth 模式宿主机上不可达；语义等价收紧，判别力不变）。
+  const prePosts = (await headOf(page2)).probe.posts;
   const toggled = await page2.evaluate(() => {
     const cb = document.querySelector('.cbc-acc-body[data-block=codebuddy] input.cbc-check');
     if (!cb) return false;
@@ -633,8 +637,8 @@ git commit -m "feat(client): 设置卡改通道手风琴骨架（4 区块 + 区�
   await sleep(600);   // 首次 GET 已回，仍在 1s 退避窗内
   const mid = await headOf(page2);
   check("[B4] 保存后首次 GET 仍「桥未监听」（复现竞态窗口）",
-    toggled && !!mid.probe && mid.probe.posts === 1 && mid.probe.gets >= 1 && /桥未监听/.test(mid.text),
-    JSON.stringify({ toggled: toggled, mid: mid }));
+    toggled && !!mid.probe && mid.probe.posts === prePosts + 1 && mid.probe.gets >= 1 && /桥未监听/.test(mid.text),
+    JSON.stringify({ toggled: toggled, prePosts: prePosts, mid: mid }));
   await sleep(2500);  // 越过 1s 退避
   const after = await headOf(page2);
   check("[B4] 退避补拉后自愈：区块头假「桥未监听」消失",
@@ -963,6 +967,12 @@ CSS 追加：
 
 `QoderSection`：同样替换 `:1916`–`:1927`，四个字段 `qoderLoginHost`/`qoderOpenapiBaseURL`/`qoderInferBaseURL`/`qoderClientId` 原样搬进 `details.cbc-adv`，删掉 `advOpenState`/`advOpen`/`setAdvOpen`。
 
+- [ ] **Step 5b: 网关组补失败原因出口（Task 3 审查 Minor 2 路由至此）**
+
+Trae/Qoder 的网关组内加一行状态文字，取 `props.trae.bridge` / `props.qoder.bridge` 的 `running`/`port`/`lastError`：未监听时把 `lastError`（如 `EADDRINUSE`）显示出来——踩坑 #7「错误提示要带原因」，Task 3 删「启用通道」行后它是 :3902/:3903 失败原因的唯一可能出口。口径照 CodeBuddy 流式桥行（`bridgeView.lastError` 那段）写。
+
+断言 `[D4]`：mock 视图给 `trae.bridge = {running:false, port:null, lastError:"mock-eaddrinuse"}`（qoder 同），展开 Trae/Qoder 后其网关组文案含 `mock-eaddrinuse`。
+
 - [ ] **Step 6: 跑回归确认绿**
 
 Expected: 全部 ok（32 + 7 = 39 通过 / 0 失败）。
@@ -1137,9 +1147,16 @@ CSS 追加：
 
 **注意**：Trae/Qoder 的操作条要在「通道未启用」时也渲染（现在模型组整体在 `value.xxxEnabled === true` 才出现）——把 `.cbc-syncbar` 提到该条件之外，只有**列表**部分保留条件；未启用时状态文字后面追加一句「（通道未启用）」，避免用户对着一个不生效的按钮发愣。
 
+- [ ] **Step 4b: 模型子标题降一级 + [D1] 收紧 + 高级 summary 补 title + adv 输入计数（Task 4 审查 Minor 2/3/4/5 路由至此）**
+
+  1. 新增 CSS `.cbc-subtitle{font-size:12px;font-weight:600;color:var(--dsw-alias-label-secondary,inherit);margin:8px 0 4px}`；把模型列表的子标题（ModelsSection 的「当前可用（N）」「未启用（N）」、Trae/Qoder 的「X 模型（选择器内 n/m）」）从 `.cbc-group-title` 改为 `.cbc-subtitle`——一级序列契约（`.cbc-group-title` = 凭据/模型/工具/网关/高级）由此恢复逐字成立，视觉层级也不再与一级标题平级。
+  2. `[D1]` 由 isSubsequence 收紧为**直接子元素逐字全等**：`.cbc-section > .cbc-group-title` 与 `.cbc-section > details.cbc-adv > summary` 的并集序列 == 期望序列（乱序/缺组/一级标题进错分区都必须红）。
+  3. 两处 `details.cbc-adv` 的 `summary` 加 `title` 属性复述旧折叠按钮携带的提示（Trae：「认证 / 聊天 / 登录域」；Qoder：「登录域 / OpenAPI / infer / client_id」）；可见文本仍为「高级」，断言不变。
+  4. `[D2]` 补输入计数断言：qoder 的 `details.cbc-adv input` 数 === 4、codebuddy 的 === 1（trae 的 === 3 已有）。
+
 - [ ] **Step 5: 跑回归确认绿**
 
-Expected: 全部 ok（39 + 8 = 47 通过 / 0 失败）。
+Expected: 全部 ok（Task 4 收尾 56 通过 + 本任务 [E1]×2 + [E2]×4 + Step 4b [D2]×2 = 64 通过 / 0 失败；实际数目若不符，须在报告里解释差额）。
 
 - [ ] **Step 6: 提交**
 
@@ -1161,6 +1178,8 @@ git commit -m "feat(client): 三家模型组同构——「同步目录」单按
 - Produces: `generalSummary(usageRes, providersRes)` → `string`（区块头文案）；`useGeneralSample(post)` → `{text, usage, providers}`（卡片级一次性取样，不轮询）
 
 - [ ] **Step 1: 追加失败断言**
+
+**变量名裁定（落盘时改，其余逐字照抄）**：下面代码里的 `page5` / `pageErrors5` / `page6` 与 Task 5 已落地的 `[E2]` 组 `const page5`（`card-accordion.js:516`）**同作用域重名**，直接落盘会 SyntaxError ⇒ 统一改名为 `pageF1` / `pageErrorsF1` / `pageF6`。
 
 ```js
   // ---- [F] 通用区块头取样 + 轮询随展开 ----
@@ -1314,9 +1333,23 @@ Expected: `[F1]`–`[F6]` FAIL（挂载时没有取样，通用头部还是占�
 
 Task 1 已把 `usage` 的 `active` 接到 `!!openBlocks.general`；本步只做核对：`UsageSection` 内 `useEffect(..., [active])` 在 `active === false` 时 `return undefined`（不设 interval），且分区**只在通用区块首次展开时才挂载** ⇒ `[F4]`/`[F5]` 的语义成立。若发现挂载即轮询（`active` 默认 `true`），改为 `props.active === true`。
 
+- [ ] **Step 4b: general 一级标题契约对齐（控制器指派，承接 Task 5 的 `.cbc-subtitle` 裁定）**
+
+  1. `UsageSection` 里两处**子标题**从 `.cbc-group-title` 降为 `.cbc-subtitle`：资源包表头（`grep -n 'key: "pkh"' lib/client.js`）与「最近轮次（按间隔聚类，近似）」（`grep -n '最近轮次' lib/client.js`）。general 的一级标题只留「额度与用量」（`UsageSection`）与「服务商」（`ProvidersSection`）。
+  2. 套件追加 `[F7]` **两条**断言：`.cbc-acc-body[data-block=general]` 内每个 `.cbc-section` 的**直接子级** `.cbc-group-title` 文本序列逐字全等——`UsageSection` === `["额度与用量"]`、`ProvidersSection` === `["服务商"]`。选择器不中时必须红（不许 `[].every()` 型恒真）。general 是懒挂载，**复用 `[F4]` 已展开的 `pageF1`**（在 `[F5]` 收起之前读），别新开页面。
+
+- [ ] **Step 4c: 审查路由至此的加固（Task 6 审查 Minor 2/3/6/7/9）**
+
+  1. `generalSummary`：`numericQuota` 为真但带 `resourceError`（分区自己会渲染「数值额度读取失败」）时，头部**不得**落进「估算（累计 …）」分支——`q.resourceError` 存在即出 `额度 —`。理由：已声明数值额度却读失败时给一个累计估算数字，语义偏（spec §3 的意图是不编数字）。
+  2. 卡片层取样的外层 `.catch` 补 `console.warn`（两个输入各自 `.catch(() => null)` ⇒ 外层只可能捕到 `generalSummary`/`setGenSample` 自己的 bug，静默置 null 会让头部永远停在占位文案且无线索，违踩坑 #7）。
+  3. `[F7]` 补一条**正向**断言封住"整段删掉子标题也绿"的洞：`.cbc-acc-body[data-block=general] .cbc-subtitle` 文本序列 === `["资源包（2）", "最近轮次（按间隔聚类，近似）"]`（与 [F1] mock 的 packs 条数联动）。
+  4. `[F6]` 的负向半句 `!/credit/.test(head.replace(/估算/g,""))` 里那个 `replace` 对 `/credit/` 是无效操作 ⇒ 改为钉**全等**：`额度 估算（累计 7.00） · 服务商 0`（正向 `/估算/` 半句保留，防回落文案假绿）。
+  5. `[F7]` 的两处内联 `JSON.stringify(…) === JSON.stringify(…)` 改用套件既有的 `sameSeq` helper。
+  6. 新增 `[F8]` mock 组（**独立 `newPage(installer)`**，主 page 不装 mock）：`action:'usage'` 返回 `{ok:true, quota:{numericQuota:true, resourceError:"mock-quota-401"}, usage:{totalCredit:7,…}}`、`provider-list` 返回 1 条 ⇒ 断言头部含 `额度 —`、**不含** `估算`/`累计`/任何数字额度。这是 4c-1 的覆盖测试：改前必须红。两条断言（mock 通道可开 + 头部不编数字）。
+
 - [ ] **Step 5: 跑回归确认绿**
 
-Expected: 全部 ok（47 + 9 = 56 通过 / 0 失败）。注意 `[F3]`/`[F5]` 各含 12s 等待，整套耗时约 1 分钟。
+Expected: 全部 ok（Task 5 收尾 **70** 通过 + `[F1]`×3 + `[F2]`×1 + `[F3]`×1 + `[F4]`×2 + `[F5]`×2 + `[F6]`×2 + `[F7]`×3 + `[F8]`×2 = **86 通过 / 0 失败**；实际数目若不符须在报告里解释差额，**不许改断言凑数**）。注意 `[F3]`/`[F4]`/`[F5]` 合计约 37s 等待，整套耗时约 2 分钟。
 
 - [ ] **Step 6: 哈希对账 + 提交**
 
@@ -1355,7 +1388,7 @@ git commit -m "feat(client): 通用区块头挂载取样（额度/服务商数�
 | `[10]` 浅色主题渲染 | `page.emulateMediaFeatures([{name:'prefers-color-scheme',value:'light'}])` 后重开卡截图，断言无 pageerror + 四区块仍在 |
 | `[11]`/`[13]` 无 pageerror | 每个 mock 通道各自断言（`[B4]`/`[C3]`/`[F5]` 已有），真实视图阶段补一条 |
 | `[12]` 启用+未监听 → warn 芯片带端口 | 已由 `[B3]` 覆盖（落到区块头），跳过 |
-| `[14]` 保存后退避补拉自愈 | 已由 `[B4]` 覆盖，跳过 |
+| `[14]` 保存后退避补拉自愈 | 已由 `[B4]` 覆盖，跳过；**加固一行**：`[B4]` 的 after 断言补 `after.probe.posts === prePosts + 1` 复核，关死"mid→after 窗口内出现第二次保存导致自愈"的假说（Task 2 审查 Minor 1 路由至此） |
 
 新区块头键盘断言代码：
 
@@ -1387,6 +1420,35 @@ git commit -m "feat(client): 通用区块头挂载取样（额度/服务商数�
     }).length);
   check("[G2] 无悬空 aria-controls", dangling === 0, "dangling=" + dangling);
 ```
+
+- [ ] **Step 1b: 套件卫生（Task 2/4/6 审查路由至此）**：① `[B4]` 的 after 断言补 `after.probe.posts === prePosts + 1` 复核（关死"mid→after 窗口内第二次保存导致自愈"的假说）；② `card-accordion.js` 的 `pageerror` 采集里 `turnTail` 过滤加注释说明理由（宿主已知噪声）或收窄匹配面；③ **补 `console` 采集**——套件目前只监听 `pageerror`，而 Task 6 的 Step 4c-2 给取样失败加了 `console.warn("dsh-tap: …")` 却无回归锁：给主 page 与 `newPage` 开的每个 mock 页都挂 `console` 监听，**只收**匹配 `/dsh-tap:/` 前缀的 `warning`/`error` 级消息（宽匹配会被宿主噪声打成 flaky），在真实视图阶段与各 mock 组收尾各断言一次「无 dsh-tap 自身告警」。
+
+- [ ] **Step 1c: 抽 fetch-mock installer 工厂（Task 6 审查 Important 1，plan-mandated 债务）**
+
+`card-accordion.js` 现有 **8 份**逐字复制的 fetch-mock 骨架（`:206`、`:235`、`:317`、`:435`、`:495`、`:572`、`:677`、`:712`，每份约 12 行：`/dsh-tap/settings` URL 过滤、method 推断、`json()` 构造 `Response`、GET 透传真实视图）。7~8 份各自独立变绿 = 分叉不可见，harness 级教训要改就得改 8 处 ⇒ 抽一个 Node 侧工厂，变化全部走**可序列化参数**：
+
+```js
+  // mock 骨架只此一份。evaluateOnNewDocument 只能传可序列化实参 ⇒ 每组的差异
+  // 用 plain object 描述（哪些 action 返回什么、要不要记 action 序列），在浏览器
+  // 侧解释；不要试图把函数传进去。
+  const mockInstaller = (realView, spec) => (pg) =>
+    pg.evaluateOnNewDocument((v, s) => { /* 唯一一份 fetch 补丁 */ }, realView, spec);
+```
+
+硬约束（逐条守住，否则断言会**静默退化**）：
+
+- **主 `page` 自始至终不装 mock**（既有纪律，工厂只用于 `newPage`）。
+- `[F8]` 的 `usage` 响应必须保留 `resource: null` + `resourceError` 的**配对**——少了 `resource:null`，「数值额度读失败时头部不编数字」会退化为空洞通过（Task 6 实现者交接）。
+- `[F6]` 的 mock 现用 `quota:{numericQuota:false, error:"api-key 模式无数值额度"}`，其中 `error` 是**非契约键**（真实 api-key 产物是 `{resource:null, resourceError:null}`）⇒ 抽工厂时改成契约形状，断言不变（仍须绿）。
+- `[F7]`#3 的期望文本 `资源包（2）` 与 `[F1]` mock 的 packs 条数 + `showAgg` 为假强耦合 ⇒ packs 条数若变，同步改期望文本，别让它静默失效。
+- 卡片挂载会先打 **2 个 POST**（`usage` + `provider-list`）⇒ 任何"绝对 POST 计数"断言一律用**增量基线**（`[B4]`/`[C3]`/`[E2]` 已是增量式，不许退回绝对式）。
+- general 区块头文案已**动态化**（取样落地后才有数字）⇒ 不要钉静态占位文案。
+- 重构后**逐组比对**：8 组的响应体与计数语义必须与重构前逐字等价；跑一次全套件，断言数只允许因 Step 1/1b 的新增而上升，任何下降或意外变化都要在报告里解释。
+
+- [ ] **Step 1d: 审查裁定（Task 7 审查 2 Important 的最终形态，覆盖上面 Step 1 的两处写法）**
+
+  1. **`[G1]` 的 Enter 必须用可信按键**：上面代码块里的 `t.dispatchEvent(new KeyboardEvent("keydown", …))` 派发的是**不可信**事件——不可信事件不触发原生 `<button>` 的默认激活行为，因此测出的"不翻转"是 harness 手法造成的伪缺陷（真实键盘用户一直可用）。最终写法：`focus()` 后 `await page.keyboard.press("Enter")`（CDP 受信任事件）。**本任务据此零产品代码改动**（曾加的 `onKeyDown` 7 行已 revert）。
+  2. **`[H6]` 浅色主题必须先立 dark 基线**：只设 `prefers-color-scheme: light` 没有鉴别力——headless Chrome 默认即 light，那条 `matchMedia` 守卫无论仿真是否生效都为真（死断言）；且宿主的暗色实际由 `body[data-ds-dark-theme]` 驱动。最终写法：先仿真 `dark` 并断言 dark 基线命中，再切 `light` 断言翻转，同时把 `document.body.hasAttribute("data-ds-dark-theme")` 读进失败详情；截图名不暗示"浅色基线"（`acc-task7-h6-theme-switch.png`）。
 
 - [ ] **Step 2: 跑新套件确认绿**
 
@@ -1503,6 +1565,8 @@ profile ~/.dsh/profiles/web 已 link 本仓库 ⇒ 改 lib/client.js 刷新页�
 - [ ] **Step 3: 更新 `AGENTS.md`**
 
 架构表"浏览器半 `lib/client.js`"那一行的职责描述：把"折叠态状态芯片 + 8 标签页懒挂载隐藏不卸载"改为"4 区块通道手风琴（区块头常显状态行 = 单一真源）+ 展开才挂载/收起不卸载"。踩坑速查节**不新增条目**（本轮无新坑；若实施中真踩到新坑，按纪律取新编号追加到 `docs/pitfalls.md` 并在此加一行）。
+
+同一步里 grep 全仓文档的旧口径并修正（Task 3 交接）：`grep -rn "启用通道" README.md wiki/ AGENTS.md` —— `README.md:50/62` 与 `wiki/09-run-and-test.md:33` 仍写"分区内启用通道"，实际已上移到区块头；一并改口径。
 
 - [ ] **Step 4: 写 `CHANGELOG.md` 0.10.0 段**
 
