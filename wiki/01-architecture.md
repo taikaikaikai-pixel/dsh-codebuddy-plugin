@@ -190,7 +190,7 @@ OAuth 令牌单独存 `~/.dsh/codebuddy-plugin-auth.json` / `~/.dsh/trae-plugin-
 
 模型可见性靠写 `~/.dsh/settings.yaml` 的覆盖层实现（chokidar 热加载、免重启）：
 
-- **CodeBuddy**：`llm-pi-ai.providers.codebuddy.models` = `computeEffectiveModels()`。基清单 = 静态 18 个 ∪ 动态目录（`/v3/config` 启动同步），再减 disabled、加 extra、应用 overrides（contextWindow/maxTokens 覆盖）。纯净态（无 disabled/extra/overrides 且无动态目录）时**删除**覆盖层，避免陈旧清单遮蔽 patch 更新。
+- **CodeBuddy**：`llm-pi-ai.providers.codebuddy.models` = `computeEffectiveModels()`。基清单 = 静态 23 个 ∪ 动态目录（`/v3/config` 启动同步），再减 disabled、加 extra、应用 overrides（contextWindow/maxTokens 覆盖）。纯净态（无 disabled/extra/overrides 且无动态目录）时**删除**覆盖层，避免陈旧清单遮蔽 patch 更新。
 - **Trae**：**整块铺/删**（路由存在性管理）——启用+已同步铺完整 `providers.trae` 块（剔除 disabled 的模型清单，baseURL 跟随 traeBridgePort）；禁用/未同步/全禁用删整块。patch 不带基线，删块即干净、无回落。
 - **Qoder**：**整块铺/删**（同 trae 纪律）——启用+已同步铺完整 `providers.qoder` 块（displayName `Qoder CN`/api/baseURL 跟随 qoderBridgePort/哨兵 headers/剔除 disabled 的 models）；禁用/未同步/全禁用删整块。
 - **多服务商**（G6）：`llm-pi-ai.providers.<id>` 整块由插件写（先本地校验 + 实测 GET /models 才落盘——坏块会令整个用户层连坐，踩坑 #21），key 写 `~/.dsh/.credentials.yaml` 的 `<ID>_API_KEY`（0600）。
