@@ -1549,6 +1549,21 @@ cd /c/Users/21613/dev/dsh-tap && git status --short && git add lib/client.js \
 - Consumes: Task 1–8 的实测结果（断言数、脚本清单、截图名）
 - Produces: 0.10.0 发版所需的文档一致性
 
+- [ ] **Step 0: 前 8 个任务路由至此的收口项（控制方裁定，逐条做完）**
+
+  1. **数字口径（Task 7/8 实测；CHANGELOG 与 wiki 一律从这里取，不许沿用文档旧数）**：`card-accordion.js` **117 断言全绿**（静态 `check(` 站点 115 + `[B2]` 循环多跑 2 次）；`qoder-slot-check.js` 13/13、`qoder-tab-phase2.js` 11/11、`qoder-prefs-check.js` 37 通过 / 0 失败 / 跳过 0（静态 39 站点，2 条在未触发分支）、`shots-baseline.js` 十张元素级基线 0 失败、`debug-inputs.js` 实跑 exit 0。**`qoder-e2e.js` 未跑**（会真实发消息消耗用户额度，控制方裁定跳过）⇒ CHANGELOG 必须如实写"未跑（额度考虑）"，不得声称通过。
+  2. **用户可见文案（Task 6 审查 Minor 11 路由至此）**：`UsageSection` 仍写「本页可见时每 10 秒自动刷新」，而语义自 Task 1 起是「通用区块展开时」（`grep -n '本页可见时' lib/client.js`）⇒ 改成「通用区块展开时每 10 秒自动刷新」，改完重跑 `card-accordion.js` 确认仍 117/117。
+  3. **CHANGELOG 要记两条反复，不能只记结果**：① 键盘激活补丁 `48329a7` 加了又 revert（`4dd9f52`）——起因是回归锁用 `dispatchEvent` 派发**不可信** keydown 测出伪缺陷；② 浅色原生控件配色缺陷（宿主无条件 `color-scheme: dark`）由截图基线**人工看图**发现、`a421d35` 修复。
+  4. **新增踩坑三条**（`docs/pitfalls.md` 取新编号 #46/#47/#48，并在 AGENTS.md「踩坑速查」各加一行——这是对 Step 3 里"本轮无新坑"那句的更正，本轮确实踩到三条，每条都付了一轮 fix 的学费）：
+     - **#46 键盘可达性断言必须用可信按键**：`dispatchEvent(new KeyboardEvent(...))` 不触发原生 `<button>` 的默认激活 ⇒ 测出的"不翻转"是 harness 伪缺陷；曾为此在产品代码加 7 行 `onKeyDown` 又撤销。正解 = `page.keyboard.press(...)`。
+     - **#47 宿主主题由 `body[data-ds-dark-theme]` 属性驱动，`prefers-color-scheme` 媒体仿真对本宿主零效果**（三种仿真下截图 md5 互等）⇒ 浅色不变式要走摘属性路径；且原生控件配色必须显式绑该属性——`color-scheme` 的 used value 由 html/body 传播，插件不写就跟着宿主恒深色，浅色下未勾选 checkbox 呈**深色实心块**（看起来像已开启）。
+     - **#48 `page.screenshot({fullPage:true})` 在本宿主是空操作**（产出恒为视口 1440×900；"尺寸对 ≠ 内容在"）⇒ 区块级基线一律走元素句柄截图 + **逐张看图**；配套教训：文档自述要与产物同批更新（本轮出现过"报告声称的适配在产物里零命中"与"两向同验"过誉两类）。
+  5. **文档一致性 grep 清单**（Step 3 的扩展）：`grep -rn "8 标签\|标签页\|注意条\|状态芯片\|cbc-tab\|cbc-panel\|启用通道\|立即同步\|刷新列表" README.md wiki/ AGENTS.md docs/goals/settings-card-ux-redesign.md` ⇒ 命中处逐个判"是否已被 4 区块手风琴取代"并改口径（Task 3/6 已点名 `README.md:50/62`、`wiki/09-run-and-test.md:33`）。
+  6. **两处失效指针**（Task 8 复审三条 Low 之二）：`card-accordion.js:1003-1004` 仍把 `acc-task4-groups.png` 说成"Task 8 明暗基线的口径"（现基线已元素级，该图仍是 1440×900 视口图）⇒ 改注释；`task-8-report.md:247/:283` 仍留"两向同验（改反了也必红）"⇒ 与 §11.8 一次改齐，别让喂给 CHANGELOG 的文档自相矛盾。
+  7. **`shots/` 清理用归档不用删**：现 62 张，把三类误导性产物**移动**到 `shots/_archive-2026-09-23/`（可逆）——18 张标签时代 `baseline-*`/`r1-*`、6 张被取代的 1440×900 假基线（`acc-00..04`、`acc-dark-active-tab.png`）、5 张无写者探针（`probe-dark-body-{general,qoder}`、`probe-heads-{light,dark}`、`probe-head-check-checked-light`）。**保留**：新基线 `acc-{light,dark}-0[0-4]-*.png` ×10、套件产物 `acc-task*.png`、物证 `tmp-h6-*.png` ×3 与 `probe-head-check-unchecked-{dark,light}.png`。
+  8. **Step 8 作废**：控制方自有的 3080 实例早已不在，现在跑的是**用户 launcher 托管的 3090**（Edge 连着）⇒ **不要杀它、不要动任何端口**。改为：`netstat -ano | grep ':3080'` 确认 3080 本就空闲，并在收尾里写明"测试服务由用户侧 launcher 管理，本流程未启停"。
+  9. `docs/probes/qoder-quota-1790135931035.json`（未跟踪、非本流程产物）**不入库、不删除**，收尾时向用户报来源待认。
+
 - [ ] **Step 1: 重写 `wiki/07-web-client.md` 的"卡片结构"节**
 
 把"状态芯片 + 8 标签页"整节换成通道手风琴的描述（4 区块、区块头状态行 = 单一真源、展开才挂载/收起不卸载、通道内 5 分组、`details.cbc-adv` 与 `details.cbc-help` 的分工、通用区块头挂载取样与轮询条件）。保留"请求契约"与"React 纪律"两节，并在纪律节补一条：**区块头是 `div` + 两个独立交互元素（展开 button + 启用开关），不要把开关嵌进 button**。
