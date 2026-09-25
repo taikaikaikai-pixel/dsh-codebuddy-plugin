@@ -113,6 +113,7 @@ Qoder CN 通道：
 46. **键盘可达性断言必须用可信按键**：`dispatchEvent(new KeyboardEvent(...))` 不触发原生 `<button>` 的默认激活 ⇒ 测出的"不翻转"是 harness 伪缺陷，曾为此在产品代码加 7 行 `onKeyDown` 又撤销（`48329a7`→`4dd9f52`）；正解 `page.keyboard.press(...)`
 47. **宿主主题由 `body[data-ds-dark-theme]` 属性驱动**：`prefers-color-scheme` 媒体仿真对本宿主零效果（三种仿真截图 md5 互等）⇒ 浅色不变式要走摘属性路径；原生控件配色必须显式绑该属性（`color-scheme` used value 由 html/body 传播，插件不写就恒深色，浅色下未勾选 checkbox 呈**深色实心块**、看着像已开启）
 48. **`page.screenshot({fullPage:true})` 在本宿主是空操作**：产出恒为视口 1440×900（"尺寸对 ≠ 内容在"）⇒ 区块级基线走元素句柄截图 + 逐张看图；配套教训 = 文档自述要与产物同批更新（"报告声称的适配在产物里零命中"与"两向同验"过誉都出现过）
+49. **上游给 provider 模块改名/拆包 ⇒ profile patch 里旧模块名的条目被整条静默跳过**（rc.2 的 `llm-deepseek` → `dsh-llm-deepseek-api-key`）——包还在、版本也对、退出码还是 0；升级后必跑 `--dump-config 2>err` 逐行读 stderr，id→模块名的权威映射看 dump 的 bundle 清单段（`repair-profile-links.js --dry-run` 的"补缺链"清单是改名/拆分的免费预警）
 
 ## 常用命令
 
