@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **docs：AGENTS.md 膨胀治理**（docs-only，零代码改动；新坑 **#52**）——184 行 / 34,323 B → **82 行 / 8,234 B**（预算 ≤150 行 / ≤12KB），任务态知识迁入项目 skill，体积与引用完整性由 linter 在 CI 锁死：
+  - **分流瘦身**：项目定位压 3 行（沿革本就在 CHANGELOG）；三层架构表每格压成「文件 + 一句话职责 + 裁判文档链接」（host-config.js 职责补入 wiki/02——此前全仓只有 STATE.md 覆盖，两处 ≤0.1.6 时代的 settings.yaml 写路径口径同批修正）；网关事实速查 40 行压成 5 条通则 + gateway-facts.md 指针；踩坑速查 51 条长句压成「编号 + 标签」超短表（全本仍在 docs/pitfalls.md，纪律改为动手前 grep 编号）；常用命令留 top 12 无注释，probe 脚本用法注释迁 wiki/09（补 8 个 Qoder/CodeBuddy probe 行）
+  - **任务态知识 skill 化**：浏览器回归大段落整体迁入 `.agents/skills/dsh-ui-regression/`（agentskills.io 规范 frontmatter，description 含触发词）；wiki/09 同名节改为指针，顺带消除 wiki 停留 129 而实际 197 的断言口径漂移
+  - **CI 上锁**（.github/workflows/node.js.yml）：硬闸门 `agents-md lint --check --threshold 0 --max-lines 150 --max-bytes 12000 --fail-on-placeholder`（PyPI `agent-context-md`，支持手写 AGENTS.md；`--threshold 0` 因为质量评分面向英文模板结构、对中文薄索引恒 0 分——只用行数/字节/占位符硬闸门，评分不参与）+ `asamarts/alint@v0.16.1`（`agent-context@v1` 规则集：存在性/陈旧引用/stub/膨胀守卫，`.alint.yml`，github 注解 + fail-on-warning）；本地零依赖预算检查 `scripts/verify-agents-md.mjs`（行数/字节/引用路径存在 + 踩坑编号连续性对账）同入 CI
+  - **新增** `/agents-md-audit` 斜杠命令（`.agents/commands/`）：定期对账 AGENTS.md 与构建/测试/CI 实况
+  - 头注纪律同步更新：docs/pitfalls.md 与 docs/rules/gateway-facts.md 的「在 AGENTS.md 加一行」旧口径改为新分流规则
+
 ## 0.13.0 (2026-09-26)
 
 - **设置卡 P3：打磨——冷启动引导 + 头部开关误触缓解**（goal 驱动，判定表 `docs/goals/settings-card-ux-redesign.md` §4；纯 `lib/client.js` 前端改动，后端契约零变化）

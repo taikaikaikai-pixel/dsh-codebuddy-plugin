@@ -33,3 +33,15 @@ jobs:
     - run: node scripts/verify-trae-provider.mjs
     - run: node scripts/verify-qoder-provider.mjs
     - run: node scripts/verify-host-config.mjs
+    - run: node scripts/verify-agents-md.mjs
+    - name: AGENTS.md 体积硬闸门（agents-md lint，PyPI agent-context-md）
+      # --threshold 0：质量评分面向英文模板结构（## Commands/Testing/Boundaries），对本仓库的中文薄索引恒 0 分；
+      # 只用它的硬闸门（行数/字节/占位符），评分不参与判定（实测：不带 --threshold 0 时预算全过也 exit 1）
+      run: |
+        python -m pip install --quiet agent-context-md
+        agents-md lint --check --threshold 0 --max-lines 150 --max-bytes 12000 --fail-on-placeholder
+    - name: AGENTS.md 陈旧引用/膨胀守卫（alint agent-context@v1）
+      uses: asamarts/alint@v0.16.1
+      with:
+        format: github
+        fail-on-warning: true

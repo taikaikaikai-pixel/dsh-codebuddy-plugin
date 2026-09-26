@@ -1,6 +1,6 @@
 # 已验证的网关事实（2026-08 实测，勿凭记忆改）
 
-> 本文是网关事实摘要总表（2026-08-29 自 AGENTS.md 同名章节逐字迁入）。逐字段裁判细节见同目录专题文件：routing.md / ua-validation.md / quota-signals.md / prompt-cache.md / content-moderation.md / dev-role-boundary.md / trae-surface.md / oauth-handshake.md / extra-providers.md；Trae 协议细节另见 docs/reverse/traework-cn.md + trae-cloud-api.md。新实测事实追加在本文，并在 AGENTS.md「关键网关事实速查」加一行。
+> 本文是网关事实摘要总表（2026-08-29 自 AGENTS.md 同名章节逐字迁入）。逐字段裁判细节见同目录专题文件：routing.md / ua-validation.md / quota-signals.md / prompt-cache.md / content-moderation.md / dev-role-boundary.md / trae-surface.md / oauth-handshake.md / extra-providers.md；Trae 协议细节另见 docs/reverse/traework-cn.md + trae-cloud-api.md。新实测事实追加在本文即可——AGENTS.md 网关节 2026-09-26 起只留 5 条通则 + 本文指针，不再逐条加行（踩坑 #52）。
 
 - `/v2/chat/completions`：**仅流式**（非流式报 `code 11101`）；`reasoning_effort` 接受 low/medium/high/max，各模型思考量自适应非严格单调（逐模型档位表与 2026-09-22 复查见下方「CodeBuddy 思考强度事实」节）
 

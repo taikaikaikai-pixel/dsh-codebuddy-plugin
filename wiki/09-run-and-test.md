@@ -44,6 +44,7 @@ TraeWork CN / Qoder CN：各自区块的**区块头右侧勾选框**就是启用
 | `node scripts/verify-trae-provider.mjs` | Trae 通道：mock OAuth 全流程（**用我们注册的公钥验 DeviceProof 签名**）/ 目录映射 / 翻译网关 | **89 项断言**（2026-09-23 实测） |
 | `node scripts/verify-qoder-provider.mjs` | Qoder CN 通道：mock 设备流全流程（PKCE/404 轮询/drt- 刷新/门禁/代际守卫）+ 翻译网关信封 + 目录投影 + tool 配对/可见性与归因上报锁定案 | **154 项断言**（2026-09-23 实测） |
 | `node scripts/verify-host-config.mjs` | 宿主配置层：0.1.7+ forms seam 选路/写前比对/`SETTINGS_CONFLICT` 重试/不可写降级 + ≤0.1.6 settings.yaml 回退 | **36 项断言**（2026-09-23 实测） |
+| `node scripts/verify-agents-md.mjs` | AGENTS.md 预算闸门：行数/字节/引用路径存在 + 踩坑编号连续性对账 | — |
 | `node scripts/verify-models.mjs` | 模型解析离线自检 / 在线探测可用性 / 目录漂移对比 | — |
 | `node scripts/verify-trae-model-catalog.mjs` | 目录提取器回归 | — |
 
@@ -67,6 +68,14 @@ TraeWork CN / Qoder CN：各自区块的**区块头右侧勾选框**就是启用
 | `measure-latency.mjs --mock\|--real` | 识图/搜索端到端延迟分布（JSONL 落盘） |
 | `probe-trae-live.mjs --login` / `--chat "文本"` | Trae 真实登录（一次性）与对话联调（证据落 docs/probes/ 校准信封） |
 | `probe-qoder-live.mjs --login` / `--chat "文本"` | Qoder CN 真实设备流登录 / 真实对话（cosy 签名路径，证据落 docs/probes/） |
+| `probe-codebuddy-efforts.mjs [--catalog] [--models a,b] [--repeat N] [--summarize <证据.json>]` | CodeBuddy 思考强度现状探测 + 档位表决策表（证据落 docs/probes/codebuddy-efforts-*.json） |
+| `probe-codebuddy-tier-wiring.mjs` | 【真实上游】档位全链路联调：目录声明→档位表→镜像→桥出站注入（经本地捕获代理，临时 DSH_HOME 隔离） |
+| `probe-qoder-null-content.mjs [--models dmodel,kmodel] [--gw-local]` | content 可见性单变量差分（provider_error 真根因判别；--gw-local 用当前代码起临时网关做前后对比） |
+| `probe-qoder-pairing.mjs [--live] [--model dmodel]` | 宿主真实序列化器离线复现 tool 配对/可见性坏体 + 真实上游重放 |
+| `probe-qoder-matrix.mjs --suite flash\|tools\|reject\|repair` | Qoder 差分矩阵（逐变量隔离上游报错，证据 docs/probes/qoder-matrix-*.json） |
+| `probe-qoder-flash-confirm.mjs` | Qwen3.8-Flash 上游节点状态确认（3×Flash + 2×对照，恢复即翻绿） |
+| `probe-qoder-quota.mjs [--read-only]` | 用量计数器差分（quota/heatmap/summary 前后对比，--read-only 只读） |
+| `probe-qoder-attribution.mjs [--arm N]` | 用量归因梯度实验（裸体/信封/business块/finish/tracking 逐臂判定） |
 | `probe-trae-model-routing.mjs --round 2\|evidence\|3\|4` / `probe-trae-3003-diagnosis.mjs` | Trae 模型改派矩阵（四轮合并，轮次对应原 model-routing/routing-evidence/routing3/routing4） / 3003 故障定位取证 |
 | `trae-model-catalog.mjs` | Trae 目录提取 CLI（纯函数可作库导入，import.meta 守卫） |
 | `hermes-probe-dev-role.mjs --round 1\|2\|3` | developer 角色事件取证（三轮合并，轮次对应原 -role/-role2/-role3） |
@@ -80,12 +89,9 @@ CODEBUDDY_BRIDGE_DUMP=/tmp/dump dsh web           # 叠加请求体明文（仅�
 
 ## 浏览器回归（UI 改动后）
 
-脚本位于**仓库外**本地目录 `dsh-ui-test/`（puppeteer-core + 系统 Chrome，不进仓库）。0.10.0 手风琴重设计后驱动换成区块（`card-regression.js` 同日退役删除，详见 [07](07-web-client.md) §改 UI 后的回归）：
+脚本位于**仓库外**本地目录 `dsh-ui-test/`（puppeteer-core + 系统 Chrome，不进仓库）。**套件清单、断言基线、区块驱动口径、实例与 token、零真实写入纪律的唯一真源 = 项目 skill `.agents/skills/dsh-ui-regression/`**（跑 UI 回归前先加载它）；断言数沿革见 [CHANGELOG](../CHANGELOG.md)（0.10.0 手风琴换代 `card-accordion.js` 为唯一设置卡套件，详见 [07](07-web-client.md)）。
 
-- `card-accordion.js`：**设置卡唯一回归套件，129 断言**（静态 `check(` 站点 126 + `[B2]` 循环多跑 2 次 + `[C2]` 循环多跑 1 次）——四区块顺序与默认全收、区块头状态行与**独立预言机**双向对齐（直接从 GET 视图算应有片段，避免 `.cbc-acc-status` 缺席时 `[].every()` 恒真的空洞通过）、展开才挂载 + 收起保留（草稿/滚动）、多开独立、头部开关恰 1 POST、无注意条无徽标、通用区块挂载取样 + **收起边界重采恰一次（`[F9]`：收起前基线与收起点击同一次 evaluate 读，收起后 1.5s 的 `usage` 必须 === 收起前 + 1——0 = 重采被回退，≥2 = 周期轮询没停）** + 收起停轮询、区块头键盘可达（`page.keyboard.press` **可信按键**，踩坑 #46）、浅色与卡片根 `color-scheme`（#47）、无 tablist 残留、无 pageerror/dsh-tap 告警；另含 **mock GET/POST** 通道：「启用+未监听 → warn 落区块头带端口」、「保存后退避补拉自愈」（踩坑 #45，`[B4]`）与「补拉链**启动点**在本包被竞争包作废时照旧启动」（`[B5]`：mock 侧让保存自带的第 2 发 GET 迟到 5s、期间走 Trae「同步目录」这条**非保存路径**再发一发 load，断言解析序 `1,3,2,4,5` + `gets===5` + 终态「运行中」；迟到包独带的水印 `模型 4242 个` 不得落地 ⇒ 同一条顺手锁住 A2 请求代次门）——都不写真实设置；
-- `qoder-slot-check.js`（槽迁移 + Qoder CN 区块，**13 断言**）、`qoder-tab-phase2.js`（头部开关 / `.cbc-syncbar` 同步条 / 模型启停组 / 端口行 / `details.cbc-adv` 真查元素，**11 断言**）、`qoder-prefs-check.js`（模型行思考强度与上下文变体，**37 通过 / 静态 39 站点**；真实写盘级 = 基线从实况读 + 收尾复原到实况）、`qoder-e2e.js`（选择器出模→发消息→收回复，8 断言——**跑它就消耗用户额度，默认不跑**）、`shots-baseline.js`（明/暗 × 总览+四区块 = **10 张元素级基线**；`fullPage` 在本宿主是空操作故弃用，踩坑 #48）、`debug-dom.js` / `debug-inputs.js`（宿主原语真实 DOM dump，选择器校准）；
-- 跑法：`node <脚本>.js "http://127.0.0.1:<port>/?token=..."`（0.1.5 起 web 入口要 token，踩坑 #30；profile 已 link 本仓库 ⇒ 改 `lib/client.js` 刷新页面即生效，建议 `--disable-http-cache`）。每轮 tee 原始输出到 `dsh-ui-test/logs/` 且日志首行回显完整 URL；**测试服务由用户侧 launcher 管理（本机现为 :3090），回归轮次不启停它、不占端口**；
-- 零真实写入可复验：跑前跑后对 `~/.dsh/codebuddy-plugin.json` 取 md5 对账；选择器一律按 `.cbc-*` 类与行内单元格精确匹配（已丢失的 step20 曾因模糊匹配误删 Key）。
+跑法骨架：`node <脚本>.js "http://127.0.0.1:<port>/?token=..."`（0.1.5 起 web 入口要 token，踩坑 #30；测试服务由用户侧 launcher 托管在 :3090，**回归轮次不启停它、不占端口**；profile 已 link 本仓库 ⇒ 改 `lib/client.js` 刷新即生效，建议 `--disable-http-cache`）；零真实写入 = 跑前跑后对 `~/.dsh/codebuddy-plugin.json` 取 md5 对账。
 
 ## 依赖关系图（模块级）
 

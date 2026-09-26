@@ -1,0 +1,5 @@
+# alint 配置：AGENTS.md 等 agent 指令文件的存在性/陈旧引用/stub/膨胀守卫。
+# 规则集说明：https://github.com/asamarts/alint（agent-context@v1，仅在存在 agent-context 文件的仓库生效）
+version: 1
+extends:
+  - alint://bundled/agent-context@v1

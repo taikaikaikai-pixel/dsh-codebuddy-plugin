@@ -1,6 +1,6 @@
-# 02 — 组合根 index.js
+# 02 — 组合根 index.js + host-config.js
 
-> 文件：[index.js](../index.js)（~1740 行，插件入口与导出契约所在）。
+> 文件：[index.js](../index.js)（~1740 行，插件入口与导出契约所在）+ [host-config.js](../host-config.js)（宿主配置层统一写入点）。
 > 上游无关的机制在 [03-core-layer.md](03-core-layer.md)；上游事实在 [04](04-provider-codebuddy.md)/[05](05-provider-trae.md)/[10](10-provider-qoder.md)。
 
 ## 模块导出契约
@@ -101,6 +101,16 @@ flowchart TB
     DISP --> D["停桥 + 停 Trae/Qoder 网关<br/>+ 注销 web / tools 资源 + meter.dispose()"]
 ```
 
+## host-config.js（宿主配置层统一写入点）
+
+模型镜像 / provider 块等**宿主配置层**写入的唯一出口，按宿主能力选路（dsh 0.1.7 适配，踩坑 #43/#44）：
+
+- **dsh 0.1.7+**：走 Settings forms seam——`describe()` 读 live value、`update/mutate`（带 `expectedRevision`）写 profile 的 `cordis.patch.yml`；只有 `.volatile()` 字段可表单编辑（`llm-pi-ai.providers` 恰好是）；写前比对同值不写；撞 `SETTINGS_CONFLICT` 重新活取服务 + 重读 revision 重试；`writable===false` 降级为结果对象。
+- **dsh ≤0.1.6**：回退注释保留的 `~/.dsh/settings.yaml` 文档编辑。
+- **纪律**：写入永不 reject（失败落 `lastError`）；`ctx.settings` 是实时 getter——只缓存注入进来的子上下文，每次操作现取（缓存实例会拿陈旧 revision 撞冲突，踩坑 #44①）；启动期不用"未同步完成"的状态写权威层（re-apply 会把它铺成终态，#44②）。
+- index.js 四个 writer（codebuddy 模型镜像 / G6 provider 块 / trae / qoder 整块铺删）全部产出 `ops` 经它落盘——**index.js 里再无一处直写 settings.yaml**。
+- 诊断端点 `GET /dsh-tap/settings?probe=host-config`（选路/可写性/写入目标/revision 可观测）；离线回归 `scripts/verify-host-config.mjs`。
+
 ## 模型管理（CodeBuddy 侧）
 
 | 函数 | 职责 |
@@ -109,7 +119,7 @@ flowchart TB
 | `catalogToProfile(m)` | 目录条目 → profile（尺寸/图像能力；目录不给档位清单） |
 | `computeBaseModels()` | 基清单 = 动态目录 ∪ 静态：目录刷新同名静态条目的名称/尺寸，静态的 `reasoningEfforts` 档位表保留；纯静态 id 保留（deepseek-v3 不在目录但可用且是默认模型） |
 | `computeEffectiveModels()` | 基清单 − disabled + extra，再应用 `overrides`（contextWindow/maxTokens 逐模型覆盖） |
-| `syncModelsToDshSettings()` | 镜像到 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.codebuddy.models`（注释保留的 YAML 文档编辑）；**纯净态删路径**，否则恒铺有效清单 |
+| `syncModelsToDshSettings()` | 镜像到宿主配置层的 `llm-pi-ai.providers.codebuddy.models`（经 host-config.js 选路：0.1.7+ 写 profile patch / ≤0.1.6 写 `~/.dsh/settings.yaml` 注释保留编辑）；**纯净态删路径**，否则恒铺有效清单 |
 | `setModelEnabled({id, enabled, profile})` | 启停一个模型：基清单模型只动 `disabled` 标记；目录新增模型启用写 `extra`、禁用只删 extra（不写 disabled，保持可回归纯净态） |
 | `setModelLimits({id, contextWindow, maxTokens})` | G5 覆盖值：必须正整数且不得超过基清单实际上限；`null` 清除该字段 |
 | `syncModelsFromGateway(resolveNow)` | G4 动态目录同步（单飞锁）：成功换新 `dynamicCatalog` 并重铺；失败时已有旧目录则沿用重铺，否则回落静态 + 纯净态纪律——**选择器绝不变空** |
@@ -133,7 +143,7 @@ flowchart TB
 |------|------|
 | `readManagedProviders()` / `writeManagedProviders(list)` | 登记册 = 文件层 `managedProviders`（无 secret；空表时删键保持纯净） |
 | `writeCredential(ref, value)` / `deleteCredential(ref)` | 写/删 `~/.dsh/.credentials.yaml`（**写后 chmod 0600**——dsh 凭据缝要求） |
-| `writeProviderBlock(id, block)` | 写/删（`null`）`llm-pi-ai.providers.<id>` 块（注释保留编辑） |
+| `writeProviderBlock(id, block)` | 写/删（`null`）宿主配置层 `llm-pi-ai.providers.<id>` 块（经 host-config.js 选路） |
 | `addExtraProvider({preset, id, baseURL, displayName, apiKey})` | 添加上游五步：preset/自定义校验 → 保留路由检查（`codebuddy` 禁用）→ **实测 GET /models 验 key**（失败不落盘）→ 写凭据 → 写块 → 登记册 |
 | `removeExtraProvider(id)` | 删块 + 删凭据 + 出登记册（外部已删块也照常清理） |
 | `refreshExtraProviderModels(id)` | 重拉模型清单（key 从 credentials.yaml 活解析；preset 条目的 fallbackModels/staticCatalog 一并透传） |
