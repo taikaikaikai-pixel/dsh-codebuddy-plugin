@@ -1,0 +1,914 @@
+{
+  "ts": "2026-09-22T02:19:36.002Z",
+  "piAi": "C:/Users/21613/dev/dsh-launcher/node_modules/@earendil-works/pi-ai/dist/api/openai-completions.js",
+  "model": {
+    "id": "dmodel",
+    "name": "probe",
+    "provider": "qoder",
+    "api": "openai-completions",
+    "baseUrl": "http://127.0.0.1:3903/v1",
+    "reasoning": false,
+    "input": [
+      "text",
+      "image"
+    ],
+    "contextWindow": 200000,
+    "maxTokens": 32768
+  },
+  "gwPort": 3903,
+  "cases": [
+    {
+      "name": "normal_tool_round",
+      "sequenceBefore": "system user assistant[call_A] tool[call_A] assistant",
+      "sequenceAfter": "system user assistant[call_A] tool[call_A] assistant",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0,
+        "invisible": 1
+      },
+      "violationsBefore": {
+        "flat": [],
+        "group": []
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "file content",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "assistant",
+          "content": "内容如上"
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "file content",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "assistant",
+          "content": "内容如上"
+        }
+      ]
+    },
+    {
+      "name": "aborted_carrier",
+      "sequenceBefore": "system user tool[call_B] user",
+      "sequenceAfter": "system user assistant[call_B] tool[call_B] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0,
+        "invisible": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b content",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b content",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "error_carrier",
+      "sequenceBefore": "system user tool[call_E] user",
+      "sequenceAfter": "system user assistant[call_E] tool[call_E] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0,
+        "invisible": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_E（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_E（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "e content",
+          "tool_call_id": "call_E"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "再来"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_E",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "e content",
+          "tool_call_id": "call_E"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "再来"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mixed_multi_turn",
+      "sequenceBefore": "system user assistant[call_A] tool[call_A] tool[call_B] assistant[call_C] tool[call_C] assistant user",
+      "sequenceAfter": "system user assistant[call_A] tool[call_A] assistant[call_B] tool[call_B] assistant[call_C] tool[call_C] assistant user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0,
+        "invisible": 2
+      },
+      "violationsBefore": {
+        "flat": [
+          "L4: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L4: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "step1"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "ok",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "tool",
+          "content": "ran anyway",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_C",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":3}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "hits",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "assistant",
+          "content": "完成"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "next"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "step1"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "ok",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "ran anyway",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_C",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":3}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "hits",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "assistant",
+          "content": "完成"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "next"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "parallel_partial",
+      "sequenceBefore": "system user assistant[call_A+call_B] tool[call_A] tool[call_B] user",
+      "sequenceAfter": "system user assistant[call_A+call_B] tool[call_A] tool[call_B] user",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0,
+        "invisible": 1
+      },
+      "violationsBefore": {
+        "flat": [],
+        "group": []
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "parallel"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            },
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":2}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "only A",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "tool",
+          "content": "No result provided",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "换个问题"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "parallel"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            },
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":2}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "only A",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "tool",
+          "content": "No result provided",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "换个问题"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "aborted_no_result",
+      "sequenceBefore": "system user user",
+      "sequenceAfter": "system user user",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0,
+        "invisible": 0
+      },
+      "violationsBefore": {
+        "flat": [],
+        "group": []
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "重来"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "重来"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two_aborted_carriers",
+      "sequenceBefore": "system user tool[call_B] tool[call_C] user",
+      "sequenceAfter": "system user assistant[call_B] tool[call_B] assistant[call_C] tool[call_C] user",
+      "repaired": {
+        "orphans": 2,
+        "synthesized": 0,
+        "duplicates": 0,
+        "invisible": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_C（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_C（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "tool",
+          "content": "c",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_C",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "c",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duplicate_result",
+      "sequenceBefore": "system user tool[call_B] tool[call_B] user",
+      "sequenceAfter": "system user assistant[call_B] tool[call_B] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 1,
+        "invisible": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "first",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "tool",
+          "content": "second",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "system",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "first",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

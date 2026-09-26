@@ -1,0 +1,49 @@
+{
+  "at": "2026-08-23T23:29:19.160Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "模型测试1787527751"
+            }
+          ]
+        }
+      ],
+      "model": "glm-5.3",
+      "function": "inline_chat",
+      "request_id": "b17d174b-82b6-469b-b3fd-d5cabd7c1665",
+      "session_id": "probe-live",
+      "stream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sun, 23 Aug 2026 23:29:13 GMT",
+      "server": "volc-dcdn",
+      "server-timing": "inner; dur=1834, cdn-cache;desc=MISS, origin;dur=1859, edge;dur=0",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "transfer-encoding": "chunked",
+      "via": "<redacted:via>",
+      "x-dsa-origin-status": "200",
+      "x-dsa-trace-id": "1787527751e99a8af7ea6c0b74fc99ce7af688d0bb",
+      "x-request-ip": "<redacted:x-request-ip>",
+      "x-tt-logid": "20260824072911EAF8222F7FE1EF618B95",
+      "x-tt-timestamp": "1787527753.358",
+      "x-tt-trace-host": "0127b0cf403cfc4744f72d0413359221a6a29fcd5efd38974d5c90e6c19ab976e6b09e28e54368324cda925a7627da632c80ed6ab38e616a21ed91be27cc3e66a1655a58048edb5c72d14b46c72a7fb6f41082022b06cb23d8ebca4f42f0f4888dd7614df90ff496949a55b4a794938f59",
+      "x-tt-trace-id": "00-260824072911EAF8222F7FE1EF618B95-21C6E995A04032E7-00",
+      "x-tt-trace-tag": "id=5"
+    },
+    "bodyHead": "id:1\nevent:metadata\ndata:{\"model\":\"\",\"session_id\":\"probe-live\",\"prompt_completion_id\":0,\"ab_versions\":null,\"app_version\":\"\",\"ide_version\":null,\"ide_version_type\":null,\"prompt_cache_pool_record\":null}\n\nid:2\nevent:timing_cost\ndata:{\"name\":\"llm_raw_chat_v2\",\"preprocess_timing\":45,\"postprocess_timing\":17,\"queue_timing\":0,\"platform_first_token_timing\":1745,\"account_type\":\"\",\"is_retry\":false,\"middleware_processing_time\":24,\"server_processing_time\":1831,\"first_sse_event_time\":1814,\"preprocessing_detail\":{\"check_risk\":22,\"build_llm_prompt\":0,\"chat_completion_prepare\":0,\"other\":23},\"platform_detail\":{\"preprocess_timing\":28,\"first_token_timing\":1700,\"network_latency\":16,\"provider_first_token\":0,\"provider_network_latency\":0,\"other\":1},\"post_processing_detail\":{\"post_security_check\":16,\"other\":1},\"provider_model_name\":\"kimi-k2.6\"}\n\nid:3\nevent:output\ndata:{\"response\":\"您好\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:4\nevent:output\ndata:{\"response\":\"！您提到的 \\\"模型测试1787527751\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:5\nevent:output\ndata:{\"response\":\"\\\" 看起来像是一个测试编号或会话ID（\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:6\nevent:output\ndata:{\"response\":\"可能是时间戳格式）。\\n\\n请问您需要我帮您\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:7\nevent:output\ndata:{\"response\":\"什么？\\n\\n1.\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:8\nevent:output\ndata:{\"response\":\" **测试模型功能** — 想测试我的\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:9\nevent:output\ndata:{\"response\":\"某些特定能力（如推理、编程、翻译\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:10\nevent:output\ndata:{\"response\":\"、数学计算等）？\\n2.\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:11\nevent:output\ndata:{\"response\":\" **验证响应质量** — 检查我的回答\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:12\nevent:output\ndata:{\"response\":\"是否符合预期标准？\\n3.\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:13\nevent:output\ndata:{\"response\":\" **排查技术问题** — 遇到了什么具体的\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:14\nevent:output\ndata:{\"response\":\"错误或不正常现象？\\n4.\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:15\nevent:output\ndata:{\"response\":\" **其他需求** — 请详细说明您的\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:16\nevent:output\ndata:{\"response\":\"测试目的\\n\\n请告诉我具体的测试内容或问题\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:17\nevent:output\ndata:{\"response\":\"，我很乐意配合您完成测试。\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:18\nevent:token_usage\ndata:{\"name\":\"\",\"prompt_tokens\":15,\"completion_tokens\":124,\"total_tokens\":139,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":3,\"reasoning_tokens\":0,\"prompt_tokens_total\":0,\"completion_tokens_total\":0,\"total_tokens_total\":0,\"cache_creation_input_tokens_total\":0,\"cache_read_input_tokens_total\":0,\"reasoning_tokens_total\":0,\"cluster\":\"normal_context\"}\n\nid:19\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 3363
+  }
+}

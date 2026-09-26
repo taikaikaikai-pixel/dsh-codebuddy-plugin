@@ -1,0 +1,201 @@
+{
+  "fetchedAt": "2026-09-22T03:21:50.574Z",
+  "catalogCount": 31,
+  "efforts": {
+    "deepseek-v4-pro": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "deepseek-v4-flash": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "deepseek-v4.1-flash": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "deepseek-v3-2-volc": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "minimax-m3": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "minimax-m2.7": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "glm-5.3": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "glm-5.3-flash": [
+      "low",
+      "high",
+      "max"
+    ],
+    "glm-5.2": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "glm-5.1": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "glm-5.0-turbo": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "glm-5v-turbo": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "kimi-k3-1": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "kimi-k2.8-preview": [
+      "low",
+      "high",
+      "max"
+    ],
+    "kimi-k2.7": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "kimi-k2.6": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "kimi-k2.5": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "hy3": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "hy3-x": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "hy4-preview": [
+      "high"
+    ],
+    "hy4-preview-x": [
+      "high"
+    ],
+    "deepseek-v3.2": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "deepseek-r1": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "kimi-k3": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ],
+    "hy3-preview": [
+      "low",
+      "medium",
+      "high",
+      "max"
+    ]
+  },
+  "mirrorHasReasoningEfforts": true,
+  "chats": [
+    {
+      "model": "glm-5.3-flash",
+      "status": 200,
+      "effort": "max",
+      "bodyPreview": "data: {\"id\":\"cmb-bbc13582b63411f1ad908e9bea569f31\",\"model\":\"glm-5.3-flash\",\"object\":\"chat.completion.chunk\",\"created\":17"
+    },
+    {
+      "model": "glm-5.3-flash",
+      "status": 200,
+      "effort": null,
+      "bodyPreview": "data: {\"id\":\"cmb-bd22bccab63411f1966c5a969f3d4267\",\"model\":\"glm-5.3-flash\",\"object\":\"chat.completion.chunk\",\"created\":17"
+    },
+    {
+      "model": "auto",
+      "status": 200,
+      "effort": null,
+      "bodyPreview": "data: {\"id\":\"gen-1790047307-qff5YcOxWAW493TO3EYw\",\"model\":\"hy4-preview\",\"object\":\"chat.completion.chunk\",\"created\":17900"
+    }
+  ],
+  "captured": [
+    {
+      "url": "/v3/config",
+      "status": 200,
+      "model": null,
+      "reasoningEffort": null
+    },
+    {
+      "url": "/v3/config",
+      "status": 200,
+      "model": null,
+      "reasoningEffort": null
+    },
+    {
+      "url": "/v2/chat/completions",
+      "status": 200,
+      "model": "glm-5.3-flash",
+      "reasoningEffort": "max"
+    },
+    {
+      "url": "/v2/chat/completions",
+      "status": 200,
+      "model": "glm-5.3-flash",
+      "reasoningEffort": null
+    },
+    {
+      "url": "/v2/chat/completions",
+      "status": 200,
+      "model": "auto",
+      "reasoningEffort": null
+    }
+  ]
+}

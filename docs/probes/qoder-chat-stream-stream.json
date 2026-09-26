@@ -1,0 +1,14 @@
+{
+  "request": {
+    "model": "auto",
+    "stream": true,
+    "messages": [
+      {
+        "role": "user",
+        "content": "说三个字：你好呀"
+      }
+    ]
+  },
+  "status": 404,
+  "body": ""
+}

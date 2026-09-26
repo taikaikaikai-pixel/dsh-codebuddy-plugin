@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-21T21:56:55.431Z",
+  "status": 200,
+  "keys": [
+    "device_token",
+    "refresh_token",
+    "token_type",
+    "expires_at",
+    "refresh_token_expires_at",
+    "created_at"
+  ],
+  "masked": {
+    "device_token": "dt-V3q…CvZk（27字符）",
+    "refresh_token": "drt-AH…JCHs（28字符）",
+    "token_type": "Bearer",
+    "expires_at": "2026-10-21T21:56:55Z",
+    "refresh_token_expires_at": "2027-0…:55Z（20字符）",
+    "created_at": "2026-09-21T21:56:55Z"
+  }
+}

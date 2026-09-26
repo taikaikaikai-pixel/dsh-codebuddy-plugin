@@ -1,0 +1,61 @@
+{
+  "ts": "2026-08-24T08:06:54.962Z",
+  "probes": [
+    {
+      "label": "F0-get_model_list",
+      "host": "https://api.trae.cn",
+      "status": 404,
+      "body": "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>TLB</center>\r\n</body>\r\n</html>\r\n"
+    },
+    {
+      "label": "F0-get_model_list",
+      "host": "https://trae-api-cn.mchost.guru",
+      "status": 404,
+      "body": "<html>\r\n<head><title>404 Not Found</title></head>\r\n<body>\r\n<center><h1>404 Not Found</h1></center>\r\n<hr><center>TLB</center>\r\n</body>\r\n</html>\r\n"
+    },
+    {
+      "label": "F1-kimi-k3",
+      "status": 200,
+      "timing": null,
+      "err": {
+        "code": 3003,
+        "message": "all models failed",
+        "extra": null
+      },
+      "text": "",
+      "raw": "id:1\nevent:error\ndata:{\"code\":3003,\"message\":\"all models failed\",\"extra\":null}\n\nid:2\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n"
+    },
+    {
+      "label": "F2-glm53-custom_model",
+      "status": 200,
+      "timing": null,
+      "err": {
+        "code": 3003,
+        "message": "all models failed",
+        "extra": null
+      },
+      "text": "",
+      "raw": "id:1\nevent:error\ndata:{\"code\":3003,\"message\":\"all models failed\",\"extra\":null}\n\nid:2\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n"
+    },
+    {
+      "label": "F3-ds-v4-flash-official",
+      "status": 200,
+      "timing": null,
+      "err": {
+        "code": 3003,
+        "message": "all models failed",
+        "extra": null
+      },
+      "text": "",
+      "raw": "id:1\nevent:error\ndata:{\"code\":3003,\"message\":\"all models failed\",\"extra\":null}\n\nid:2\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n"
+    },
+    {
+      "label": "F4-chat_v3-glm53",
+      "status": 200,
+      "timing": null,
+      "err": null,
+      "text": "ok",
+      "raw": "id:1\nevent:metadata\ndata:{\"model\":\"\",\"session_id\":\"1aef2121-eeda-4ebd-936c-7d4648447ee4\",\"prompt_completion_id\":0,\"ab_versions\":null,\"app_version\":\"\",\"ide_version\":null,\"ide_version_type\":null,\"prompt_cache_pool_record\":null}\n\nid:2\nevent:timing_cost\ndata:{\"name\":\"llm_raw_chat_v2\",\"preprocess_timing\":160,\"postprocess_timing\":26,\"queue_timing\":24,\"platform_first_token_timing\":266,\"account_type\":\"\",\"is_retry\":false,\"middleware_processing_time\":150,\"server_processing_time\":604,\"first_sse_event_time\":576,\"preprocessing_detail\":{\"check_risk\":24,\"build_llm_prompt\":0,\"chat_completion_prepare\":0,\"other\":136},\"platform_detail\":{\"preprocess_timing\":0,\"first_token_timing\":243,\"network_latency\":0,\"provider_first_token\":0,\"provider_network_latency\":0,\"other\":23},\"post_processing_detail\":{\"post_security_check\":25,\"other\":1},\"provider_model_name\":\"seed-code-lite-dev-0602-v1-part1\"}\n\nid:3\nevent:output\ndata:{\"response\":\"\",\"reasoning_content\":\"Okay\",\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:4\nevent:output\ndata:{\"response\":\"\",\"reasoning_content\":\", the user wants exactly \\\"ok\\\", so I\",\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:5\nevent:output\ndata:{\"response\":\"\",\"reasoning_content\":\"'ll just output that.\",\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:6\nevent:output\ndata:{\"response\":\"ok\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:7\nevent:extra_info\ndata:{\"model\":\"seed-code-lite-dev-0602-v1-part1\",\"version\":1,\"content\":\"{\\\"reasoning_content\\\":\\\"Okay, the user wants exactly \\\\\\\"ok\\\\\\\", so I'll just output that.\\\"}\",\"input_token\":17,\"expire_time\":2733638884159}\n\nid:8\nevent:token_usage\ndata:{\"name\":\"\",\"prompt_tokens\":35,\"completion_tokens\":18,\"total_tokens\":53,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"reasoning_tokens\":17,\"prompt_tokens_total\":0,\"completion_tokens_total\":0,\"total_tokens_total\":0,\"cache_creation_input_tokens_total\":0,\"cache_read_input_tokens_total\":0,\"reas"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "request": {
+    "model": "qfmodel",
+    "stream": true,
+    "stream_options": {
+      "include_usage": true
+    },
+    "messages": [
+      {
+        "role": "user",
+        "content": "hi"
+      }
+    ]
+  },
+  "signedUrl": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+  "status": 200,
+  "headers": {
+    "access-control-expose-headers": "TraceId",
+    "cache-control": "no-cache",
+    "connection": "keep-alive",
+    "content-encoding": "br",
+    "content-type": "text/event-stream;charset=UTF-8",
+    "date": "Mon, 21 Sep 2026 16:15:39 GMT",
+    "entry-timestamp": "1790007339555",
+    "leave-timestamp": "1790007339616",
+    "set-cookie": "acw_tc=ac10e36417900073395356835e09d7111a15a435bcb60537af24f2626e6828;path=/;HttpOnly;Max-Age=1800",
+    "sw-trace-id": "53dfbdf04d9af56965ee8a6b3a62acac",
+    "transfer-encoding": "chunked",
+    "vary": "Accept-Encoding"
+  },
+  "body": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"400\\\",\\\"message\\\":\\\"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null\\\"}\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1790007339616,\"totalDuration\":1790007339616,\"serverDuration\":-1790007339555}\n\n"
+}

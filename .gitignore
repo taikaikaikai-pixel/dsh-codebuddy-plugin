@@ -1,3 +1,17 @@
 node_modules/
 *.log
+Thumbs.db
 .DS_Store
+code/
+.trae/
+.trae-html-share-packages/
+.env*
+*.pem
+*.key
+codebuddy-plugin*.json
+*plugin-auth.json
+.credentials*
+.claude/
+.workbuddy-ai/
+.audit-*.md
+.extract-audit.py

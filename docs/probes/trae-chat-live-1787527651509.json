@@ -1,0 +1,48 @@
+{
+  "at": "2026-08-23T23:27:31.509Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "只回复两个字：收到"
+            }
+          ]
+        }
+      ],
+      "model": "glm-5.3",
+      "function": "inline_chat",
+      "request_id": "9c03b2c5-287e-47d3-8f9c-7dfb3ac31f79",
+      "session_id": "probe-live",
+      "stream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sun, 23 Aug 2026 23:27:31 GMT",
+      "eagleid": "7544543917875276496971327e",
+      "server": "Tengine",
+      "server-timing": "inner; dur=1714, cdn-cache;desc=MISS,edge;dur=0,origin;dur=1742",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "timing-allow-origin": "*",
+      "transfer-encoding": "chunked",
+      "via": "ens-dynamic5.cn8728[1742,0]",
+      "x-tt-logid": "2026082407272943726FEB1CF5723ACCBD",
+      "x-tt-timestamp": "1787527651.431",
+      "x-tt-trace-host": "0105dba5438c12d8d6e0c60642398be114b92f18b18d65ded4f53a52d9efc2110b273265b17317a6061ee779bc54d4f919a5a27908a32113a29b1644754fcb6bf5dbbe96a4c07b83389d19aafc083daff7f973d5a09764903cd87e2848ef3d24e95281d33ec8f94071fbba67e134e3ffda",
+      "x-tt-trace-id": "00-26082407272943726FEB1CF5723ACCBD-4B39C70E91401112-00",
+      "x-tt-trace-tag": "id=03;cdn-cache=miss;type=dyn"
+    },
+    "bodyHead": "id:1\nevent:metadata\ndata:{\"model\":\"\",\"session_id\":\"probe-live\",\"prompt_completion_id\":0,\"ab_versions\":null,\"app_version\":\"\",\"ide_version\":null,\"ide_version_type\":null,\"prompt_cache_pool_record\":null}\n\nid:2\nevent:timing_cost\ndata:{\"name\":\"llm_raw_chat_v2\",\"preprocess_timing\":58,\"postprocess_timing\":17,\"queue_timing\":0,\"platform_first_token_timing\":1607,\"account_type\":\"\",\"is_retry\":false,\"middleware_processing_time\":30,\"server_processing_time\":1714,\"first_sse_event_time\":1695,\"preprocessing_detail\":{\"check_risk\":18,\"build_llm_prompt\":0,\"chat_completion_prepare\":0,\"other\":40},\"platform_detail\":{\"preprocess_timing\":32,\"first_token_timing\":1549,\"network_latency\":26,\"provider_first_token\":0,\"provider_network_latency\":0,\"other\":0},\"post_processing_detail\":{\"post_security_check\":17,\"other\":0},\"provider_model_name\":\"kimi-k2.6\"}\n\nid:3\nevent:output\ndata:{\"response\":\"收到\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:4\nevent:token_usage\ndata:{\"name\":\"\",\"prompt_tokens\":14,\"completion_tokens\":2,\"total_tokens\":16,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":3,\"reasoning_tokens\":0,\"prompt_tokens_total\":0,\"completion_tokens_total\":0,\"total_tokens_total\":0,\"cache_creation_input_tokens_total\":0,\"cache_read_input_tokens_total\":0,\"reasoning_tokens_total\":0,\"cluster\":\"normal_context\"}\n\nid:5\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 1386
+  }
+}

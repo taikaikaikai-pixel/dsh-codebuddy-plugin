@@ -1,0 +1,14 @@
+{
+  "request": {
+    "model": "auto",
+    "stream": false,
+    "messages": [
+      {
+        "role": "user",
+        "content": "只回复两个字：收到"
+      }
+    ]
+  },
+  "status": 404,
+  "body": ""
+}

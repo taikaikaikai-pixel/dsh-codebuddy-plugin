@@ -1,4 +1,4 @@
-# dsh-codebuddy-plugin — CodeBuddy provider bundle
+# dsh-tap — CodeBuddy provider bundle
 #
 # Overrides three rows from dsh-base:
 #
@@ -39,12 +39,37 @@
 #   (kimi-k2.7 / k3 / k3-1, minimax-m2.7) offer no `off`; the rest map
 #   `off` to omitting the parameter (verified: no reasoning_content).
 #   Reasoning length per level is adaptive, not strictly monotonic.
+# - reasoningEfforts RE-verified 2026-09-22 with
+#   `node scripts/probe-codebuddy-efforts.mjs` (162 arms, evidence
+#   docs/probes/codebuddy-efforts-matrix-2026-09-22.json; decision table via
+#   `--summarize`), 5 weeks after the first pass. Outcomes:
+#   * `off` REMOVED from hy3 and hy3-preview — both now think on the omitted
+#     parameter (reasoning_content ~600 chars on every arm), so the old
+#     "off = omit the parameter" entry had become a no-op switch. `off` stays
+#     on models whose omission still yields no reasoning (deepseek-v3.2 / r1
+#     family, v4-pro, v4-flash, GLM 5.1/5.2/5v-turbo, Kimi k2.5/k2.6, m3).
+#   * SIZES corrected against the current catalog (maxTokens 50000 -> 128000
+#     for deepseek-v4-pro, 48000 -> 64000 for glm-5.2, 128000 -> 64000 for
+#     minimax-m3).
+#   * NEW static entries for catalog-only models that are routable AND whose
+#     effort parameter measurably works (probe 200 + reasoning changes):
+#     deepseek-v4.1-flash, deepseek-v3-2-volc, glm-5.3, glm-5.0-turbo, hy3-x.
+#     They carry no `off` where omission thinks (glm-5.3 / hy3-x).
+#   * Newer models declare their tiers in the catalog itself
+#     (`reasoning.supportedEfforts` / `canDisableThinking` / `defaultEffort`)
+#     — glm-5.3-flash, kimi-k2.8-preview, hy4-preview. Those are NOT listed
+#     here: index.js derives their tier table from the declaration at sync
+#     time (see `catalogReasoningEfforts`), and no wire spelling was found
+#     that actually turns thinking off on them, so no `off` is offered.
+#   * Catalog entries the chat endpoint refuses with 11102 (glm-4.6v,
+#     kimi-k2-thinking, minimax-m2.5, hy4-preview-x) are deliberately NOT
+#     added — catalog presence does not imply routability (routing.md R-R3).
 
 # Insert this package into the profile's plugin entry list so cordis loads
 # index.js (the runtime layer registering the codebuddy web providers).
 - insert:
-    - id: dsh-codebuddy-plugin
-      name: 'dsh-codebuddy-plugin'
+    - id: dsh-tap
+      name: 'dsh-tap'
 
 - id: llm-pi-ai
   config:
@@ -96,6 +121,14 @@
             name: DeepSeek V3.2
             contextWindow: 131072
             maxTokens: 32768
+            # 2026-09-22 补表：旧清单漏了这条，实测档位有效（omit 无思考、
+            # low/medium/high/max 各出 147–248 字推理）——与 v4 家族同形。
+            reasoningEfforts:
+              off:
+              low: low
+              medium: medium
+              high: high
+              max: max
           - id: deepseek-r1
             name: DeepSeek R1
             contextWindow: 131072
@@ -108,7 +141,7 @@
           - id: deepseek-v4-pro
             name: DeepSeek V4 Pro
             contextWindow: 1000000
-            maxTokens: 50000
+            maxTokens: 128000
             input: [text, image]
             reasoningEfforts:
               off:
@@ -121,6 +154,28 @@
             contextWindow: 1000000
             maxTokens: 50000
             input: [text, image]
+            reasoningEfforts:
+              off:
+              low: low
+              medium: medium
+              high: high
+              max: max
+          # 2026-09-22 新增（目录可路由 + 档位实测有效；非 CLI 名单但 /v2 可用）
+          - id: deepseek-v4.1-flash
+            name: DeepSeek V4.1 Flash
+            contextWindow: 1000000
+            maxTokens: 128000
+            input: [text, image]
+            reasoningEfforts:
+              off:
+              low: low
+              medium: medium
+              high: high
+              max: max
+          - id: deepseek-v3-2-volc
+            name: DeepSeek V3.2 Volc
+            contextWindow: 96000
+            maxTokens: 32000
             reasoningEfforts:
               off:
               low: low
@@ -142,8 +197,29 @@
           - id: glm-5.2
             name: GLM 5.2
             contextWindow: 1000000
-            maxTokens: 48000
+            maxTokens: 64000
             input: [text, image]
+            reasoningEfforts:
+              off:
+              low: low
+              medium: medium
+              high: high
+              max: max
+          # 2026-09-22 新增：省略参数即思考（omit 臂 reason≈1.2k）→ 无 off 档
+          - id: glm-5.3
+            name: GLM 5.3
+            contextWindow: 1000000
+            maxTokens: 64000
+            input: [text, image]
+            reasoningEfforts:
+              low: low
+              medium: medium
+              high: high
+              max: max
+          - id: glm-5.0-turbo
+            name: GLM 5.0 Turbo
+            contextWindow: 200000
+            maxTokens: 48000
             reasoningEfforts:
               off:
               low: low
@@ -227,7 +303,7 @@
           - id: minimax-m3
             name: MiniMax M3
             contextWindow: 512000
-            maxTokens: 128000
+            maxTokens: 64000
             input: [text, image]
             reasoningEfforts:
               off:
@@ -236,13 +312,24 @@
               high: high
               max: max
           # Tencent Hunyuan
+          # 2026-09-22：hy3 / hy3-preview 的 off 档撤销——省略参数两模型都照常
+          # 思考（六臂 reason≈510–625），off 已成假开关（宿主选择器会出 Off）。
           - id: hy3
             name: Hunyuan Hy3
             contextWindow: 192000
             maxTokens: 64000
             input: [text, image]
             reasoningEfforts:
-              off:
+              low: low
+              medium: medium
+              high: high
+              max: max
+          - id: hy3-x
+            name: Hunyuan Hy3 X
+            contextWindow: 192000
+            maxTokens: 64000
+            input: [text, image]
+            reasoningEfforts:
               low: low
               medium: medium
               high: high
@@ -252,7 +339,6 @@
             contextWindow: 262144
             maxTokens: 32768
             reasoningEfforts:
-              off:
               low: low
               medium: medium
               high: high
@@ -262,6 +348,31 @@
             name: Auto
             contextWindow: 262144
             maxTokens: 32768
+
+      # TraeWork CN channel (v0.8.x): OAuth subscription quota via the
+      # plugin's OpenAI<->Trae translation gateway at 127.0.0.1:3902
+      # (default; must match traeBridgePort).
+      #
+      # 0.8.7 NOTE — no static trae base here anymore (dsh 0.1.1-rc.2
+      # adaptation): llm-pi-ai now REJECTS a non-catalog route with an empty
+      # models list at apply time (throwing takes down the whole llm-pi-ai
+      # fiber), so the "empty-list shadowing" trick for disabling the channel
+      # no longer works. Route EXISTENCE is now the whole story, owned by the
+      # settings.yaml mirror index.js maintains (llm-pi-ai.providers.trae as a
+      # COMPLETE block): enabled+synced -> full block (displayName/api/
+      # baseURL/headers/models, baseURL following traeBridgePort);
+      # disabled/unsynced -> the block is DELETED (route gone, picker hides
+      # the channel, no restart). With no patch-layer base, deletion leaves
+      # no stale fallback to shadow. Same sentinel-Authorization mechanics
+      # as the codebuddy route: the gateway replaces the static header per
+      # request with the resolved OAuth credential (Cloud-IDE-JWT +
+      # x-cloudide-token). reasoning_effort dialect unverified against the
+      # Trae gateway — compat left off until the live probe pins it
+      # (docs/reverse/trae-cloud-api.md).
+      # UPGRADE NOTE: a settings.yaml trae block written by <=0.8.5 carries
+      # only the models path (it leaned on this base for the other fields);
+      # remove it before the first 0.1.1-rc.2 boot, or llm-pi-ai fails on
+      # the missing baseURL before this plugin can rewrite it.
 
 - id: agent-default-model
   config:

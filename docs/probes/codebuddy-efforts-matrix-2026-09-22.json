@@ -1,0 +1,3375 @@
+{
+  "expect": {
+    "P1": "无参（omit）就产 reasoning_content 的模型：kimi-k2.7/k3/k3-1/minimax-m2.7 —— 这四家档位表不含 off",
+    "P2": "off/low/medium/high/max 五种拼写对思考型模型全部 HTTP 200 可接受（不出现 400/11102 类拒绝）",
+    "P3": "目录新 CLI 模型（glm-5.3 / glm-5.3-flash / kimi-k2.8-preview / hy3-x / hy4-preview / deepseek-v4.1-flash）同样接受五档拼写",
+    "P4": "各档 reasoning 长度自适应、非严格单调（off < max 不必然成立）",
+    "P5": "目录 reasoning 只给默认档，不含档位清单（即档位表无法从目录派生）——2026-09-22 复查已被推翻：新模型带 supportedEfforts/canDisableThinking/defaultEffort"
+  },
+  "catalog": {
+    "fetchedAt": "2026-09-22T03:00:47.126Z",
+    "models": [
+      {
+        "id": "default",
+        "name": "Default",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 24000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "deepseek-v4-pro",
+        "name": "Deepseek-V4-Pro",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 128000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v4-flash",
+        "name": "Deepseek-V4-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 50000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v4.1-flash",
+        "name": "Deepseek-V4.1-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 128000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v3-2-volc",
+        "name": "DeepSeek-V3.2",
+        "maxInputTokens": 96000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m2.5",
+        "name": "MiniMax-M2.5",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m3",
+        "name": "MiniMax-M3",
+        "maxInputTokens": 512000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m2.7",
+        "name": "MiniMax-M2.7",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.3",
+        "name": "GLM-5.3",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.3-flash",
+        "name": "GLM-5.3-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": true,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "low",
+            "high",
+            "max"
+          ]
+        }
+      },
+      {
+        "id": "glm-5.2",
+        "name": "GLM-5.2",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.1",
+        "name": "GLM-5.1",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.0",
+        "name": "GLM-5.0",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-5.0-turbo",
+        "name": "GLM-5.0-Turbo",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5v-turbo",
+        "name": "GLM-5v-Turbo",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-4.7",
+        "name": "GLM-4.7",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-4.6",
+        "name": "GLM-4.6",
+        "maxInputTokens": 168000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-4.6v",
+        "name": "GLM-4.6V",
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k3-1",
+        "name": "Kimi-K3",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.8-preview",
+        "name": "Kimi-K2.8-Preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": true,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "low",
+            "high",
+            "max"
+          ]
+        }
+      },
+      {
+        "id": "kimi-k2.7",
+        "name": "Kimi-K2.7-Code",
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.6",
+        "name": "Kimi-K2.6",
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.5",
+        "name": "Kimi-K2.5",
+        "maxInputTokens": 164000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2-thinking",
+        "name": "Kimi-K2-Thinking",
+        "maxInputTokens": 164000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy3",
+        "name": "Hy3",
+        "maxInputTokens": 192000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy3-x",
+        "name": "Hy3",
+        "maxInputTokens": 192000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy4-preview",
+        "name": "Hy4 preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": false,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "high"
+          ]
+        }
+      },
+      {
+        "id": "hy4-preview-x",
+        "name": "Hy4 preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "canDisableThinking": false,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "high"
+          ]
+        }
+      },
+      {
+        "id": "hunyuan-chat",
+        "name": "Hunyuan-Turbos",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 8192,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "hunyuan-image-alpha",
+        "name": "Hunyuan Image Alpha",
+        "maxInputTokens": null,
+        "maxOutputTokens": null,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "hunyuan-image-alpha-edit",
+        "name": "Hunyuan Image Alpha Edit",
+        "maxInputTokens": null,
+        "maxOutputTokens": null,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      }
+    ]
+  },
+  "arms": [
+    {
+      "id": "deepseek-v3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 121,
+      "finish": "stop",
+      "echoModel": "deepseek-v3",
+      "streamErr": null,
+      "chunks": 23,
+      "reasoningTokens": 0,
+      "totalTokens": 110,
+      "ms": 2289
+    },
+    {
+      "id": "deepseek-v3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 64,
+      "finish": "stop",
+      "echoModel": "deepseek-v3",
+      "streamErr": null,
+      "chunks": 15,
+      "reasoningTokens": 0,
+      "totalTokens": 72,
+      "ms": 1823
+    },
+    {
+      "id": "deepseek-v3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "deepseek-v3",
+      "streamErr": null,
+      "chunks": 7,
+      "reasoningTokens": 0,
+      "totalTokens": 31,
+      "ms": 2421
+    },
+    {
+      "id": "deepseek-v3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 37,
+      "finish": "stop",
+      "echoModel": "deepseek-v3",
+      "streamErr": null,
+      "chunks": 12,
+      "reasoningTokens": 0,
+      "totalTokens": 51,
+      "ms": 1798
+    },
+    {
+      "id": "deepseek-v3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 120,
+      "finish": "stop",
+      "echoModel": "deepseek-v3",
+      "streamErr": null,
+      "chunks": 25,
+      "reasoningTokens": 0,
+      "totalTokens": 112,
+      "ms": 2392
+    },
+    {
+      "id": "deepseek-v3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "deepseek-v3",
+      "streamErr": null,
+      "chunks": 7,
+      "reasoningTokens": 0,
+      "totalTokens": 31,
+      "ms": 1668
+    },
+    {
+      "id": "deepseek-v3.2",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 91,
+      "finish": "stop",
+      "echoModel": "deepseek-v3.2",
+      "streamErr": null,
+      "chunks": 19,
+      "reasoningTokens": 0,
+      "totalTokens": 87,
+      "ms": 2343
+    },
+    {
+      "id": "deepseek-v3.2",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 131,
+      "finish": "stop",
+      "echoModel": "deepseek-v3.2",
+      "streamErr": null,
+      "chunks": 25,
+      "reasoningTokens": 0,
+      "totalTokens": 117,
+      "ms": 2636
+    },
+    {
+      "id": "deepseek-v3.2",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 248,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-v3.2",
+      "streamErr": null,
+      "chunks": 40,
+      "reasoningTokens": 164,
+      "totalTokens": 192,
+      "ms": 3547
+    },
+    {
+      "id": "deepseek-v3.2",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 195,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-v3.2",
+      "streamErr": null,
+      "chunks": 34,
+      "reasoningTokens": 129,
+      "totalTokens": 157,
+      "ms": 2930
+    },
+    {
+      "id": "deepseek-v3.2",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 147,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-v3.2",
+      "streamErr": null,
+      "chunks": 26,
+      "reasoningTokens": 99,
+      "totalTokens": 127,
+      "ms": 2537
+    },
+    {
+      "id": "deepseek-v3.2",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 171,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-v3.2",
+      "streamErr": null,
+      "chunks": 30,
+      "reasoningTokens": 116,
+      "totalTokens": 144,
+      "ms": 2713
+    },
+    {
+      "id": "deepseek-r1",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 203,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-r1",
+      "streamErr": null,
+      "chunks": 33,
+      "reasoningTokens": 134,
+      "totalTokens": 162,
+      "ms": 2507
+    },
+    {
+      "id": "deepseek-r1",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 142,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-r1",
+      "streamErr": null,
+      "chunks": 25,
+      "reasoningTokens": 93,
+      "totalTokens": 121,
+      "ms": 2441
+    },
+    {
+      "id": "deepseek-r1",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 192,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "deepseek-r1",
+      "streamErr": null,
+      "chunks": 34,
+      "reasoningTokens": 137,
+      "totalTokens": 169,
+      "ms": 2834
+    },
+    {
+      "id": "deepseek-r1",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 216,
+      "contentChars": 65,
+      "finish": "stop",
+      "echoModel": "deepseek-r1",
+      "streamErr": null,
+      "chunks": 45,
+      "reasoningTokens": 145,
+      "totalTokens": 218,
+      "ms": 3107
+    },
+    {
+      "id": "deepseek-r1",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 210,
+      "contentChars": 66,
+      "finish": "stop",
+      "echoModel": "deepseek-r1",
+      "streamErr": null,
+      "chunks": 46,
+      "reasoningTokens": 141,
+      "totalTokens": 214,
+      "ms": 3356
+    },
+    {
+      "id": "deepseek-r1",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 144,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-r1",
+      "streamErr": null,
+      "chunks": 28,
+      "reasoningTokens": 99,
+      "totalTokens": 127,
+      "ms": 2827
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-pro",
+      "streamErr": null,
+      "chunks": 10,
+      "reasoningTokens": 0,
+      "totalTokens": 30,
+      "ms": 1787
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 7,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-pro",
+      "streamErr": null,
+      "chunks": 8,
+      "reasoningTokens": 0,
+      "totalTokens": 28,
+      "ms": 1826
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 333,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-pro",
+      "streamErr": null,
+      "chunks": 223,
+      "reasoningTokens": 216,
+      "totalTokens": 244,
+      "ms": 5560
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 360,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-pro",
+      "streamErr": null,
+      "chunks": 238,
+      "reasoningTokens": 231,
+      "totalTokens": 338,
+      "ms": 5657
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 361,
+      "contentChars": 18,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-pro",
+      "streamErr": null,
+      "chunks": 258,
+      "reasoningTokens": 242,
+      "totalTokens": 358,
+      "ms": 6070
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 304,
+      "contentChars": 34,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-pro",
+      "streamErr": null,
+      "chunks": 228,
+      "reasoningTokens": 200,
+      "totalTokens": 341,
+      "ms": 4885
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 45,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-flash",
+      "streamErr": null,
+      "chunks": 37,
+      "reasoningTokens": 0,
+      "totalTokens": 57,
+      "ms": 1721
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 98,
+      "finish": "stop",
+      "echoModel": "deepseek-v4-flash",
+      "streamErr": null,
+      "chunks": 79,
+      "reasoningTokens": 0,
+      "totalTokens": 99,
+      "ms": 1488
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 598,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "deepseek-v4-flash",
+      "streamErr": null,
+      "chunks": 402,
+      "reasoningTokens": 400,
+      "totalTokens": 448,
+      "ms": 3293
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 569,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "deepseek-v4-flash",
+      "streamErr": null,
+      "chunks": 402,
+      "reasoningTokens": 400,
+      "totalTokens": 448,
+      "ms": 2884
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 586,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "deepseek-v4-flash",
+      "streamErr": null,
+      "chunks": 402,
+      "reasoningTokens": 400,
+      "totalTokens": 448,
+      "ms": 3344
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 969,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "deepseek-v4-flash",
+      "streamErr": null,
+      "chunks": 402,
+      "reasoningTokens": 400,
+      "totalTokens": 448,
+      "ms": 3081
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 95,
+      "finish": "stop",
+      "echoModel": "deepseek-v4.1-flash",
+      "streamErr": null,
+      "chunks": 78,
+      "reasoningTokens": 0,
+      "totalTokens": 98,
+      "ms": 4905
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 78,
+      "finish": "stop",
+      "echoModel": "deepseek-v4.1-flash",
+      "streamErr": null,
+      "chunks": 60,
+      "reasoningTokens": 0,
+      "totalTokens": 80,
+      "ms": 1612
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 438,
+      "contentChars": 21,
+      "finish": "stop",
+      "echoModel": "deepseek-v4.1-flash",
+      "streamErr": null,
+      "chunks": 308,
+      "reasoningTokens": 289,
+      "totalTokens": 355,
+      "ms": 3004
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 562,
+      "contentChars": 23,
+      "finish": "length",
+      "echoModel": "deepseek-v4.1-flash",
+      "streamErr": null,
+      "chunks": 401,
+      "reasoningTokens": 381,
+      "totalTokens": 448,
+      "ms": 3190
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 448,
+      "contentChars": 20,
+      "finish": "stop",
+      "echoModel": "deepseek-v4.1-flash",
+      "streamErr": null,
+      "chunks": 311,
+      "reasoningTokens": 294,
+      "totalTokens": 358,
+      "ms": 2693
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 1051,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "deepseek-v4.1-flash",
+      "streamErr": null,
+      "chunks": 402,
+      "reasoningTokens": 400,
+      "totalTokens": 448,
+      "ms": 2662
+    },
+    {
+      "id": "deepseek-v3-2-volc",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 91,
+      "finish": "stop",
+      "echoModel": "deepseek-v3-2-volc",
+      "streamErr": null,
+      "chunks": 19,
+      "reasoningTokens": 0,
+      "totalTokens": 88,
+      "ms": 2198
+    },
+    {
+      "id": "deepseek-v3-2-volc",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 115,
+      "finish": "stop",
+      "echoModel": "deepseek-v3-2-volc",
+      "streamErr": null,
+      "chunks": 23,
+      "reasoningTokens": 0,
+      "totalTokens": 105,
+      "ms": 2479
+    },
+    {
+      "id": "deepseek-v3-2-volc",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 157,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-v3-2-volc",
+      "streamErr": null,
+      "chunks": 26,
+      "reasoningTokens": 107,
+      "totalTokens": 135,
+      "ms": 2835
+    },
+    {
+      "id": "deepseek-v3-2-volc",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 123,
+      "contentChars": 30,
+      "finish": "stop",
+      "echoModel": "deepseek-v3-2-volc",
+      "streamErr": null,
+      "chunks": 27,
+      "reasoningTokens": 81,
+      "totalTokens": 127,
+      "ms": 2727
+    },
+    {
+      "id": "deepseek-v3-2-volc",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 155,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "deepseek-v3-2-volc",
+      "streamErr": null,
+      "chunks": 28,
+      "reasoningTokens": 107,
+      "totalTokens": 138,
+      "ms": 2539
+    },
+    {
+      "id": "deepseek-v3-2-volc",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 161,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "deepseek-v3-2-volc",
+      "streamErr": null,
+      "chunks": 27,
+      "reasoningTokens": 111,
+      "totalTokens": 139,
+      "ms": 2963
+    },
+    {
+      "id": "glm-5.1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "glm-5.1",
+      "streamErr": null,
+      "chunks": 4,
+      "reasoningTokens": 0,
+      "totalTokens": 28,
+      "ms": 1796
+    },
+    {
+      "id": "glm-5.1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "glm-5.1",
+      "streamErr": null,
+      "chunks": 4,
+      "reasoningTokens": 0,
+      "totalTokens": 28,
+      "ms": 1802
+    },
+    {
+      "id": "glm-5.1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 662,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "glm-5.1",
+      "streamErr": null,
+      "chunks": 82,
+      "reasoningTokens": 430,
+      "totalTokens": 464,
+      "ms": 8665
+    },
+    {
+      "id": "glm-5.1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 666,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "glm-5.1",
+      "streamErr": null,
+      "chunks": 81,
+      "reasoningTokens": 409,
+      "totalTokens": 443,
+      "ms": 8333
+    },
+    {
+      "id": "glm-5.1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 1101,
+      "contentChars": 26,
+      "finish": "stop",
+      "echoModel": "glm-5.1",
+      "streamErr": null,
+      "chunks": 132,
+      "reasoningTokens": 703,
+      "totalTokens": 748,
+      "ms": 15099
+    },
+    {
+      "id": "glm-5.1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 338,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "glm-5.1",
+      "streamErr": null,
+      "chunks": 44,
+      "reasoningTokens": 221,
+      "totalTokens": 251,
+      "ms": 5814
+    },
+    {
+      "id": "glm-5.2",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 32,
+      "finish": "stop",
+      "echoModel": "glm-5.2",
+      "streamErr": null,
+      "chunks": 8,
+      "reasoningTokens": 0,
+      "totalTokens": 50,
+      "ms": 1720
+    },
+    {
+      "id": "glm-5.2",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "glm-5.2",
+      "streamErr": null,
+      "chunks": 5,
+      "reasoningTokens": 0,
+      "totalTokens": 29,
+      "ms": 1761
+    },
+    {
+      "id": "glm-5.2",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 514,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "glm-5.2",
+      "streamErr": null,
+      "chunks": 51,
+      "reasoningTokens": 306,
+      "totalTokens": 346,
+      "ms": 5669
+    },
+    {
+      "id": "glm-5.2",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 686,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.2",
+      "streamErr": null,
+      "chunks": 68,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 8458
+    },
+    {
+      "id": "glm-5.2",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 639,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.2",
+      "streamErr": null,
+      "chunks": 65,
+      "reasoningTokens": 400,
+      "totalTokens": 431,
+      "ms": 6062
+    },
+    {
+      "id": "glm-5.2",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 476,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "glm-5.2",
+      "streamErr": null,
+      "chunks": 52,
+      "reasoningTokens": 295,
+      "totalTokens": 336,
+      "ms": 7356
+    },
+    {
+      "id": "glm-5.3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1259,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.3",
+      "streamErr": null,
+      "chunks": 131,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 6316
+    },
+    {
+      "id": "glm-5.3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 1231,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.3",
+      "streamErr": null,
+      "chunks": 139,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 6716
+    },
+    {
+      "id": "glm-5.3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 32,
+      "contentChars": 70,
+      "finish": "stop",
+      "echoModel": "glm-5.3",
+      "streamErr": null,
+      "chunks": 72,
+      "reasoningTokens": 21,
+      "totalTokens": 104,
+      "ms": 5201
+    },
+    {
+      "id": "glm-5.3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 123,
+      "contentChars": 115,
+      "finish": "stop",
+      "echoModel": "glm-5.3",
+      "streamErr": null,
+      "chunks": 147,
+      "reasoningTokens": 61,
+      "totalTokens": 178,
+      "ms": 5745
+    },
+    {
+      "id": "glm-5.3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 104,
+      "contentChars": 81,
+      "finish": "stop",
+      "echoModel": "glm-5.3",
+      "streamErr": null,
+      "chunks": 38,
+      "reasoningTokens": 51,
+      "totalTokens": 145,
+      "ms": 2983
+    },
+    {
+      "id": "glm-5.3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 1268,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.3",
+      "streamErr": null,
+      "chunks": 132,
+      "reasoningTokens": 401,
+      "totalTokens": 430,
+      "ms": 7844
+    },
+    {
+      "id": "glm-5.0-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "glm-5.0-turbo",
+      "streamErr": null,
+      "chunks": 5,
+      "reasoningTokens": 0,
+      "totalTokens": 29,
+      "ms": 2832
+    },
+    {
+      "id": "glm-5.0-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "glm-5.0-turbo",
+      "streamErr": null,
+      "chunks": 5,
+      "reasoningTokens": 0,
+      "totalTokens": 29,
+      "ms": 5826
+    },
+    {
+      "id": "glm-5.0-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 487,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "glm-5.0-turbo",
+      "streamErr": null,
+      "chunks": 139,
+      "reasoningTokens": 319,
+      "totalTokens": 348,
+      "ms": 16374
+    },
+    {
+      "id": "glm-5.0-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 613,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "glm-5.0-turbo",
+      "streamErr": null,
+      "chunks": 164,
+      "reasoningTokens": 380,
+      "totalTokens": 413,
+      "ms": 16977
+    },
+    {
+      "id": "glm-5.0-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 626,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.0-turbo",
+      "streamErr": null,
+      "chunks": 165,
+      "reasoningTokens": 400,
+      "totalTokens": 423,
+      "ms": 16983
+    },
+    {
+      "id": "glm-5.0-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 482,
+      "contentChars": 5,
+      "finish": "stop",
+      "echoModel": "glm-5.0-turbo",
+      "streamErr": null,
+      "chunks": 118,
+      "reasoningTokens": 292,
+      "totalTokens": 321,
+      "ms": 12197
+    },
+    {
+      "id": "glm-5v-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 7,
+      "finish": "stop",
+      "echoModel": "glm-5v-turbo",
+      "streamErr": null,
+      "chunks": 6,
+      "reasoningTokens": 0,
+      "totalTokens": 29,
+      "ms": 1266
+    },
+    {
+      "id": "glm-5v-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 103,
+      "finish": "stop",
+      "echoModel": "glm-5v-turbo",
+      "streamErr": null,
+      "chunks": 72,
+      "reasoningTokens": 0,
+      "totalTokens": 95,
+      "ms": 3167
+    },
+    {
+      "id": "glm-5v-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 661,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5v-turbo",
+      "streamErr": null,
+      "chunks": 398,
+      "reasoningTokens": 397,
+      "totalTokens": 423,
+      "ms": 13809
+    },
+    {
+      "id": "glm-5v-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 672,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5v-turbo",
+      "streamErr": null,
+      "chunks": 400,
+      "reasoningTokens": 399,
+      "totalTokens": 423,
+      "ms": 11732
+    },
+    {
+      "id": "glm-5v-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 683,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5v-turbo",
+      "streamErr": null,
+      "chunks": 400,
+      "reasoningTokens": 399,
+      "totalTokens": 423,
+      "ms": 26850
+    },
+    {
+      "id": "glm-5v-turbo",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 703,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5v-turbo",
+      "streamErr": null,
+      "chunks": 399,
+      "reasoningTokens": 398,
+      "totalTokens": 423,
+      "ms": 9234
+    },
+    {
+      "id": "glm-4.6v",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [glm-4.6v] service info not found\",\"requestId\":\"2cabcfc8-9b25-4f0b-a7ad-18f2c7f83330\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another mode",
+      "ms": 316
+    },
+    {
+      "id": "glm-4.6v",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [glm-4.6v] service info not found\",\"requestId\":\"d3f99e7d-e854-4f80-bf16-0d284e15f381\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another mode",
+      "ms": 305
+    },
+    {
+      "id": "glm-4.6v",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [glm-4.6v] service info not found\",\"requestId\":\"029cebfc-ff6b-4603-bdfd-82b117741efe\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another mode",
+      "ms": 282
+    },
+    {
+      "id": "glm-4.6v",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [glm-4.6v] service info not found\",\"requestId\":\"f4b67bd3-4bf7-4da8-9bd3-909dd2f48b21\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another mode",
+      "ms": 333
+    },
+    {
+      "id": "glm-4.6v",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [glm-4.6v] service info not found\",\"requestId\":\"9ff22353-9e20-4957-9a21-e3634afea281\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another mode",
+      "ms": 302
+    },
+    {
+      "id": "glm-4.6v",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [glm-4.6v] service info not found\",\"requestId\":\"debde987-e40e-4397-b6c9-447e15f34c18\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another mode",
+      "ms": 315
+    },
+    {
+      "id": "kimi-k2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 63,
+      "finish": "stop",
+      "echoModel": "kimi-k2.5",
+      "streamErr": null,
+      "chunks": 50,
+      "reasoningTokens": 1,
+      "totalTokens": 73,
+      "ms": 2484
+    },
+    {
+      "id": "kimi-k2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 168,
+      "finish": "stop",
+      "echoModel": "kimi-k2.5",
+      "streamErr": null,
+      "chunks": 110,
+      "reasoningTokens": 1,
+      "totalTokens": 135,
+      "ms": 4022
+    },
+    {
+      "id": "kimi-k2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 610,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "kimi-k2.5",
+      "streamErr": null,
+      "chunks": 401,
+      "reasoningTokens": 399,
+      "totalTokens": 423,
+      "ms": 11903
+    },
+    {
+      "id": "kimi-k2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 517,
+      "contentChars": 78,
+      "finish": "stop",
+      "echoModel": "kimi-k2.5",
+      "streamErr": null,
+      "chunks": 388,
+      "reasoningTokens": 331,
+      "totalTokens": 411,
+      "ms": 11838
+    },
+    {
+      "id": "kimi-k2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 374,
+      "contentChars": 122,
+      "finish": "stop",
+      "echoModel": "kimi-k2.5",
+      "streamErr": null,
+      "chunks": 326,
+      "reasoningTokens": 249,
+      "totalTokens": 349,
+      "ms": 10304
+    },
+    {
+      "id": "kimi-k2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 446,
+      "contentChars": 72,
+      "finish": "stop",
+      "echoModel": "kimi-k2.5",
+      "streamErr": null,
+      "chunks": 359,
+      "reasoningTokens": 306,
+      "totalTokens": 382,
+      "ms": 10565
+    },
+    {
+      "id": "kimi-k2.6",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 38,
+      "finish": "stop",
+      "echoModel": "kimi-k2.6",
+      "streamErr": null,
+      "chunks": 32,
+      "reasoningTokens": 1,
+      "totalTokens": 55,
+      "ms": 1871
+    },
+    {
+      "id": "kimi-k2.6",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 149,
+      "finish": "stop",
+      "echoModel": "kimi-k2.6",
+      "streamErr": null,
+      "chunks": 99,
+      "reasoningTokens": 1,
+      "totalTokens": 122,
+      "ms": 3683
+    },
+    {
+      "id": "kimi-k2.6",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 413,
+      "contentChars": 66,
+      "finish": "stop",
+      "echoModel": "kimi-k2.6",
+      "streamErr": null,
+      "chunks": 316,
+      "reasoningTokens": 266,
+      "totalTokens": 339,
+      "ms": 9837
+    },
+    {
+      "id": "kimi-k2.6",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 258,
+      "contentChars": 77,
+      "finish": "stop",
+      "echoModel": "kimi-k2.6",
+      "streamErr": null,
+      "chunks": 236,
+      "reasoningTokens": 177,
+      "totalTokens": 259,
+      "ms": 7641
+    },
+    {
+      "id": "kimi-k2.6",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 594,
+      "contentChars": 45,
+      "finish": "length",
+      "echoModel": "kimi-k2.6",
+      "streamErr": null,
+      "chunks": 401,
+      "reasoningTokens": 368,
+      "totalTokens": 423,
+      "ms": 12704
+    },
+    {
+      "id": "kimi-k2.6",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 413,
+      "contentChars": 129,
+      "finish": "stop",
+      "echoModel": "kimi-k2.6",
+      "streamErr": null,
+      "chunks": 355,
+      "reasoningTokens": 268,
+      "totalTokens": 378,
+      "ms": 10576
+    },
+    {
+      "id": "kimi-k2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 347,
+      "contentChars": 56,
+      "finish": "stop",
+      "echoModel": "kimi-k2.7",
+      "streamErr": null,
+      "chunks": 102,
+      "reasoningTokens": 116,
+      "totalTokens": 187,
+      "ms": 5441
+    },
+    {
+      "id": "kimi-k2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 326,
+      "contentChars": 45,
+      "finish": "stop",
+      "echoModel": "kimi-k2.7",
+      "streamErr": null,
+      "chunks": 90,
+      "reasoningTokens": 101,
+      "totalTokens": 161,
+      "ms": 4506
+    },
+    {
+      "id": "kimi-k2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 213,
+      "contentChars": 35,
+      "finish": "stop",
+      "echoModel": "kimi-k2.7",
+      "streamErr": null,
+      "chunks": 75,
+      "reasoningTokens": 88,
+      "totalTokens": 141,
+      "ms": 4469
+    },
+    {
+      "id": "kimi-k2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 360,
+      "contentChars": 56,
+      "finish": "stop",
+      "echoModel": "kimi-k2.7",
+      "streamErr": null,
+      "chunks": 101,
+      "reasoningTokens": 115,
+      "totalTokens": 179,
+      "ms": 5350
+    },
+    {
+      "id": "kimi-k2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 286,
+      "contentChars": 81,
+      "finish": "stop",
+      "echoModel": "kimi-k2.7",
+      "streamErr": null,
+      "chunks": 104,
+      "reasoningTokens": 100,
+      "totalTokens": 188,
+      "ms": 5260
+    },
+    {
+      "id": "kimi-k2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 325,
+      "contentChars": 36,
+      "finish": "stop",
+      "echoModel": "kimi-k2.7",
+      "streamErr": null,
+      "chunks": 94,
+      "reasoningTokens": 112,
+      "totalTokens": 166,
+      "ms": 4967
+    },
+    {
+      "id": "kimi-k3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 216,
+      "contentChars": 27,
+      "finish": "stop",
+      "echoModel": "kimi-k3",
+      "streamErr": null,
+      "chunks": 166,
+      "reasoningTokens": 142,
+      "totalTokens": 281,
+      "ms": 7387
+    },
+    {
+      "id": "kimi-k3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 960,
+      "contentChars": 76,
+      "finish": "length",
+      "echoModel": "kimi-k3",
+      "streamErr": null,
+      "chunks": 394,
+      "reasoningTokens": 339,
+      "totalTokens": 501,
+      "ms": 13993
+    },
+    {
+      "id": "kimi-k3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 105,
+      "contentChars": 7,
+      "finish": "stop",
+      "echoModel": "kimi-k3",
+      "streamErr": null,
+      "chunks": 84,
+      "reasoningTokens": 76,
+      "totalTokens": 199,
+      "ms": 5800
+    },
+    {
+      "id": "kimi-k3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 189,
+      "contentChars": 33,
+      "finish": "stop",
+      "echoModel": "kimi-k3",
+      "streamErr": null,
+      "chunks": 164,
+      "reasoningTokens": 136,
+      "totalTokens": 279,
+      "ms": 7283
+    },
+    {
+      "id": "kimi-k3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 394,
+      "contentChars": 29,
+      "finish": "stop",
+      "echoModel": "kimi-k3",
+      "streamErr": null,
+      "chunks": 140,
+      "reasoningTokens": 116,
+      "totalTokens": 255,
+      "ms": 8367
+    },
+    {
+      "id": "kimi-k3",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 932,
+      "contentChars": 66,
+      "finish": "stop",
+      "echoModel": "kimi-k3",
+      "streamErr": null,
+      "chunks": 349,
+      "reasoningTokens": 298,
+      "totalTokens": 463,
+      "ms": 13139
+    },
+    {
+      "id": "kimi-k3-1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1019,
+      "contentChars": 47,
+      "finish": "length",
+      "echoModel": "kimi-k3-1",
+      "streamErr": null,
+      "chunks": 394,
+      "reasoningTokens": 354,
+      "totalTokens": 501,
+      "ms": 14049
+    },
+    {
+      "id": "kimi-k3-1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 925,
+      "contentChars": 104,
+      "finish": "length",
+      "echoModel": "kimi-k3-1",
+      "streamErr": null,
+      "chunks": 394,
+      "reasoningTokens": 317,
+      "totalTokens": 501,
+      "ms": 13588
+    },
+    {
+      "id": "kimi-k3-1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 161,
+      "contentChars": 24,
+      "finish": "stop",
+      "echoModel": "kimi-k3-1",
+      "streamErr": null,
+      "chunks": 136,
+      "reasoningTokens": 116,
+      "totalTokens": 251,
+      "ms": 7869
+    },
+    {
+      "id": "kimi-k3-1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 170,
+      "contentChars": 13,
+      "finish": "stop",
+      "echoModel": "kimi-k3-1",
+      "streamErr": null,
+      "chunks": 126,
+      "reasoningTokens": 114,
+      "totalTokens": 241,
+      "ms": 7465
+    },
+    {
+      "id": "kimi-k3-1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 302,
+      "contentChars": 40,
+      "finish": "stop",
+      "echoModel": "kimi-k3-1",
+      "streamErr": null,
+      "chunks": 229,
+      "reasoningTokens": 194,
+      "totalTokens": 344,
+      "ms": 10535
+    },
+    {
+      "id": "kimi-k3-1",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 1291,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "kimi-k3-1",
+      "streamErr": null,
+      "chunks": 399,
+      "reasoningTokens": 397,
+      "totalTokens": 501,
+      "ms": 15165
+    },
+    {
+      "id": "kimi-k2-thinking",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [kimi-k2-thinking] service info not found\",\"requestId\":\"c4e59137-735e-45aa-8a42-e063515ec3a6\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to anot",
+      "ms": 288
+    },
+    {
+      "id": "kimi-k2-thinking",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [kimi-k2-thinking] service info not found\",\"requestId\":\"a7ffcb8d-f610-4de3-a1bd-00dded610851\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to anot",
+      "ms": 291
+    },
+    {
+      "id": "kimi-k2-thinking",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [kimi-k2-thinking] service info not found\",\"requestId\":\"93df098e-1329-4ece-b7e4-fe010e6db73a\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to anot",
+      "ms": 312
+    },
+    {
+      "id": "kimi-k2-thinking",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [kimi-k2-thinking] service info not found\",\"requestId\":\"289ac9dd-60b4-4ea8-9970-8ca1c66ee06f\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to anot",
+      "ms": 290
+    },
+    {
+      "id": "kimi-k2-thinking",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [kimi-k2-thinking] service info not found\",\"requestId\":\"810eeaa2-0a30-4073-8d5e-5f2a064aba6e\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to anot",
+      "ms": 349
+    },
+    {
+      "id": "kimi-k2-thinking",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [kimi-k2-thinking] service info not found\",\"requestId\":\"ddc92946-dd3b-4161-8586-477b338ee9dd\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to anot",
+      "ms": 314
+    },
+    {
+      "id": "minimax-m2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [minimax-m2.5] service info not found\",\"requestId\":\"e640ef4d-0328-47e0-81a2-bf80b62bf7d0\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another ",
+      "ms": 298
+    },
+    {
+      "id": "minimax-m2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [minimax-m2.5] service info not found\",\"requestId\":\"d6aab4aa-5b61-4cdd-a9fd-cc677d8cf8cc\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another ",
+      "ms": 306
+    },
+    {
+      "id": "minimax-m2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [minimax-m2.5] service info not found\",\"requestId\":\"19ce9f42-0ea5-468c-a558-36c0f9b7bb2b\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another ",
+      "ms": 318
+    },
+    {
+      "id": "minimax-m2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [minimax-m2.5] service info not found\",\"requestId\":\"5f7183b3-f41b-4b72-93c4-61f67c1c2a42\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another ",
+      "ms": 322
+    },
+    {
+      "id": "minimax-m2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [minimax-m2.5] service info not found\",\"requestId\":\"836e1d13-0433-482e-ab6e-a1598d8dbb51\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another ",
+      "ms": 310
+    },
+    {
+      "id": "minimax-m2.5",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [minimax-m2.5] service info not found\",\"requestId\":\"48b80ac0-e896-448c-9c59-d228ce3893eb\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another ",
+      "ms": 320
+    },
+    {
+      "id": "minimax-m2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 542,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "minimax-m2.7",
+      "streamErr": null,
+      "chunks": 9,
+      "reasoningTokens": 190,
+      "totalTokens": 259,
+      "ms": 4481
+    },
+    {
+      "id": "minimax-m2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 1002,
+      "contentChars": 12,
+      "finish": "stop",
+      "echoModel": "minimax-m2.7",
+      "streamErr": null,
+      "chunks": 175,
+      "reasoningTokens": 0,
+      "totalTokens": 382,
+      "ms": 9070
+    },
+    {
+      "id": "minimax-m2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 577,
+      "contentChars": 8,
+      "finish": "stop",
+      "echoModel": "minimax-m2.7",
+      "streamErr": null,
+      "chunks": 99,
+      "reasoningTokens": 0,
+      "totalTokens": 247,
+      "ms": 4853
+    },
+    {
+      "id": "minimax-m2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 935,
+      "contentChars": 12,
+      "finish": "stop",
+      "echoModel": "minimax-m2.7",
+      "streamErr": null,
+      "chunks": 162,
+      "reasoningTokens": 0,
+      "totalTokens": 348,
+      "ms": 9061
+    },
+    {
+      "id": "minimax-m2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 767,
+      "contentChars": 12,
+      "finish": "stop",
+      "echoModel": "minimax-m2.7",
+      "streamErr": null,
+      "chunks": 136,
+      "reasoningTokens": 0,
+      "totalTokens": 317,
+      "ms": 5157
+    },
+    {
+      "id": "minimax-m2.7",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 937,
+      "contentChars": 9,
+      "finish": "stop",
+      "echoModel": "minimax-m2.7",
+      "streamErr": null,
+      "chunks": 154,
+      "reasoningTokens": 0,
+      "totalTokens": 348,
+      "ms": 12219
+    },
+    {
+      "id": "minimax-m3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 106,
+      "finish": "stop",
+      "echoModel": "minimax-m3",
+      "streamErr": null,
+      "chunks": 29,
+      "reasoningTokens": 0,
+      "totalTokens": 251,
+      "ms": 1980
+    },
+    {
+      "id": "minimax-m3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "minimax-m3",
+      "streamErr": null,
+      "chunks": 6,
+      "reasoningTokens": 0,
+      "totalTokens": 191,
+      "ms": 2480
+    },
+    {
+      "id": "minimax-m3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 553,
+      "contentChars": 246,
+      "finish": "stop",
+      "echoModel": "minimax-m3",
+      "streamErr": null,
+      "chunks": 108,
+      "reasoningTokens": 184,
+      "totalTokens": 534,
+      "ms": 4170
+    },
+    {
+      "id": "minimax-m3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 268,
+      "contentChars": 82,
+      "finish": "stop",
+      "echoModel": "minimax-m3",
+      "streamErr": null,
+      "chunks": 48,
+      "reasoningTokens": 97,
+      "totalTokens": 343,
+      "ms": 2843
+    },
+    {
+      "id": "minimax-m3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 411,
+      "contentChars": 115,
+      "finish": "stop",
+      "echoModel": "minimax-m3",
+      "streamErr": null,
+      "chunks": 61,
+      "reasoningTokens": 139,
+      "totalTokens": 411,
+      "ms": 6377
+    },
+    {
+      "id": "minimax-m3",
+      "catalogReasoning": {
+        "effort": "medium",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 291,
+      "contentChars": 112,
+      "finish": "stop",
+      "echoModel": "minimax-m3",
+      "streamErr": null,
+      "chunks": 53,
+      "reasoningTokens": 99,
+      "totalTokens": 366,
+      "ms": 2452
+    },
+    {
+      "id": "hy3",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 521,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "hy3",
+      "streamErr": null,
+      "chunks": 179,
+      "reasoningTokens": 352,
+      "totalTokens": 393,
+      "ms": 7019
+    },
+    {
+      "id": "hy3",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 602,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3",
+      "streamErr": null,
+      "chunks": 195,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 6468
+    },
+    {
+      "id": "hy3",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 541,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "hy3",
+      "streamErr": null,
+      "chunks": 175,
+      "reasoningTokens": 359,
+      "totalTokens": 400,
+      "ms": 5740
+    },
+    {
+      "id": "hy3",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 523,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "hy3",
+      "streamErr": null,
+      "chunks": 177,
+      "reasoningTokens": 346,
+      "totalTokens": 387,
+      "ms": 6471
+    },
+    {
+      "id": "hy3",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 568,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "hy3",
+      "streamErr": null,
+      "chunks": 180,
+      "reasoningTokens": 372,
+      "totalTokens": 412,
+      "ms": 6906
+    },
+    {
+      "id": "hy3",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 615,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3",
+      "streamErr": null,
+      "chunks": 201,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 6954
+    },
+    {
+      "id": "hy3-x",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 608,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-x",
+      "streamErr": null,
+      "chunks": 212,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 7604
+    },
+    {
+      "id": "hy3-x",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 621,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-x",
+      "streamErr": null,
+      "chunks": 205,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 7618
+    },
+    {
+      "id": "hy3-x",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 582,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-x",
+      "streamErr": null,
+      "chunks": 179,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 6620
+    },
+    {
+      "id": "hy3-x",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 615,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-x",
+      "streamErr": null,
+      "chunks": 199,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 6565
+    },
+    {
+      "id": "hy3-x",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 616,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-x",
+      "streamErr": null,
+      "chunks": 209,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 8068
+    },
+    {
+      "id": "hy3-x",
+      "catalogReasoning": {
+        "effort": "high",
+        "summary": "auto"
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 409,
+      "contentChars": 10,
+      "finish": "stop",
+      "echoModel": "hy3-x",
+      "streamErr": null,
+      "chunks": 141,
+      "reasoningTokens": 267,
+      "totalTokens": 308,
+      "ms": 5742
+    },
+    {
+      "id": "hy3-preview",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 618,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-preview",
+      "streamErr": null,
+      "chunks": 202,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 7306
+    },
+    {
+      "id": "hy3-preview",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 625,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-preview",
+      "streamErr": null,
+      "chunks": 202,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 6723
+    },
+    {
+      "id": "hy3-preview",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 621,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-preview",
+      "streamErr": null,
+      "chunks": 206,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 7318
+    },
+    {
+      "id": "hy3-preview",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 610,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-preview",
+      "streamErr": null,
+      "chunks": 200,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 7557
+    },
+    {
+      "id": "hy3-preview",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 612,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-preview",
+      "streamErr": null,
+      "chunks": 205,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 7007
+    },
+    {
+      "id": "hy3-preview",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 615,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy3-preview",
+      "streamErr": null,
+      "chunks": 203,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 7125
+    },
+    {
+      "id": "hy4-preview-x",
+      "catalogReasoning": {
+        "canDisableThinking": false,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "high"
+        ]
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "omit",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [hy4-preview-x] service info not found\",\"requestId\":\"d40e89a1-042f-4f5c-b60e-3a45e06c4cba\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another",
+      "ms": 289
+    },
+    {
+      "id": "hy4-preview-x",
+      "catalogReasoning": {
+        "canDisableThinking": false,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "high"
+        ]
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "off",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [hy4-preview-x] service info not found\",\"requestId\":\"9b8e796c-2984-4d57-83ad-b00afd677440\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another",
+      "ms": 338
+    },
+    {
+      "id": "hy4-preview-x",
+      "catalogReasoning": {
+        "canDisableThinking": false,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "high"
+        ]
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "low",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [hy4-preview-x] service info not found\",\"requestId\":\"7dd7c54e-ed3f-430b-9413-447156c5b47f\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another",
+      "ms": 306
+    },
+    {
+      "id": "hy4-preview-x",
+      "catalogReasoning": {
+        "canDisableThinking": false,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "high"
+        ]
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "medium",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [hy4-preview-x] service info not found\",\"requestId\":\"49643fe9-4d3d-4dd5-aea6-8bffe7036b97\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another",
+      "ms": 302
+    },
+    {
+      "id": "hy4-preview-x",
+      "catalogReasoning": {
+        "canDisableThinking": false,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "high"
+        ]
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "high",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [hy4-preview-x] service info not found\",\"requestId\":\"b87432a6-2fe9-4cda-8516-97145c24af7e\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another",
+      "ms": 310
+    },
+    {
+      "id": "hy4-preview-x",
+      "catalogReasoning": {
+        "canDisableThinking": false,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "high"
+        ]
+      },
+      "cli": false,
+      "rep": 1,
+      "level": "max",
+      "http": 400,
+      "error": "{\"code\":11102,\"msg\":\"model [hy4-preview-x] service info not found\",\"requestId\":\"4c5af05f-900f-4da3-903c-53fc06f4ef8e\",\"displayMsg\":{\"en\":\"The requested model is not available. Please switch to another",
+      "ms": 290
+    },
+    {
+      "id": "auto",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1267,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy4-preview",
+      "streamErr": null,
+      "chunks": 17,
+      "reasoningTokens": 400,
+      "totalTokens": 439,
+      "ms": 15425
+    },
+    {
+      "id": "auto",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "off",
+      "http": 200,
+      "reasonChars": 1174,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy4-preview",
+      "streamErr": null,
+      "chunks": 74,
+      "reasoningTokens": 400,
+      "totalTokens": 439,
+      "ms": 12600
+    },
+    {
+      "id": "auto",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 350,
+      "contentChars": 63,
+      "finish": "stop",
+      "echoModel": "hy4-preview",
+      "streamErr": null,
+      "chunks": 97,
+      "reasoningTokens": 228,
+      "totalTokens": 316,
+      "ms": 6260
+    },
+    {
+      "id": "auto",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "medium",
+      "http": 200,
+      "reasonChars": 1202,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy4-preview",
+      "streamErr": null,
+      "chunks": 102,
+      "reasoningTokens": 400,
+      "totalTokens": 439,
+      "ms": 17748
+    },
+    {
+      "id": "auto",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "high",
+      "http": 200,
+      "reasonChars": 1279,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy4-preview",
+      "streamErr": null,
+      "chunks": 112,
+      "reasoningTokens": 400,
+      "totalTokens": 439,
+      "ms": 17377
+    },
+    {
+      "id": "auto",
+      "catalogReasoning": null,
+      "cli": null,
+      "rep": 1,
+      "level": "max",
+      "http": 200,
+      "reasonChars": 1405,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "hy4-preview",
+      "streamErr": null,
+      "chunks": 142,
+      "reasoningTokens": 400,
+      "totalTokens": 439,
+      "ms": 8207
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "at": "2026-08-24T09:41:08.504Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "只回复两个字：成功"
+            }
+          ]
+        }
+      ],
+      "model": "kimi-k2.7-code",
+      "function": "inline_chat",
+      "request_id": "d94f7297-792f-4e9f-9b56-095fbc732fd2",
+      "session_id": "probe-live",
+      "stream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Mon, 24 Aug 2026 09:41:08 GMT",
+      "eagleid": "7518a92717875644681977199e",
+      "server": "Tengine",
+      "server-timing": "inner; dur=232, cdn-cache;desc=MISS,edge;dur=0,origin;dur=277",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "timing-allow-origin": "*",
+      "transfer-encoding": "chunked",
+      "via": "dynamic6.cn8714[277,0]",
+      "x-tt-logid": "202608241741087DB848BFB60A30FA0642",
+      "x-tt-timestamp": "1787564468.461",
+      "x-tt-trace-host": "0105dba5438c12d8d6e0c60642398be114945cf9a11c1ecc039770fcb8fe7f63c2b3ae63f07de59646c564e88d37a55c7d0cc23d30929d0a8959577336a0359be220839dd0b188717184aacdf6198d173fd3609a86cfb4f1c524b632c1ef03c7d7",
+      "x-tt-trace-id": "00-2608241741087DB848BFB60A30FA0642-3D345E7B88340DDA-00",
+      "x-tt-trace-tag": "id=03;cdn-cache=miss;type=dyn"
+    },
+    "bodyHead": "id:1\nevent:error\ndata:{\"code\":3003,\"message\":\"all models failed\",\"extra\":null}\n\nid:2\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 127
+  }
+}

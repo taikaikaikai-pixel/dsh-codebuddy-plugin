@@ -1,0 +1,354 @@
+{
+  "ts": "2026-09-21T20:39:02.946Z",
+  "infer": "https://gateway.qoder.com.cn",
+  "cases": [
+    {
+      "label": "drop_orphan_tool",
+      "note": "R1：孤儿 tool 直接丢弃后，工具调用已从历史消失",
+      "modelKey": "qmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "你好，请只回复两个字：收到"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_abc123",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": "{\"timezone\":\"Asia/Shanghai\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_abc123",
+            "content": "(tool result unavailable: previous attempt was interrupted)"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "收到",
+        "reasoning": "思考过程：1.  **分析用户的输入**：用户说“你好，请只回复两个字：收到”。\n2.  **提取核心约束**：\n    *   回复内容必须且只能是“收到”。\n    *   字数限制：两个字（“收到”正好是两个字）。\n    *   不能有其他多余的标点符号或文字（虽然通常带个句号也可以，但严格遵守“只回复两个字”的话，最好连标点都不加，或者只输出这两个汉字）。\n3.  **拟定回复**：收到\n4.  **检查约束**：\n    *   是否只有两个字？是。\n    *   是否是“收到”？是。\n5.  **输出结果**：收到。 (为了绝对安全，不加任何标点，或者按照中文习惯不加标点直接输出“收到”)。直接输出“收到”。",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 188,
+          "completion_tokens_details": {
+            "reasoning_tokens": 184
+          },
+          "credits": 0.018558144,
+          "original_credits": 0.04639536,
+          "prompt_tokens": 292,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 480
+        },
+        "errorObjects": [],
+        "frames": 57,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"思考\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"过程：1\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\".  **分析\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户的输入**：\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户说“你好\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"，请只回复\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"两个字：收到”。\\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n2. \\\"},\\\"index\\\":0}],\\\"created\\\":1790023144,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" **提取核心约束\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"**：\\\\n   \\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" *   \\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"回复内容必须且\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"只能是“收到”。\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"    *   \\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"字数限制：两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"（“收到”\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"正好\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"是两个字）。\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"    *   \\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"不能有其他多余的标点\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"符号或文字（\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"虽然\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"通常带个句号\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"也可以\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"，但严格遵守“\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"只回复两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"”的话，最好\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"连标点\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"都不加，或者\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"只输出这两个汉字\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"）。\\\\n3\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\".  **拟定\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"回复**：收到\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n4. \\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" **检查约束**\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"：\\\\n    *\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"   \\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"是否只有两个字？\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"是。\\\"},\\\"index\\\":0}],\\\"created\\\":1790023145,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n    *  \\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" 是否是“收到\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"”？\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"是。\\\\n5\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\".  **输出\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"结果**：收到\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。 (为了绝对\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"安全，不加任何\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"标点，或者\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"按照中文习惯不加\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"标点直接输出“\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到”)。直接\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"输出“收到”。\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790023146,\\\"id\\\":\\\"chatcmpl-6eb43b66-6395-912c-b165-32ac0fb5746c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":188,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":184},\\\"credits\\\":0.018558144,\\\"original_credits\\\":0.04639536,\\\"prompt_tokens\\\":292,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":480}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":914,\"totalDuration\":2668,\"serverDuration\":895}\n\n"
+    },
+    {
+      "label": "synthesize_missing_tool_result",
+      "note": "R2：合成缺失的 tool 结果，保住 assistant.tool_calls 配对",
+      "modelKey": "qmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "你好，请只回复两个字：收到"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_abc123",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": "{\"timezone\":\"Asia/Shanghai\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_abc123",
+            "content": "(tool result unavailable: previous attempt was interrupted)"
+          },
+          {
+            "role": "user",
+            "content": "算了，直接说你好"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "你好",
+        "reasoning": "用户让我只回复两个字“收到”，但工具调用被中断了。现在用户说“算了，直接说你好”。\n根据用户的要求，我应该回复“你好”。\n",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 39,
+          "completion_tokens_details": {
+            "reasoning_tokens": 35
+          },
+          "credits": 0.008141408000000001,
+          "original_credits": 0.02035352,
+          "prompt_tokens": 302,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 341
+        },
+        "errorObjects": [],
+        "frames": 18,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"让我\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"只\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"回复两个字“\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到”，但工具\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"调用被中断了\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。现在\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户说“算了\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"，直接\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"说你好”。\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"根据\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户的要求，我应该\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"回复\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"“你好”。\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"你好\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790023149,\\\"id\\\":\\\"chatcmpl-2cd4dd25-9075-9da0-8bc0-33139192f5af\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":39,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":35},\\\"credits\\\":0.008141408000000001,\\\"original_credits\\\":0.02035352,\\\"prompt_tokens\\\":302,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":341}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1060,\"totalDuration\":1569,\"serverDuration\":209}\n\n"
+    },
+    {
+      "label": "pure_orphan_without_toolcalls",
+      "note": "R3：既无 tool_calls 也无助手消息的纯孤儿 tool",
+      "modelKey": "qmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "你好，请只回复两个字：收到"
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_zzz",
+            "content": "(unavailable)"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "收到",
+        "reasoning": "用户要求我只回复两个字：“收到”。\n这是一个非常明确的指令，不需要任何其他信息或工具调用。\n我只需要输出“收到”即可。",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 33,
+          "completion_tokens_details": {
+            "reasoning_tokens": 30
+          },
+          "credits": 0.007430368,
+          "original_credits": 0.01857592,
+          "prompt_tokens": 286,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 319
+        },
+        "errorObjects": [],
+        "frames": 15,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790023153,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790023153,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求我只\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"回复两个字：“\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到”。\\\\n这是一个\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"非常明确的指令，\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"不需要任何其他信息或\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"工具调用\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。\\\\n我只需要\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"输出\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"“收到”即可\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790023154,\\\"id\\\":\\\"chatcmpl-8735b07f-9988-9a17-8c80-cc1e7d3aa3e7\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":33,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":30},\\\"credits\\\":0.007430368,\\\"original_credits\\\":0.01857592,\\\"prompt_tokens\\\":286,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":319}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":2453,\"totalDuration\":2843,\"serverDuration\":26}\n\n"
+    },
+    {
+      "label": "duplicate_assistant_tool_calls",
+      "note": "R4：重复 assistant（同 id）",
+      "modelKey": "qmodel",
+      "modelSource": "system",
+      "request": {
+        "model": "qmodel",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "你好，请只回复两个字：收到"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_abc123",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": "{\"timezone\":\"Asia/Shanghai\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_abc123",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": "{\"timezone\":\"Asia/Shanghai\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_abc123",
+            "content": "2026-09-22 05:00:00 +08:00"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "收到",
+        "reasoning": "用户要求我只回复两个字：“收到”。\n当前时间是 2026-09-22 05:00:00 +08:00。\n我需要严格遵守用户的指令，只回复“收到”。\n不需要提及时间，不需要其他任何内容。\n",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 63,
+          "completion_tokens_details": {
+            "reasoning_tokens": 59
+          },
+          "credits": 0.00995456,
+          "original_credits": 0.024886399999999996,
+          "prompt_tokens": 308,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 371
+        },
+        "errorObjects": [],
+        "frames": 23,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"我只\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"回复两个字\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"：“收到”。\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"当前\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"时间是 20\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"26-0\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"9-22\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" 05:\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"00:0\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"0 +08\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\":00。\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n我需要严格遵守用户的\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"指令，\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"只回复“收到\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"”。\\\\n不需要提及\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"时间，不需要其他\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"任何内容。\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790023157,\\\"id\\\":\\\"chatcmpl-0298e8ca-6661-993e-8960-845ac5e4a898\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":63,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":59},\\\"credits\\\":0.00995456,\\\"original_credits\\\":0.024886399999999996,\\\"prompt_tokens\\\":308,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":371}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1061,\"totalDuration\":1369,\"serverDuration\":551}\n\n"
+    }
+  ]
+}

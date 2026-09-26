@@ -1,0 +1,5 @@
+{
+  "at": "2026-08-24T12:49:50.247Z",
+  "ok": false,
+  "error": "trae remote create_session [404]: Not Found（边缘节点路由漂移/WAF 拦截，通常数分钟内自愈；可稍后重试或改用 inline 通道）"
+}

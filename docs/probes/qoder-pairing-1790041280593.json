@@ -1,0 +1,1028 @@
+{
+  "ts": "2026-09-22T01:41:12.299Z",
+  "piAi": "C:/Users/21613/dev/dsh-launcher/node_modules/@earendil-works/pi-ai/dist/api/openai-completions.js",
+  "model": {
+    "id": "dmodel",
+    "name": "probe",
+    "provider": "qoder",
+    "api": "openai-completions",
+    "baseUrl": "http://127.0.0.1:3903/v1",
+    "reasoning": true,
+    "input": [
+      "text",
+      "image"
+    ],
+    "contextWindow": 200000,
+    "maxTokens": 32768
+  },
+  "gwPort": 3903,
+  "cases": [
+    {
+      "name": "normal_tool_round",
+      "sequenceBefore": "developer user assistant[call_A] tool[call_A] assistant",
+      "sequenceAfter": "developer user assistant[call_A] tool[call_A] assistant",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "flat": [],
+        "group": []
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "file content",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "assistant",
+          "content": "内容如上"
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "file content",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "assistant",
+          "content": "内容如上"
+        }
+      ]
+    },
+    {
+      "name": "aborted_carrier",
+      "sequenceBefore": "developer user tool[call_B] user",
+      "sequenceAfter": "developer user assistant[call_B] tool[call_B] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b content",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b content",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "error_carrier",
+      "sequenceBefore": "developer user tool[call_E] user",
+      "sequenceAfter": "developer user assistant[call_E] tool[call_E] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_E（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_E（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "e content",
+          "tool_call_id": "call_E"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "再来"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "读一下文件"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_E",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "e content",
+          "tool_call_id": "call_E"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "再来"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mixed_multi_turn",
+      "sequenceBefore": "developer user assistant[call_A] tool[call_A] tool[call_B] assistant[call_C] tool[call_C] assistant user",
+      "sequenceAfter": "developer user assistant[call_A] tool[call_A] assistant[call_B] tool[call_B] assistant[call_C] tool[call_C] assistant user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L4: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L4: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "step1"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "ok",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "tool",
+          "content": "ran anyway",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_C",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":3}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "hits",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "assistant",
+          "content": "完成"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "next"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "step1"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "ok",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "ran anyway",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_C",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":3}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "hits",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "assistant",
+          "content": "完成"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "next"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "parallel_partial",
+      "sequenceBefore": "developer user assistant[call_A+call_B] tool[call_A] tool[call_B] user",
+      "sequenceAfter": "developer user assistant[call_A+call_B] tool[call_A] tool[call_B] user",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "flat": [],
+        "group": []
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "parallel"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            },
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":2}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "only A",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "tool",
+          "content": "No result provided",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "换个问题"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "parallel"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_A",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":1}"
+              }
+            },
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "read",
+                "arguments": "{\"f\":2}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "only A",
+          "tool_call_id": "call_A"
+        },
+        {
+          "role": "tool",
+          "content": "No result provided",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "换个问题"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "aborted_no_result",
+      "sequenceBefore": "developer user user",
+      "sequenceAfter": "developer user user",
+      "repaired": {
+        "orphans": 0,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "flat": [],
+        "group": []
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "重来"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "重来"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two_aborted_carriers",
+      "sequenceBefore": "developer user tool[call_B] tool[call_C] user",
+      "sequenceAfter": "developer user assistant[call_B] tool[call_B] assistant[call_C] tool[call_C] user",
+      "repaired": {
+        "orphans": 2,
+        "synthesized": 0,
+        "duplicates": 0
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_C（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_C（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "tool",
+          "content": "c",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "b",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_C",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "c",
+          "tool_call_id": "call_C"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duplicate_result",
+      "sequenceBefore": "developer user tool[call_B] tool[call_B] user",
+      "sequenceAfter": "developer user assistant[call_B] tool[call_B] user",
+      "repaired": {
+        "orphans": 1,
+        "synthesized": 0,
+        "duplicates": 1
+      },
+      "violationsBefore": {
+        "flat": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ],
+        "group": [
+          "L2: 孤儿 tool call_B（更早历史没有声明它的 assistant）",
+          "L3: 孤儿 tool call_B（更早历史没有声明它的 assistant）"
+        ]
+      },
+      "violationsAfter": {
+        "flat": [],
+        "group": []
+      },
+      "stillBroken": false,
+      "rawMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "first",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "tool",
+          "content": "second",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ],
+      "fixedMessages": [
+        {
+          "role": "developer",
+          "content": "You are a coding agent. Use tools when helpful."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "x"
+            }
+          ]
+        },
+        {
+          "role": "assistant",
+          "content": null,
+          "tool_calls": [
+            {
+              "id": "call_B",
+              "type": "function",
+              "function": {
+                "name": "tool",
+                "arguments": "{}"
+              }
+            }
+          ]
+        },
+        {
+          "role": "tool",
+          "content": "first",
+          "tool_call_id": "call_B"
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "继续"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "live": [
+    {
+      "label": "A1_raw_orphan_direct",
+      "note": "pi-ai 裸出站（孤儿 tool）",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"eb679b156b65-3b5a-fa24-2786-e8353f2c\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"eb679b156b65-3b5a-fa24-2786-e8353f2c\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"eb679b156b65-3b5a-fa24-2786-e8353f2c\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 111\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"param\\\\\\\":null,\\\\\\\"code\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\"}}\\\"}\\n\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:error\ndata:{\"stackTrace\":[{\"methodName\":\"onFailure\",\"fileName\":\"PassThroughSseTransferListener.java\",\"lineNumber\":593,\"className\":\"com.alibaba.force.ai.biz.sse.PassThroughSseTransferListener\",\"nativeMethod\":false},{\"methodName\":\"onFailure\",\"fileName\":\"BaseLargeModelRequestNode.java\",\"lineNumber\":1585,\"className\":\"com.alibaba.force.ai.biz.nodes.BaseLargeModelRequestNode$RetryableSseListener\",\"nativeMethod\":false},{\"methodName\":\"processResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":52,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"onResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":46,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"RealCall.kt\",\"lineNumber\":519,\"className\":\"okhttp3.internal.connection.RealCall$AsyncCall\",\"nativeMethod\":false},{\"methodName\":\"runWorker\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":1149,\"className\":\"java.util.concurrent.ThreadPoolExecutor\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":624,\"className\":\"java.util.concurrent.ThreadPoolExecutor$Worker\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"Thread.java\",\"lineNumber\":879,\"className\":\"java.lang.Thread\",\"nativeMethod\":false}],\"message\":\"Unknown sse issue\",\"localizedMessage\":\"Unknown sse issue\",\"suppressed\":[]}\n\n{\"success\":false,\"traceId\":\"9e3f948acf98c5cb76e65a96109e8d5a\",\"msgCode\":500,\"msgInfo\":\"Internal Server Error\",\"message\":\"Internal Server Error\"}"
+    },
+    {
+      "label": "A2_raw_two_orphans_direct",
+      "note": "两条连续孤儿 tool",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"c89061bca244-25b9-5024-f11e-6587230f\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"c89061bca244-25b9-5024-f11e-6587230f\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"c89061bca244-25b9-5024-f11e-6587230f\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 111\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"param\\\\\\\":null,\\\\\\\"code\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\"}}\\\"}\\n\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:error\ndata:{\"stackTrace\":[{\"methodName\":\"onFailure\",\"fileName\":\"PassThroughSseTransferListener.java\",\"lineNumber\":593,\"className\":\"com.alibaba.force.ai.biz.sse.PassThroughSseTransferListener\",\"nativeMethod\":false},{\"methodName\":\"onFailure\",\"fileName\":\"BaseLargeModelRequestNode.java\",\"lineNumber\":1585,\"className\":\"com.alibaba.force.ai.biz.nodes.BaseLargeModelRequestNode$RetryableSseListener\",\"nativeMethod\":false},{\"methodName\":\"processResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":52,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"onResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":46,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"RealCall.kt\",\"lineNumber\":519,\"className\":\"okhttp3.internal.connection.RealCall$AsyncCall\",\"nativeMethod\":false},{\"methodName\":\"runWorker\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":1149,\"className\":\"java.util.concurrent.ThreadPoolExecutor\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":624,\"className\":\"java.util.concurrent.ThreadPoolExecutor$Worker\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"Thread.java\",\"lineNumber\":879,\"className\":\"java.lang.Thread\",\"nativeMethod\":false}],\"message\":\"Unknown sse issue\",\"localizedMessage\":\"Unknown sse issue\",\"suppressed\":[]}\n\n{\"success\":false,\"traceId\":\"665c3ee2df22529a3f4d9e4bcfc68b6a\",\"msgCode\":500,\"msgInfo\":\"Internal Server Error\",\"message\":\"Internal Server Error\"}"
+    },
+    {
+      "label": "B1_gateway_aborted_carrier",
+      "note": "网关修复孤儿→补桩",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"c8996bae-a94b-40e0-a509-c20ef7b5b324\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"c8996bae-a94b-40e0-a509-c20ef7b5b324\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data: {\"error\":{\"message\":\"qoder upstream error: {\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"c8996bae-a94b-40e0-a509-c20ef7b5b324\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 111\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_req\"}}\n\ndata: [DONE]\n\n"
+    },
+    {
+      "label": "B2_gateway_mixed_multi_turn",
+      "note": "多轮混合（孤儿夹在合法环中）",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"861b8e0f-6d23-41bd-9eed-10169f399890\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"861b8e0f-6d23-41bd-9eed-10169f399890\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data: {\"error\":{\"message\":\"qoder upstream error: {\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"861b8e0f-6d23-41bd-9eed-10169f399890\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 111\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_req\"}}\n\ndata: [DONE]\n\n"
+    },
+    {
+      "label": "B3_gateway_two_aborted",
+      "note": "连续两孤儿",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"97b7e64c-bb6d-41e3-b08c-2f242c5a4b8a\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"97b7e64c-bb6d-41e3-b08c-2f242c5a4b8a\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data: {\"error\":{\"message\":\"qoder upstream error: {\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"97b7e64c-bb6d-41e3-b08c-2f242c5a4b8a\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 111\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_req\"}}\n\ndata: [DONE]\n\n"
+    },
+    {
+      "label": "B4_gateway_dup_result",
+      "note": "同 id 重复结果",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"043bf4d3-77fa-40f8-8b4d-e57650f0d275\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"043bf4d3-77fa-40f8-8b4d-e57650f0d275\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data: {\"error\":{\"message\":\"qoder upstream error: {\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"043bf4d3-77fa-40f8-8b4d-e57650f0d275\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 111\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_req\"}}\n\ndata: [DONE]\n\n"
+    },
+    {
+      "label": "B5_gateway_normal_round",
+      "note": "对照：本就合法",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"140368b6-1092-46b6-a766-1b7577bac0f4\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"140368b6-1092-46b6-a766-1b7577bac0f4\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data: {\"error\":{\"message\":\"qoder upstream error: {\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"140368b6-1092-46b6-a766-1b7577bac0f4\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 111\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_req\"}}\n\ndata: [DONE]\n\n"
+    },
+    {
+      "label": "C1_stub_content_null",
+      "note": "桩：assistant content:null",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"f491f791910b-868b-2ab4-578f-fbb96f33\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Mes",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"f491f791910b-868b-2ab4-578f-fbb96f33\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":",
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"f491f791910b-868b-2ab4-578f-fbb96f33\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"param\\\\\\\":null,\\\\\\\"code\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\"}}\\\"}\\n\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:error\ndata:{\"stackTrace\":[{\"methodName\":\"onFailure\",\"fileName\":\"PassThroughSseTransferListener.java\",\"lineNumber\":593,\"className\":\"com.alibaba.force.ai.biz.sse.PassThroughSseTransferListener\",\"nativeMethod\":false},{\"methodName\":\"onFailure\",\"fileName\":\"BaseLargeModelRequestNode.java\",\"lineNumber\":1585,\"className\":\"com.alibaba.force.ai.biz.nodes.BaseLargeModelRequestNode$RetryableSseListener\",\"nativeMethod\":false},{\"methodName\":\"processResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":52,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"onResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":46,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"RealCall.kt\",\"lineNumber\":519,\"className\":\"okhttp3.internal.connection.RealCall$AsyncCall\",\"nativeMethod\":false},{\"methodName\":\"runWorker\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":1149,\"className\":\"java.util.concurrent.ThreadPoolExecutor\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":624,\"className\":\"java.util.concurrent.ThreadPoolExecutor$Worker\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"Thread.java\",\"lineNumber\":879,\"className\":\"java.lang.Thread\",\"nativeMethod\":false}],\"message\":\"Unknown sse issue\",\"localizedMessage\":\"Unknown sse issue\",\"suppressed\":[]}\n\n{\"success\":false,\"traceId\":\"bfb2f196f8991ad2dade9996989718a0\",\"msgCode\":500,\"msgInfo\":\"Internal Server Error\",\"message\":\"Internal Server Error\"}"
+    },
+    {
+      "label": "C2_stub_content_empty",
+      "note": "桩：assistant content:\"\"",
+      "status": "HTTP 200",
+      "verdict": "OK 空正文(有 DONE)",
+      "errHit": null,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"The\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" tool\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" call\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" failed\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" because\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" I\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" didn\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"'t\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" provide\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" the\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" required\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" parameter\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" `\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"f\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"`.\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" Let\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" me\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" try\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" again\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" with\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" the\\\"},\\\"index\\\":0}],\\\"created\\\":1790041273,\\\"id\\\":\\\"4f56804f-5057-4adf-9701-9b6f8784a64b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b"
+    },
+    {
+      "label": "C3_valid_pair",
+      "note": "对照：合法工具环",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"e656a990908c-63d8-d534-fd25-56996818\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Mes",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"e656a990908c-63d8-d534-fd25-56996818\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":",
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"e656a990908c-63d8-d534-fd25-56996818\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"param\\\\\\\":null,\\\\\\\"code\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\"}}\\\"}\\n\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:error\ndata:{\"stackTrace\":[{\"methodName\":\"onFailure\",\"fileName\":\"PassThroughSseTransferListener.java\",\"lineNumber\":593,\"className\":\"com.alibaba.force.ai.biz.sse.PassThroughSseTransferListener\",\"nativeMethod\":false},{\"methodName\":\"onFailure\",\"fileName\":\"BaseLargeModelRequestNode.java\",\"lineNumber\":1585,\"className\":\"com.alibaba.force.ai.biz.nodes.BaseLargeModelRequestNode$RetryableSseListener\",\"nativeMethod\":false},{\"methodName\":\"processResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":52,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"onResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":46,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"RealCall.kt\",\"lineNumber\":519,\"className\":\"okhttp3.internal.connection.RealCall$AsyncCall\",\"nativeMethod\":false},{\"methodName\":\"runWorker\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":1149,\"className\":\"java.util.concurrent.ThreadPoolExecutor\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":624,\"className\":\"java.util.concurrent.ThreadPoolExecutor$Worker\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"Thread.java\",\"lineNumber\":879,\"className\":\"java.lang.Thread\",\"nativeMethod\":false}],\"message\":\"Unknown sse issue\",\"localizedMessage\":\"Unknown sse issue\",\"suppressed\":[]}\n\n{\"success\":false,\"traceId\":\"145ede29fcbafc8d47b7e1966146143f\",\"msgCode\":500,\"msgInfo\":\"Internal Server Error\",\"message\":\"Internal Server Error\"}"
+    },
+    {
+      "label": "D1_group_order_edge",
+      "note": "assistant[A] assistant[B] tool[B] tool[A]（A 的结果不在紧跟组内）",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"90bd44bbf6a4-8aba-7a14-d222-6d6b7024\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Mes",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"90bd44bbf6a4-8aba-7a14-d222-6d6b7024\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":",
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"90bd44bbf6a4-8aba-7a14-d222-6d6b7024\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"param\\\\\\\":null,\\\\\\\"code\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\"}}\\\"}\\n\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:error\ndata:{\"stackTrace\":[{\"methodName\":\"onFailure\",\"fileName\":\"PassThroughSseTransferListener.java\",\"lineNumber\":593,\"className\":\"com.alibaba.force.ai.biz.sse.PassThroughSseTransferListener\",\"nativeMethod\":false},{\"methodName\":\"onFailure\",\"fileName\":\"BaseLargeModelRequestNode.java\",\"lineNumber\":1585,\"className\":\"com.alibaba.force.ai.biz.nodes.BaseLargeModelRequestNode$RetryableSseListener\",\"nativeMethod\":false},{\"methodName\":\"processResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":52,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"onResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":46,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"RealCall.kt\",\"lineNumber\":519,\"className\":\"okhttp3.internal.connection.RealCall$AsyncCall\",\"nativeMethod\":false},{\"methodName\":\"runWorker\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":1149,\"className\":\"java.util.concurrent.ThreadPoolExecutor\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":624,\"className\":\"java.util.concurrent.ThreadPoolExecutor$Worker\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"Thread.java\",\"lineNumber\":879,\"className\":\"java.lang.Thread\",\"nativeMethod\":false}],\"message\":\"Unknown sse issue\",\"localizedMessage\":\"Unknown sse issue\",\"suppressed\":[]}\n\n{\"success\":false,\"traceId\":\"7440a7ab1fed751be25e8bf8096ba8fd\",\"msgCode\":500,\"msgInfo\":\"Internal Server Error\",\"message\":\"Internal Server Error\"}"
+    },
+    {
+      "label": "E1_developer_role",
+      "note": "role:developer 是否被接受",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"80ca5884e67e-0579-9fd4-7650-3945a653\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Fai",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"80ca5884e67e-0579-9fd4-7650-3945a653\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assista",
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"80ca5884e67e-0579-9fd4-7650-3945a653\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Failed to deserialize the JSON body into the target type: messages[0].role: unknown variant `developer`, expected one of `system`, `user`, `assistant`, `tool`, `latest_reminder` at line 1 column 82\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"param\\\\\\\":null,\\\\\\\"code\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\"}}\\\"}\\n\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:error\ndata:{\"stackTrace\":[{\"methodName\":\"onFailure\",\"fileName\":\"PassThroughSseTransferListener.java\",\"lineNumber\":593,\"className\":\"com.alibaba.force.ai.biz.sse.PassThroughSseTransferListener\",\"nativeMethod\":false},{\"methodName\":\"onFailure\",\"fileName\":\"BaseLargeModelRequestNode.java\",\"lineNumber\":1585,\"className\":\"com.alibaba.force.ai.biz.nodes.BaseLargeModelRequestNode$RetryableSseListener\",\"nativeMethod\":false},{\"methodName\":\"processResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":52,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"onResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":46,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"RealCall.kt\",\"lineNumber\":519,\"className\":\"okhttp3.internal.connection.RealCall$AsyncCall\",\"nativeMethod\":false},{\"methodName\":\"runWorker\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":1149,\"className\":\"java.util.concurrent.ThreadPoolExecutor\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":624,\"className\":\"java.util.concurrent.ThreadPoolExecutor$Worker\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"Thread.java\",\"lineNumber\":879,\"className\":\"java.lang.Thread\",\"nativeMethod\":false}],\"message\":\"Unknown sse issue\",\"localizedMessage\":\"Unknown sse issue\",\"suppressed\":[]}\n\n{\"success\":false,\"traceId\":\"cb662a9c839773b78a442fa109eb9c45\",\"msgCode\":500,\"msgInfo\":\"Internal Server Error\",\"message\":\"Internal Server Error\"}"
+    },
+    {
+      "label": "E2_system_role",
+      "note": "role:system 对照",
+      "status": "HTTP 200",
+      "verdict": "OK 有正文",
+      "errHit": null,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"The\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" user\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" is\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" asking\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" me\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" to\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" only\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" reply\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" \\\\\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"收到\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"\\\\\\\".\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" Let\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" me\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" just\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" do\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" that\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\".\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\"},\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790041276,\\\"id\\\":\\\"60959a73-4a7e-4510-854e-6cfd6b0e028d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":19,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":17},\\\"credits\\\":0.08479152,\\\"original_credits\\\":0.08479152,\\\"prompt_tokens\\\":367,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":386}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":363,\"totalDuration\":1598,\"serverDuration\":44}\n\n"
+    },
+    {
+      "label": "F1_calls_without_result",
+      "note": "tool_calls 缺结果",
+      "status": "HTTP 200",
+      "verdict": "OK 有正文",
+      "errHit": null,
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"The\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" user\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" says\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" \\\\\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"读\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"文件\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"\\\\\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" (\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"read\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" file\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\").\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" But\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" they\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" haven\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\"'t\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" specified\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" which\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" file\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\".\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" The\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945ce396\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"reasoning_content\\\":\\\" only\\\"},\\\"index\\\":0}],\\\"created\\\":1790041278,\\\"id\\\":\\\"28e94c63-ad9d-48a1-972f-d75a9072958b\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"system_fingerprint\\\":\\\"a307abda487cd1b463329ccb945c"
+    },
+    {
+      "label": "F2_pair_without_tools_array",
+      "note": "合法配对但请求不带 tools 数组",
+      "status": "HTTP 200",
+      "verdict": "ERROR {\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"c1b2ce690dac-8c58-dd94-8800-79acf366\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Mes",
+      "errHit": "{\"code\":\"provider_error\",\"message\":\"Error in upstream response\",\"request_id\":\"c1b2ce690dac-8c58-dd94-8800-79acf366\",\"type\":\"provider_error\",\"details\":\"{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":",
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"code\\\":\\\"provider_error\\\",\\\"message\\\":\\\"Error in upstream response\\\",\\\"request_id\\\":\\\"c1b2ce690dac-8c58-dd94-8800-79acf366\\\",\\\"type\\\":\\\"provider_error\\\",\\\"details\\\":\\\"{\\\\\\\"error\\\\\\\":{\\\\\\\"message\\\\\\\":\\\\\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\\\\\",\\\\\\\"type\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\",\\\\\\\"param\\\\\\\":null,\\\\\\\"code\\\\\\\":\\\\\\\"invalid_request_error\\\\\\\"}}\\\"}\\n\",\"statusCodeValue\":400,\"statusCode\":\"BAD_REQUEST\"}\n\nevent:error\ndata:{\"stackTrace\":[{\"methodName\":\"onFailure\",\"fileName\":\"PassThroughSseTransferListener.java\",\"lineNumber\":593,\"className\":\"com.alibaba.force.ai.biz.sse.PassThroughSseTransferListener\",\"nativeMethod\":false},{\"methodName\":\"onFailure\",\"fileName\":\"BaseLargeModelRequestNode.java\",\"lineNumber\":1585,\"className\":\"com.alibaba.force.ai.biz.nodes.BaseLargeModelRequestNode$RetryableSseListener\",\"nativeMethod\":false},{\"methodName\":\"processResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":52,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"onResponse\",\"fileName\":\"RealEventSource.kt\",\"lineNumber\":46,\"className\":\"okhttp3.internal.sse.RealEventSource\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"RealCall.kt\",\"lineNumber\":519,\"className\":\"okhttp3.internal.connection.RealCall$AsyncCall\",\"nativeMethod\":false},{\"methodName\":\"runWorker\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":1149,\"className\":\"java.util.concurrent.ThreadPoolExecutor\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"ThreadPoolExecutor.java\",\"lineNumber\":624,\"className\":\"java.util.concurrent.ThreadPoolExecutor$Worker\",\"nativeMethod\":false},{\"methodName\":\"run\",\"fileName\":\"Thread.java\",\"lineNumber\":879,\"className\":\"java.lang.Thread\",\"nativeMethod\":false}],\"message\":\"Unknown sse issue\",\"localizedMessage\":\"Unknown sse issue\",\"suppressed\":[]}\n\n{\"success\":false,\"traceId\":\"56ebc22f9b43a5a62a126fd61ae54750\",\"msgCode\":500,\"msgInfo\":\"Internal Server Error\",\"message\":\"Internal Server Error\"}"
+    }
+  ]
+}

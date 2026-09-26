@@ -1,0 +1,19 @@
+{"type":"run","at":"2026-08-19T04:49:03.002Z","set":"core","args":["--set","core"]}
+{"type":"probe","name":"create-spell-headers","path":"/v2/plugin/auth/state?platform=CLI","pred":"","note":"baseline creation with all three X-No-* headers","status":200,"code":0,"msg":"OK","dataKeys":["state","authUrl"],"ms":196}
+{"type":"state","name":"state1","state":"e0ab9a1c-6f4f-4b82-a28b-de4a5eda9e1a","createdAt":1787114945217}
+{"type":"probe","name":"poll-pending-1","path":"/v2/plugin/auth/token?state=e0ab9a1c-6f4f-4b82-a28b-de4a5eda9e1a","pred":"","note":"expect 11217","status":200,"code":11217,"msg":"11217:login ing...","dataKeys":null,"ms":119}
+{"type":"probe","name":"poll-pending-2","path":"/v2/plugin/auth/token?state=e0ab9a1c-6f4f-4b82-a28b-de4a5eda9e1a","pred":"","note":"idempotent 11217","status":200,"code":11217,"msg":"11217:login ing...","dataKeys":null,"ms":106}
+{"type":"probe","name":"P-O1-bogus-state","path":"/v2/plugin/auth/token?state=bogus-k3r9x7","pred":"P-O1","note":"invalid state distinguishable from pending (not 0, not 11217)","status":200,"code":11217,"msg":"11217:login ing...","dataKeys":null,"ms":101}
+{"type":"probe","name":"P-O6-account-pending","path":"/v2/plugin/login/account?state=e0ab9a1c-6f4f-4b82-a28b-de4a5eda9e1a","pred":"P-O6","note":"account facts with a pending state → code ≠ 0","status":401,"code":null,"msg":"<html>\r\n<head><title>401 Authorization Required</title></head>\r\n<body>\r\n<center><h1>401 Authorization Required</h1></center>\r\n<hr><center>op","dataKeys":null,"ms":95}
+{"type":"probe","name":"create-second-state","path":"/v2/plugin/auth/state?platform=CLI","pred":"P-O2","note":"second state creation","status":200,"code":0,"msg":"OK","dataKeys":["state","authUrl"],"ms":227}
+{"type":"state","name":"state2","state":"5b326e2c-17b4-43d4-9e0b-1463c004fe92","createdAt":1787114955920}
+{"type":"probe","name":"P-O2-state1-after-state2","path":"/v2/plugin/auth/token?state=e0ab9a1c-6f4f-4b82-a28b-de4a5eda9e1a","pred":"P-O2","note":"state1 still 11217 after state2 exists","status":200,"code":11217,"msg":"11217:login ing...","dataKeys":null,"ms":115}
+{"type":"probe","name":"P-O3-create-no-headers","path":"/v2/plugin/auth/state?platform=CLI","pred":"P-O3","note":"X-No-* headers are superstition","status":200,"code":0,"msg":"OK","dataKeys":["state","authUrl"],"ms":110}
+{"type":"probe","name":"P-O4-platform-workbuddy","path":"/v2/plugin/auth/state?platform=WORKBUDDY","pred":"P-O4","note":"free-form platform tag","status":200,"code":0,"msg":"OK","dataKeys":["state","authUrl"],"ms":103}
+{"type":"probe","name":"P-O4-platform-omitted","path":"/v2/plugin/auth/state","pred":"P-O4","note":"platform omitted","status":400,"code":10001,"msg":"10001:platform is empty","dataKeys":null,"ms":100}
+{"type":"probe","name":"P-O7-refresh-bogus","path":"/v2/plugin/auth/token/refresh","pred":"P-O7","note":"refresh failure is loud (non-2xx or code ≠ 0)","status":401,"code":12153,"msg":"12153:refresh token failed:10000:token format error","dataKeys":null,"ms":116}
+{"type":"run","at":"2026-08-19T04:50:27.484Z","set":"ttl","args":["--set","ttl"]}
+{"type":"probe","name":"ttl-create","path":"/v2/plugin/auth/state?platform=CLI","pred":"","note":"TTL ladder seed","status":200,"code":0,"msg":"OK","dataKeys":["state","authUrl"],"ms":208}
+{"type":"state","name":"ttl-state","state":"e45a3bce-2551-4388-bdd3-9e10fe37695a","createdAt":1787115027696}
+{"type":"probe","name":"P-O5-ttl-60s","path":"/v2/plugin/auth/token?state=e45a3bce-2551-4388-bdd3-9e10fe37695a","pred":"P-O5","note":"still 11217 at +60s","status":200,"code":11217,"msg":"11217:login ing...","dataKeys":null,"ms":139}
+{"type":"probe","name":"P-O5-ttl-240s","path":"/v2/plugin/auth/token?state=e45a3bce-2551-4388-bdd3-9e10fe37695a","pred":"P-O5","note":"still 11217 at +240s","status":200,"code":11217,"msg":"11217:login ing...","dataKeys":null,"ms":149}

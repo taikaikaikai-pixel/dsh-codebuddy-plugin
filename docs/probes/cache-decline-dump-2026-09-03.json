@@ -1,0 +1,46 @@
+{
+ "type": "dump-forensics",
+ "at": "2026-09-03T08:08:57.659Z",
+ "note": "bridge DUMP analysis for session-2584c54c (codebuddy/deepseek-v4-flash, 2 turns); inbound bodies; FFFD = U+FFFD replacement chars from per-chunk utf8 decode; message bodies not archived",
+ "dumps": [
+  {
+   "file": "req-0001-1788422317866.json",
+   "marker": "title",
+   "msgs": 2,
+   "bodyBytes": 771,
+   "fffd": 0
+  },
+  {
+   "file": "req-0002-1788422317870.json",
+   "marker": "chat",
+   "msgs": 5,
+   "bodyBytes": 75071,
+   "fffd": 0,
+   "msg2Len": 13112,
+   "msg2FirstFffd": null,
+   "commonPrefixWithPrevB": 69
+  },
+  {
+   "file": "req-0003-1788422320551.json",
+   "marker": "chat",
+   "msgs": 7,
+   "bodyBytes": 77747,
+   "fffd": 3,
+   "msg2Len": 13114,
+   "msg2FirstFffd": 4675,
+   "commonPrefixWithPrevB": 22847,
+   "sharedLeadingMsgsWithPrev": "2/5→7"
+  },
+  {
+   "file": "req-0004-1788422326642.json",
+   "marker": "chat",
+   "msgs": 9,
+   "bodyBytes": 78337,
+   "fffd": 3,
+   "msg2Len": 13114,
+   "msg2FirstFffd": 10581,
+   "commonPrefixWithPrevB": 22847,
+   "sharedLeadingMsgsWithPrev": "2/7→9"
+  }
+ ]
+}

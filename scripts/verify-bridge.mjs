@@ -21,15 +21,44 @@
  *      codebuddy-plugin-usage.json and served via action:'usage'
  *   9. developer-role messages are rewritten to system on the way out
  *      (regression: gateway moderation content_filter on developer role)
- *   10. bridge listen EADDRINUSE degrades to a warning, never crashes
+ *  10. chunked multibyte integrity: a body split so chunk boundaries fall
+ *      inside multibyte chars arrives byte-identical upstream
+ *      (regression 踩坑 #28: per-chunk implicit utf8 decoding corrupted
+ *      chars into 3×U+FFFD and drifted the outbound prefix every request)
+ *  11. bridge listen EADDRINUSE degrades to a warning, never crashes
  *      (regression: an unhandled 'error' event took the whole process down)
+ *  12. settings POST responses mask plaintext apiKeys (regression: four POST
+ *      paths shipped the raw file layer — GET was masked in f9aeeaa, POST
+ *      was not), and oauth-start rejects an upstream-poisoned authUrl
+ *      before oauthPending activates (https + login-site-family gate;
+ *      loopback mock pairs pass)
+ *  13. loopback gates + input guards (audit [6][7][8][18][22][29]):
+ *      bridge Host gate 403s non-loopback Host before proxying (loopback
+ *      names still pass), the settings route is Host/Origin-guarded on GET
+ *      as well as POST, trae-model-sync dbPath is path/extension-checked,
+ *      __proto__-family model ids are rejected, and plaintext http
+ *      baseURLs outside loopback fail validation without persisting
+ *  14. G8 per-model reasoning_effort injection (effortByModel level → wire
+ *      value; caller-set wins, off/table-less/unknown inject nothing)
+ *  15. cancellation & guardrails: mid-stream client disconnect aborts the
+ *      upstream fetch; a queued waiter whose caller hung up never fires
+ *      upstream and the aborted holder's slot is really released; bodies
+ *      past 32MB get a real 413 JSON (was: silent req.destroy); aggregated
+ *      non-streaming responses carry the captured usage (was: always {});
+ *      a silent upstream fails fast with 502 + first-byte reason
+ *      (upstreamFirstByteTimeoutMs, symmetric with the trae gateway)
+ *  16. OAuth state machine: logout() terminates an in-flight poll
+ *      (generation guard — a post-logout authorization never signs back
+ *      in; uninterrupted poll still completes); a failed refresh and an
+ *      expired refreshExpiresAt both surface needsRelogin in oauthStatus
  *
  * Usage: node scripts/verify-bridge.mjs   (no network, no credentials)
  */
 
 import { createServer } from 'node:http'
+import { connect } from 'node:net'
 import { EventEmitter } from 'node:events'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -44,10 +73,88 @@ process.env.CODEBUDDY_BRIDGE_LOG = join(process.env.DSH_HOME, 'bridge-log.jsonl'
 // ---------------------------------------------------------------- mock gateway
 
 const arrivals = [] // {path, stream, headers, at} in upstream-arrival order
+// [12] oauth-start 门禁用：auth/state 响应里的 authUrl（null → 回环默认值，
+// 即通过门禁的正例；置为投毒值即负例）。
+let oauthStateAuthUrl = null
+// [15] 取消传播用：model 'hang' = 永远不出响应头（首字节超时/排队 waiter 用
+// 例）；model 'drip' = 发一块后沉默（流式中途断连用例）。两者记录桥何时
+// 丢弃上游连接（res close 且 writableEnded=false = 对端中止，不是正常完成）。
+const hangCloses = []
+// [16] OAuth 状态机用：token 轮询在 pending（11217）与 success（发令牌）间
+// 切换，refresh 在 ok 与 fail（401+12153，对齐 bogus refresh 实测）间切换。
+let oauthTokenMode = 'pending'
+let oauthRefreshMode = 'ok'
+// [17] 目录思考强度声明：'off' = /v3/config 500（启动同步失败，静态兜底——
+// 与前面各节的既有前提一致）；'on' = 发目录 fixture（含新形态 supportedEfforts
+// 与 legacy 形态各一条，用于锁定档位表的来源与优先级）。
+let catalogMode = 'off'
+const CATALOG_FIXTURE = {
+  models: [
+    {
+      id: 'glm-5.3-flash', name: 'GLM 5.3 Flash', maxInputTokens: 1000000, maxOutputTokens: 32000, supportsImages: true,
+      reasoning: { canDisableThinking: true, defaultEffort: 'high', summary: 'auto', supportedEfforts: ['low', 'high', 'max'] },
+    },
+    {
+      id: 'hy4-preview', name: 'Hunyuan Hy4 Preview', maxInputTokens: 1000000, maxOutputTokens: 64000, supportsImages: true,
+      reasoning: { canDisableThinking: false, defaultEffort: 'high', summary: 'auto', supportedEfforts: ['high'] },
+    },
+    {
+      id: 'mock-legacy', name: 'Mock Legacy Model', maxInputTokens: 200000, maxOutputTokens: 48000,
+      reasoning: { effort: 'medium', summary: 'auto' },
+    },
+  ],
+  agents: [{ name: 'cli', models: ['glm-5.3-flash', 'hy4-preview', 'mock-legacy'] }],
+}
 const upstream = createServer((req, res) => {
-  let raw = ''
-  req.on('data', (c) => (raw += c))
+  // [17] 目录端点（GET，无 body）：开闸才发目录，否则 500 走静态兜底。
+  if (req.url.startsWith('/v3/config')) {
+    if (catalogMode !== 'on') {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end('{"code":1,"msg":"catalog unavailable"}')
+      return
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ code: 0, data: CATALOG_FIXTURE }))
+    return
+  }
+  // OAuth 设备流第一步（安全审计回归锁 [12]）：authUrl 可投毒。
+  if (req.url.startsWith('/v2/plugin/auth/state')) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({
+      code: 0,
+      data: {
+        state: 'st-verify',
+        authUrl: oauthStateAuthUrl ?? `http://127.0.0.1:${upstream.address()?.port}/authorize`,
+      },
+    }))
+    return
+  }
+  // [16] OAuth 设备流后续端点：refresh 必须先于 token 匹配（前缀包含关系）。
+  if (req.url.startsWith('/v2/plugin/auth/token/refresh')) {
+    res.writeHead(oauthRefreshMode === 'fail' ? 401 : 200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(oauthRefreshMode === 'fail'
+      ? { code: 12153, msg: 'invalid refresh token' }
+      : { code: 0, data: { accessToken: 'at-refreshed', expiresIn: 3600, refreshToken: 'rt-new', domain: '' } }))
+    return
+  }
+  if (req.url.startsWith('/v2/plugin/auth/token')) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify(oauthTokenMode === 'success'
+      ? { code: 0, data: { accessToken: 'at-polled', expiresIn: 3600, refreshToken: 'rt-polled', refreshExpiresAt: 30 * 86400, domain: '' } }
+      : { code: 11217, msg: 'pending' }))
+    return
+  }
+  if (req.url.startsWith('/v2/plugin/login/account')) {
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ code: 0, data: { uid: 'u-verify', nickname: 'verify-account' } }))
+    return
+  }
+  // Buffer 收集 + 一次解码：mock 自身不能带踩坑 #28 的缺陷，否则分片
+  // 用例的损坏源是 mock 而不是被测桥，断言就测不到真东西。
+  const chunks = []
+  req.on('data', (c) => chunks.push(c))
   req.on('end', () => {
+    const raw = Buffer.concat(chunks).toString('utf8')
     let parsed = null
     try { parsed = JSON.parse(raw) } catch { /* non-JSON body */ }
     arrivals.push({
@@ -62,6 +169,14 @@ const upstream = createServer((req, res) => {
     })
     setTimeout(() => {
       if (req.url.endsWith('/chat/completions')) {
+        // [15] 挂起模式：bridge 侧中止/超时时连接被丢弃，res close 为证。
+        if (parsed?.model === 'hang' || parsed?.model === 'drip') {
+          res.on('close', () => { hangCloses.push({ model: parsed.model, at: Date.now(), writableEnded: res.writableEnded }) })
+          if (parsed.model === 'hang') return // 永远不出响应头
+          res.writeHead(200, { 'Content-Type': 'text/event-stream' })
+          res.write('data: {"id":"mock","choices":[{"index":0,"delta":{"content":"partial "}}]}\n\n')
+          return // 一块之后沉默
+        }
         res.writeHead(200, { 'Content-Type': 'text/event-stream' })
         res.end([
           'data: {"id":"mock","choices":[{"index":0,"delta":{"content":"hello "}}]}',
@@ -109,7 +224,7 @@ async function main() {
   await new Promise((r) => upstream.listen(upstreamPort, '127.0.0.1', r))
   const bridgePort = await freePort()
 
-  const { apply } = await import(join(ROOT, 'index.js'))
+  const { apply } = await import(new URL('../index.js', import.meta.url).href)
   // Route registrations are captured so the settings route can be driven
   // in-process (the usage view is asserted through it, like the card does).
   const routes = {}
@@ -141,13 +256,13 @@ async function main() {
   const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => 'TIMEOUT')])
 
   /** Drive a captured settings-route handler with a mock req/res pair. */
-  const callRoute = (routesMap, body) => new Promise((resolve, reject) => {
-    const handler = routesMap['/dsh-codebuddy-plugin/settings']
+  const callRoute = (routesMap, body, headerOverrides = {}) => new Promise((resolve, reject) => {
+    const handler = routesMap['/dsh-tap/settings']
     if (!handler) return reject(new Error('settings route not registered'))
     const req = new EventEmitter()
     req.method = body ? 'POST' : 'GET'
     // sameOrigin() gate: origin host must match the Host header.
-    req.headers = { host: '127.0.0.1:3080', origin: 'http://127.0.0.1:3080' }
+    req.headers = { host: '127.0.0.1:3080', origin: 'http://127.0.0.1:3080', ...headerOverrides }
     const res = {
       status: 0,
       writeHead(s) { this.status = s },
@@ -159,7 +274,11 @@ async function main() {
     }
     handler(req, res)
     if (body) {
-      req.emit('data', JSON.stringify(body))
+      // 真实 webServer 喂 Buffer 分片；设置路由已按踩坑 #28 改为
+      // Buffer.concat 后一次解码，emit 字符串会令其直接抛错。
+      const bytes = Buffer.from(JSON.stringify(body))
+      req.emit('data', bytes.subarray(0, 5))
+      req.emit('data', bytes.subarray(5))
       req.emit('end')
     }
   })
@@ -376,7 +495,7 @@ async function main() {
         && Array.isArray(persisted?.recent) && persisted.recent.length === 16)
   }
 
-  // -------------------------------------------- 9. developer-role rewrite
+  // --------------------------------------------- 9. developer-role rewrite
   // pi-ai serializes the system prompt as role "developer" for reasoning
   // models; since 2026-08-18 the gateway's moderation answers such payloads
   // with finish_reason=content_filter. The bridge rewrites developer→system.
@@ -402,8 +521,66 @@ async function main() {
       JSON.stringify(forwarded?.messages?.map((m) => m.role)))
   }
 
+  // -------------------------------------- 10. chunked multibyte integrity
+  // 踩坑 #28 回归锁：TCP 分片落在多字节中文字符中间时，逐分片隐式 utf8
+  // 解码（旧 `rawBody += c`）会把它替换成 3×U+FFFD，出站前缀逐请求漂移，
+  // 网关内容寻址缓存只能命中到损坏点（v4-flash"缓存命中率下降快"根因，
+  // 证据链 docs/diagnosis-cache-decline.md）。fetch 无法控制分片边界，所以
+  // 用原生 socket 把同一请求体按几种切法各写一遍，断言 mock 网关收到的
+  // 字节与整块发送逐字节一致。
+  console.log('\n[10] chunked multibyte body arrives intact')
+  {
+    const filler = '前缀稳定。'.repeat(400) // 3-byte chars × 400
+    const body = JSON.stringify({
+      model: 'm1',
+      stream: true,
+      messages: [
+        { role: 'system', content: filler },
+        { role: 'user', content: `读取）这）些）中）文）括）号）并回答：${filler}` },
+      ],
+    })
+    const writeChunked = (chunks) =>
+      new Promise((resolve, reject) => {
+        const sock = connect(bridgePort, '127.0.0.1', () => {
+          sock.write('POST /v2/chat/completions HTTP/1.1\r\n')
+          sock.write(`Host: 127.0.0.1:${bridgePort}\r\n`)
+          sock.write('Content-Type: application/json\r\n')
+          sock.write(`Content-Length: ${Buffer.byteLength(body)}\r\n`)
+          sock.write('Connection: close\r\n')
+          sock.write('\r\n')
+          for (const c of chunks) sock.write(c)
+        })
+        // Consume the response: without a 'data' listener the socket stays
+        // paused, the FIN is never read, and 'close' never fires (the test
+        // itself then hangs — not the bridge).
+        sock.on('data', () => {})
+        sock.on('error', reject)
+        sock.on('close', () => resolve())
+      })
+    const bytes = Buffer.from(body)
+    // 切点 1/2/5 故意落在多字节序列中间；最后一段留大块保证走多分片。
+    const splitAt = [1, 2, 5, 1300, 7000, 12000]
+    const chunks = []
+    let prev = 0
+    for (const at of splitAt) {
+      chunks.push(bytes.subarray(prev, at))
+      prev = at
+    }
+    chunks.push(bytes.subarray(prev))
+    const before = arrivals.length
+    await writeChunked(chunks)
+    // 桥转发 + mock 网关 250ms 延迟后才会记录该请求
+    for (let i = 0; i < 40 && arrivals.length < before + 1; i++) await sleep(100)
+    const a = arrivals[before]
+    check('chunked request reached upstream', Boolean(a))
+    check('body bytes identical to whole-write (no U+FFFD, no drift)',
+      a?.raw === body && !a?.raw.includes('\uFFFD'),
+      `len ${a?.raw?.length} vs ${body.length}, FFFD count ${(a?.raw?.match(/\uFFFD/g) ?? []).length}`)
+    check('multibyte chars all intact', (a?.raw.match(/）/g) ?? []).length === (body.match(/）/g) ?? []).length)
+  }
+
   // ---------------------------------------------------------- 10. EADDRINUSE
-  console.log('\n[10] bridge listen EADDRINUSE degrades, never crashes')
+  console.log('\n[11] bridge listen EADDRINUSE degrades, never crashes')
   {
     const squatter = createServer()
     await new Promise((r) => squatter.listen(0, '127.0.0.1', r))
@@ -429,6 +606,429 @@ async function main() {
     const stillUp = await withTimeout(chat({ model: 'm1', stream: true, messages: [] }).then((r) => r.text()), 3000)
     check('first bridge keeps serving afterwards', stillUp !== 'TIMEOUT' && stillUp.includes('[DONE]'))
     await new Promise((r) => squatter.close(r))
+  }
+
+  // ------------------------------------------- 12. POST masking + authUrl gate
+  // 安全审计回归锁（两补丁）：
+  //   a) index.js maskedUserLayer——四个 POST 响应（apiKeysAdd 走通用 patch、
+  //      modelSetEnabled / modelSetLimits 走层叠重读；traeModelSetEnabled 同型，
+  //      无 Trae 目录时不可驱动，形状与另两条层叠路径逐字相同）曾原样回传
+  //      文件层——明文 apiKey 下发浏览器（GET 视图 f9aeeaa 已脱敏，POST 漏网）。
+  //   b) providers/codebuddy/oauth.js assertSafeAuthUrl——上游投毒 authUrl
+  //      （钓鱼域 / javascript: 串）在置位 oauthPending 之前响亮失败，
+  //      oauthStatus 不外泄该 URL，组合根 oauth-start 回 502。
+  console.log('\n[12] settings POST responses mask keys; oauth-start gates authUrl')
+  {
+    const PLAIN = 'ck_secret_plaintext_2f9b5678'
+    const MASKED = 'ck_s…5678' // maskKey：首 4 … 尾 4
+
+    // 12a. 通用 patch 路径（apiKeysAdd）
+    let res = await callRoute(routes, { patch: { apiKeysAdd: { name: 'verify-mask', key: PLAIN } } })
+    const added = Array.isArray(res.json?.user?.apiKeys)
+      && res.json.user.apiKeys.find((k) => k?.name === 'verify-mask')
+    check('apiKeysAdd response ships masked key only',
+      res.json?.ok === true && added?.key === MASKED, JSON.stringify(added))
+    check('plaintext key absent from entire POST response', !JSON.stringify(res.json).includes(PLAIN))
+
+    // 12b. modelSetEnabled 层叠路径
+    res = await callRoute(routes, { patch: { modelSetEnabled: { id: 'deepseek-v3', enabled: false } } })
+    check('modelSetEnabled response ships masked key only',
+      res.json?.ok === true
+        && res.json?.user?.apiKeys?.some((k) => k?.name === 'verify-mask' && k?.key === MASKED)
+        && !JSON.stringify(res.json).includes(PLAIN),
+      JSON.stringify(res.json?.user?.apiKeys))
+
+    // 12c. modelSetLimits 层叠路径
+    res = await callRoute(routes, { patch: { modelSetLimits: { id: 'deepseek-v3', contextWindow: 65536 } } })
+    check('modelSetLimits response ships masked key only',
+      res.json?.ok === true
+        && res.json?.user?.apiKeys?.some((k) => k?.name === 'verify-mask' && k?.key === MASKED)
+        && !JSON.stringify(res.json).includes(PLAIN))
+
+    // 12d. oauth-start：上游投毒 authUrl（https 但钓鱼域）→ 502，pending 不激活
+    oauthStateAuthUrl = 'https://evil.example.com/authorize'
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('poisoned authUrl (foreign host) rejected with 502 + reason',
+      res.status === 502 && res.json?.ok === false
+        && /evil\.example\.com/.test(res.json?.error ?? ''),
+      `HTTP ${res.status} ${JSON.stringify(res.json)}`)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('rejected start leaves no pending authUrl leak',
+      res.json?.oauth?.pending === false && res.json?.oauth?.authUrl === ''
+        && !JSON.stringify(res.json).includes('evil.example.com'))
+
+    // 12e. oauth-start：javascript: 串（scheme 门）
+    oauthStateAuthUrl = 'javascript:alert(document.domain)'
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('javascript: authUrl rejected (scheme gate)',
+      res.status === 502 && /https/.test(res.json?.error ?? ''),
+      `HTTP ${res.status} ${JSON.stringify(res.json)}`)
+
+    // 12f. 正例：回环对（mock baseURL 与 authUrl 同为 127.0.0.1）放行
+    oauthStateAuthUrl = null
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('loopback pair passes the gate (200 + authUrl)',
+      res.status === 200 && res.json?.ok === true
+        && /^http:\/\/127\.0\.0\.1:\d+\/authorize$/.test(res.json?.authUrl ?? ''),
+      `HTTP ${res.status} ${res.json?.authUrl}`)
+  }
+
+  // ---------------------------------------------- 13. loopback gates + guards
+  // 安全审计回归锁（[6][7][8][18][22][29]）：
+  //   a) core/bridge.js Host 门——桥携带活凭据，非回环 Host（DNS rebinding/
+  //      伪造）在读 body/转发之前 403；回环名（localhost）照常代理。
+  //   b) index.js settings 路由本地门——GET（[7]：此前完全裸奔）与 POST 都
+  //      先过回环 Host + Origin 一致判定。
+  //   c) trae-model-sync dbPath 纵深防御、modelSetEnabled 原型键黑名单、
+  //      validateBaseURL 明文 http 仅限回环（拒绝不落盘）。
+  console.log('\n[13] loopback Host gates + input guards')
+  {
+    // 13a. bridge：伪造 Host 拒绝（fetch 不允许自定义 Host 头，走原生 socket）
+    const rawRequest = (hostLine) => new Promise((resolve, reject) => {
+      const sock = connect(bridgePort, '127.0.0.1', () => {
+        sock.write(`GET /v2/models HTTP/1.1\r\n${hostLine}Connection: close\r\n\r\n`)
+      })
+      let head = ''
+      sock.on('data', (d) => { head += d.toString('utf8') })
+      sock.on('error', reject)
+      sock.on('close', () => resolve(head))
+    })
+    const arrivalsBefore = arrivals.length
+    const evil = await rawRequest('Host: evil.example.com\r\n')
+    check('bridge refuses non-loopback Host with 403',
+      /HTTP\/1\.1 403/.test(evil), evil.split('\r\n')[0] || '(no response)')
+    check('refused request never proxied upstream', arrivals.length === arrivalsBefore,
+      `arrivals ${arrivalsBefore} → ${arrivals.length}`)
+    const ok = await rawRequest(`Host: localhost:${bridgePort}\r\n`)
+    check('loopback Host (localhost) still proxied',
+      /HTTP\/1\.1 200/.test(ok), ok.split('\r\n')[0] || '(no response)')
+
+    // 13b. settings 路由：GET 与 POST 一体设防
+    let res = await callRoute(routes, null, { host: '192.168.1.5:3080' })
+    check('settings GET with LAN Host → 403', res.status === 403, `HTTP ${res.status}`)
+    res = await callRoute(routes, null, { host: 'attacker.example:3080' })
+    check('settings GET with rebinding Host → 403', res.status === 403, `HTTP ${res.status}`)
+    res = await callRoute(routes, null, { origin: 'http://evil.example:3080' })
+    check('settings with cross-site Origin → 403', res.status === 403, `HTTP ${res.status}`)
+    res = await callRoute(routes, null)
+    check('loopback GET still answers 200', res.status === 200 && res.json?.value != null,
+      `HTTP ${res.status}`)
+
+    // 13c. 输入门：dbPath 路径防御
+    res = await callRoute(routes, { action: 'trae-model-sync', dbPath: '../../etc/passwd' })
+    check('trae-model-sync relative dbPath → 400 + reason',
+      res.status === 400 && /dbPath/.test(res.json?.error ?? ''), JSON.stringify(res.json))
+    res = await callRoute(routes, { action: 'trae-model-sync', dbPath: '/tmp/secret.txt' })
+    check('trae-model-sync non-.db/.vscdb extension → 400', res.status === 400, `HTTP ${res.status}`)
+    res = await callRoute(routes, { action: 'trae-model-sync', dbPath: '/tmp/no-such-state.vscdb' })
+    check('valid-shaped dbPath falls through to the normal sync error path',
+      res.status === 200 && res.json?.ok === false, `HTTP ${res.status} ok=${res.json?.ok}`)
+
+    // 13c. 原型污染键与明文 http baseURL
+    res = await callRoute(routes, { patch: { modelSetEnabled: { id: '__proto__', enabled: true, profile: {} } } })
+    check('modelSetEnabled rejects __proto__ id → 400', res.status === 400, `HTTP ${res.status}`)
+    res = await callRoute(routes, { patch: { modelSetEnabled: { id: 'x.constructor', enabled: true, profile: {} } } })
+    check('modelSetEnabled rejects prototype-segment id → 400', res.status === 400, `HTTP ${res.status}`)
+    res = await callRoute(routes, { patch: { baseURL: 'http://attacker.example/v2' } })
+    check('plaintext http to non-loopback baseURL → 400 (validateBaseURL)',
+      res.status === 400 && /回环/.test(res.json?.error ?? ''), JSON.stringify(res.json))
+    res = await callRoute(routes, null)
+    check('rejected patches persisted nothing (baseURL unchanged)',
+      res.json?.value?.baseURL === `http://127.0.0.1:${upstreamPort}`, res.json?.value?.baseURL)
+  }
+
+  // ------------------------------------------------- 14. G8 思考强度注入
+  //   文件层 effortByModel 只存档位名；桥出站按静态清单 reasoningEfforts 表
+  //   注入线值——调用方显式携带不覆盖、off（线值 null）不注入、无表模型与
+  //   非法档位不注入。
+  console.log('\n[14] G8 per-model reasoning_effort injection')
+  {
+    const layerPath = join(process.env.DSH_HOME, 'codebuddy-plugin.json')
+    const writeLayer = (obj) => writeFileSync(layerPath, JSON.stringify(obj) + '\n')
+
+    writeLayer({ effortByModel: { 'deepseek-v4-pro': 'high' } })
+    let before = arrivals.length
+    await chat({ model: 'deepseek-v4-pro', stream: false, messages: [] })
+    check('effortByModel high → reasoning_effort injected upstream',
+      arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"high"')))
+
+    before = arrivals.length
+    await chat({ model: 'deepseek-v4-pro', stream: false, reasoning_effort: 'low', messages: [] })
+    check('caller-set reasoning_effort never overridden',
+      arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"low"'))
+        && !arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"high"')))
+
+    writeLayer({ effortByModel: { 'deepseek-v4-pro': 'off' } })
+    before = arrivals.length
+    await chat({ model: 'deepseek-v4-pro', stream: false, messages: [] })
+    check('off (wire null) injects nothing',
+      !arrivals.slice(before).some((a) => a.raw.includes('reasoning_effort')))
+
+    writeLayer({ effortByModel: { 'deepseek-v3': 'high', 'deepseek-v4-pro': 'bogus' } })
+    before = arrivals.length
+    await chat({ model: 'deepseek-v3', stream: false, messages: [] })
+    await chat({ model: 'deepseek-v4-pro', stream: false, messages: [] })
+    check('table-less model and unknown level both inject nothing',
+      !arrivals.slice(before).some((a) => a.raw.includes('reasoning_effort')))
+
+    writeLayer({})
+  }
+
+  // ------------------------- 15. 取消传播 / 413 / 聚合 usage / 首字节超时
+  //   a) 流式中途客户端断连 → 桥中止上游 fetch（mock 'drip'：一块后沉默，
+  //      上游连接被丢弃以 res close 且 writableEnded=false 为证）。
+  //   b) 排队 waiter 断连后不被唤醒发上游；占用者中止后槽位真正归还
+  //      （新请求能完成——旧实现槽位随挂死请求永久泄漏）。
+  //   c) 请求体超 32MB → 413 JSON（旧行为 req.destroy()：客户端只见连接
+  //      被重置，拿不到任何状态码）。
+  //   d) 非流式聚合回传流里抓到的 usage（旧行为恒 {}）。
+  //   e) 上游收下不出头 → 首字节超时快速 502（与 trae 侧护栏对称）。
+  console.log('\n[15] cancellation propagation / 413 / aggregated usage / first-byte timeout')
+  {
+    // 15a. 流式中途断连
+    const hangBefore = hangCloses.length
+    const ac1 = new AbortController()
+    const res1 = await fetch(`${bridge}/v2/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'drip', stream: true, messages: [] }),
+      signal: ac1.signal,
+    })
+    const reader1 = res1.body.getReader()
+    await withTimeout(reader1.read(), 3000) // 第一块到达 = 流已建立
+    ac1.abort()
+    await reader1.read().catch(() => {}) // 客户端读取侧收尾
+    let abortedUpstream = false
+    for (let i = 0; i < 30 && !abortedUpstream; i++) {
+      await sleep(100)
+      abortedUpstream = hangCloses.slice(hangBefore).some((c) => c.model === 'drip' && c.writableEnded === false)
+    }
+    check('mid-stream client disconnect aborts the upstream fetch', abortedUpstream,
+      JSON.stringify(hangCloses.slice(hangBefore)))
+
+    // 15b. 排队 waiter 不泄漏
+    setLimit(1)
+    arrivals.length = 0
+    const sessQ = { 'X-Session-ID': 'sess-Q' }
+    const ac2 = new AbortController() // R1：'hang' 占住唯一槽位
+    const r1p = fetch(`${bridge}/v2/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...sessQ },
+      body: JSON.stringify({ model: 'hang', stream: true, messages: [] }),
+      signal: ac2.signal,
+    }).then((r) => r.text()).catch(() => 'aborted')
+    for (let i = 0; i < 40 && !arrivals.some((a) => a.sessionId === 'sess-Q'); i++) await sleep(50)
+    check('holder request reached upstream (the one slot is occupied)',
+      arrivals.filter((a) => a.sessionId === 'sess-Q').length === 1, JSON.stringify(arrivals.length))
+    const ac3 = new AbortController() // R2：排队后断连
+    const r2p = fetch(`${bridge}/v2/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...sessQ },
+      body: JSON.stringify({ model: 'm1', stream: true, messages: [] }),
+      signal: ac3.signal,
+    }).then((r) => r.text()).catch(() => 'aborted')
+    await sleep(150) // 足够进队列
+    ac3.abort()
+    await r2p
+    await sleep(400) // 若被错误唤醒，早已发到上游
+    check('queued waiter never fires upstream after its caller disconnects',
+      arrivals.filter((a) => a.sessionId === 'sess-Q').length === 1,
+      JSON.stringify(arrivals.map((a) => a.sessionId)))
+    ac2.abort() // R1 断连 → 槽位归还
+    await r1p
+    const r3 = await withTimeout(chat({ model: 'm1', stream: true, messages: [] }, sessQ).then((r) => r.text()), 4000)
+    check('limiter slot released after the aborted holder (fresh same-session request completes)',
+      r3 !== 'TIMEOUT')
+    setLimit(2)
+
+    // 15c. 超 32MB → 413（fetch/undici 对“边发边收早回”的容忍度不一，走裸 socket）
+    const bigLen = 33 * 1024 * 1024
+    const head413 = await new Promise((resolve, reject) => {
+      const sock = connect(bridgePort, '127.0.0.1', () => {
+        sock.write(`POST /v2/chat/completions HTTP/1.1\r\nHost: 127.0.0.1:${bridgePort}\r\nContent-Type: application/json\r\nContent-Length: ${bigLen}\r\nConnection: close\r\n\r\n`)
+        sock.write(Buffer.alloc(bigLen, 120)) // 'x' × 33MB
+      })
+      let out = ''
+      sock.on('data', (d) => { out += d.toString('utf8') })
+      // 413 在收满 32MB 即回；剩余字节撞在关闭中的 socket 上不算失败。
+      sock.on('error', (err) => { out ? resolve(out) : reject(err) })
+      sock.on('close', () => resolve(out))
+    })
+    check('body past 32MB gets a real 413 JSON (was: silent req.destroy)',
+      /HTTP\/1\.1 413/.test(head413) && /too large/.test(head413), head413.slice(0, 140))
+
+    // 15d. 聚合 usage 回传
+    const resU = await chat({ model: 'm1', stream: false, messages: [] })
+    const jsonU = await resU.json().catch(() => null)
+    check('aggregated chat.completion carries the captured usage (was: always {})',
+      jsonU?.usage?.total_tokens === 5 && jsonU?.usage?.credit === 0.01, JSON.stringify(jsonU?.usage))
+
+    // 15e. 首字节超时（层文件压到 schema 下限 1000ms；'hang' 永远不出头）
+    writeFileSync(join(process.env.DSH_HOME, 'codebuddy-plugin.json'),
+      JSON.stringify({ maxConcurrentPerSession: 2, upstreamFirstByteTimeoutMs: 1000 }) + '\n')
+    const t0 = Date.now()
+    const resT = await chat({ model: 'hang', stream: true, messages: [] })
+    const msT = Date.now() - t0
+    const jsonT = await resT.json().catch(() => null)
+    check('silent upstream fails fast with 502 + first-byte reason (default window is 45s)',
+      resT.status === 502 && /first-byte timeout/.test(jsonT?.error?.message ?? '') && msT < 5000,
+      `HTTP ${resT.status} in ${msT}ms: ${JSON.stringify(jsonT)}`)
+    setLimit(2) // 恢复层文件（顺带清掉临时超时档）
+  }
+
+  // --------------------------------------------- 16. OAuth 状态机回归
+  //   a) logout() 终止进行中的 poll（代际失效）：logout 后浏览器才完成的授权
+  //      不得写回令牌库（旧实现 while 只看 deadline——logout 后 10 分钟内
+  //      授权完成会被重新登进）。附正例对照：未打断的 poll 正常登录。
+  //   b) refresh 实败（/token/refresh 401）→ oauthStatus 暴露 needsRelogin
+  //      （旧实现 signedIn 只看 accessToken 在不在：UI 显示已登录、聊天
+  //      全 503 而无从察觉）。
+  //   c) refreshExpiresAt 已过期（此前存了从不检查的字段）→ 无需 refresh
+  //      尝试即暴露 needsRelogin。
+  console.log('\n[16] OAuth state machine: logout kills the poll; refresh failure surfaces needsRelogin')
+  {
+    const authFile = join(process.env.DSH_HOME, 'codebuddy-plugin-auth.json')
+    const readAuthFile = () => { try { return JSON.parse(readFileSync(authFile, 'utf8')) } catch { return {} } }
+
+    // 16a. logout 终止 poll
+    let res = await callRoute(routes, { action: 'oauth-start' })
+    check('oauth-start activates pending', res.status === 200 && res.json?.ok === true)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('pending after start', res.json?.oauth?.pending === true, JSON.stringify(res.json?.oauth))
+    res = await callRoute(routes, { action: 'oauth-logout' })
+    check('logout clears pending immediately', res.json?.oauth?.pending === false)
+    oauthTokenMode = 'success' // 浏览器在 logout 之后才完成授权
+    await sleep(2600) // >2 个轮询周期：poll 若没死早已写入令牌
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('authorization landing after logout never signs back in',
+      res.json?.oauth?.signedIn === false && !readAuthFile()?.auth?.accessToken,
+      JSON.stringify({ oauth: res.json?.oauth, file: readAuthFile() }))
+
+    // 正例对照：未被 logout 打断的 poll 正常完成登录
+    res = await callRoute(routes, { action: 'oauth-start' })
+    check('restart after logout works (pending again)', res.status === 200 && res.json?.ok === true)
+    let signed = false
+    for (let i = 0; i < 40 && !signed; i++) { await sleep(200); signed = Boolean(readAuthFile()?.auth?.accessToken) }
+    check('uninterrupted poll completes login (control)', signed)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('control login visible in status, needsRelogin false',
+      res.json?.oauth?.signedIn === true && res.json?.oauth?.needsRelogin === false, JSON.stringify(res.json?.oauth))
+    res = await callRoute(routes, { action: 'oauth-logout' })
+    oauthTokenMode = 'pending'
+    check('control cleanup: signed out again', res.json?.oauth?.signedIn === false)
+
+    // 16b. refresh 实败 → needsRelogin
+    await callRoute(routes, { patch: { authMode: 'oauth' } })
+    writeFileSync(authFile, JSON.stringify({
+      auth: { accessToken: 'at-expired', expiresAt: Date.now() - 1000, refreshToken: 'rt-bogus', refreshExpiresAt: Date.now() + 86400_000, domain: '' },
+      account: { uid: 'u-verify', nickname: 'verify' },
+    }) + '\n')
+    oauthRefreshMode = 'fail'
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('before any refresh attempt: signedIn true, needsRelogin false',
+      res.json?.oauth?.signedIn === true && res.json?.oauth?.needsRelogin === false, JSON.stringify(res.json?.oauth))
+    const chatRes = await chat({ model: 'm1', stream: true, messages: [] })
+    await chatRes.text()
+    check('chat with an unrefreshable token → 503 credential unavailable', chatRes.status === 503, `got ${chatRes.status}`)
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('refresh failure exposed as needsRelogin (signedIn stays literally true)',
+      res.json?.oauth?.needsRelogin === true && res.json?.oauth?.signedIn === true, JSON.stringify(res.json?.oauth))
+
+    // 16c. refreshExpiresAt 过期（先 logout 清掉 16b 的粘性信号以隔离路径）
+    await callRoute(routes, { action: 'oauth-logout' })
+    writeFileSync(authFile, JSON.stringify({
+      auth: { accessToken: 'at-live', expiresAt: Date.now() + 3600_000, refreshToken: 'rt', refreshExpiresAt: Date.now() - 1000, domain: '' },
+    }) + '\n')
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('expired refreshExpiresAt alone surfaces needsRelogin (no attempt needed)',
+      res.json?.oauth?.needsRelogin === true && res.json?.oauth?.signedIn === true, JSON.stringify(res.json?.oauth))
+
+    // 收尾：登出并复原模式（本测试自建的层/令牌不向后传染）
+    await callRoute(routes, { action: 'oauth-logout' })
+    await callRoute(routes, { patch: { authMode: null } })
+    oauthRefreshMode = 'ok'
+    res = await callRoute(routes, { action: 'oauth-status' })
+    check('cleanup: signed out, mode restored, signal cleared',
+      res.json?.oauth?.signedIn === false && res.json?.oauth?.needsRelogin === false, JSON.stringify(res.json?.oauth))
+  }
+
+  // ------------------------------------- 17. 目录声明的思考档位（2026-09-22）
+  //   网关 /v3/config 自 2026-09 起对新模型发能力清单
+  //   （supportedEfforts/canDisableThinking/defaultEffort）。契约：
+  //   a) 档位表 = 目录声明优先、静态 reasoningEfforts 兜底（legacy 形态不出表）；
+  //   b) 档位表进 settings.yaml 镜像的 models 条目（宿主 Effort 选择器据此出档）；
+  //   c) 桥出站按同一张表注入；未声明档位/无表模型不注入；
+  //   d) 没有实测"关思考"拼写 → 不出 off（canDisableThinking 也不凭空造线值）。
+  console.log('\n[17] catalog-declared reasoning tiers → model-list / mirror / bridge injection')
+  {
+    const layerPath = join(process.env.DSH_HOME, 'codebuddy-plugin.json')
+    const writeLayer = (obj) => writeFileSync(layerPath, JSON.stringify(obj) + '\n')
+
+    let res = await callRoute(routes, { action: 'model-list' })
+    check('before sync (catalog unreachable): model-list reports the failure, publishes no tiers',
+      res.status === 502 && res.json?.efforts === undefined, `${res.status} ${JSON.stringify(res.json?.error)}`)
+
+    catalogMode = 'on'
+    res = await callRoute(routes, { action: 'model-sync' })
+    check('model-sync pulls the catalog (3 models)', res.json?.sync?.ok === true && res.json?.sync?.count === 3,
+      JSON.stringify(res.json?.sync))
+
+    res = await callRoute(routes, { action: 'model-list' })
+    const listed = res.json
+    const flash = (listed?.catalog?.models ?? []).find((m) => m.id === 'glm-5.3-flash')
+    check('catalog entry carries the effort declaration verbatim',
+      JSON.stringify(flash?.supportedEfforts) === '["low","high","max"]'
+        && flash?.canDisableThinking === true && flash?.defaultEffort === 'high' && flash?.reasoningEffort === 'high',
+      JSON.stringify(flash))
+    check('declared tiers → efforts map (low/high/max, no off without a proven wire)',
+      JSON.stringify(listed?.efforts?.['glm-5.3-flash']) === '["low","high","max"]',
+      JSON.stringify(listed?.efforts?.['glm-5.3-flash']))
+    check('single-tier declaration survives (hy4-preview → ["high"])',
+      JSON.stringify(listed?.efforts?.['hy4-preview']) === '["high"]',
+      JSON.stringify(listed?.efforts?.['hy4-preview']))
+    check('legacy declaration (no supportedEfforts) yields no tier row',
+      listed?.efforts?.['mock-legacy'] === undefined, JSON.stringify(listed?.efforts?.['mock-legacy']))
+    check('static-only rows keep their patch table (auto stays table-less)',
+      listed?.efforts?.['auto'] === undefined && Array.isArray(listed?.efforts?.['hy3-preview']))
+    check('static table still governs models the catalog does not declare (deepseek-v4-pro)',
+      JSON.stringify(listed?.efforts?.['deepseek-v4-pro']) === '["low","medium","high","max"]',
+      JSON.stringify(listed?.efforts?.['deepseek-v4-pro']))
+
+    // 宿主 Effort 选择器的数据源 = settings.yaml 镜像里的 reasoningEfforts。
+    const mirror = readFileSync(join(process.env.DSH_HOME, 'settings.yaml'), 'utf8')
+    check('mirror carries reasoningEfforts for the catalog model (host Effort picker)',
+      /glm-5\.3-flash[\s\S]{0,400}?reasoningEfforts/.test(mirror)
+        && /reasoningEfforts:[\s\S]{0,200}?high: high/.test(mirror), mirror.slice(0, 0))
+
+    writeLayer({ effortByModel: { 'glm-5.3-flash': 'max' } })
+    let before = arrivals.length
+    await chat({ model: 'glm-5.3-flash', stream: false, messages: [] })
+    check('catalog tier max → reasoning_effort injected upstream',
+      arrivals.slice(before).some((a) => a.raw.includes('"reasoning_effort":"max"')),
+      arrivals.slice(before).map((a) => a.raw).join(' | ').slice(0, 200))
+
+    writeLayer({ effortByModel: { 'glm-5.3-flash': 'medium', 'hy4-preview': 'high', 'mock-legacy': 'high' } })
+    before = arrivals.length
+    await chat({ model: 'glm-5.3-flash', stream: false, messages: [] })
+    await chat({ model: 'hy4-preview', stream: false, messages: [] })
+    await chat({ model: 'mock-legacy', stream: false, messages: [] })
+    const tail = arrivals.slice(before)
+    check('undeclared level (medium) injects nothing',
+      !tail[0].raw.includes('reasoning_effort'), tail[0].raw.slice(0, 160))
+    check('declared single tier still injects (hy4-preview high)',
+      tail[1].raw.includes('"reasoning_effort":"high"'), tail[1].raw.slice(0, 160))
+    check('legacy catalog model without a table injects nothing',
+      !tail[2].raw.includes('reasoning_effort'), tail[2].raw.slice(0, 160))
+
+    writeLayer({ effortByModel: { 'glm-5.3-flash': 'off' } })
+    before = arrivals.length
+    await chat({ model: 'glm-5.3-flash', stream: false, messages: [] })
+    check('off is not a declared tier → injects nothing (no invented disable wire)',
+      !arrivals.slice(before).some((a) => a.raw.includes('reasoning_effort')))
+
+    // 收尾：关闸并清层（本节之后没有其它断言，仍保持测试自净的纪律）。
+    catalogMode = 'off'
+    writeLayer({})
   }
 
   console.log(failures === 0 ? '\nall bridge checks passed' : `\n${failures} check(s) FAILED`)

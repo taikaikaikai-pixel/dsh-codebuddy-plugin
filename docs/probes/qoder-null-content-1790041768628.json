@@ -1,0 +1,1145 @@
+{
+  "ts": "2026-09-22T01:46:33.425Z",
+  "infer": "https://gateway.qoder.com.cn",
+  "models": [
+    "dmodel",
+    "kmodel",
+    "mmodel",
+    "qmodel",
+    "auto"
+  ],
+  "shapes": {
+    "A_call_content_null": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_a1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_a1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢，直接回答"
+      }
+    ],
+    "A_call_content_empty": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_a1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_a1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢，直接回答"
+      }
+    ],
+    "A_call_content_text": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": "我查一下",
+        "tool_calls": [
+          {
+            "id": "call_a1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_a1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢，直接回答"
+      }
+    ],
+    "A_call_content_absent": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "tool_calls": [
+          {
+            "id": "call_a1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_a1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢，直接回答"
+      }
+    ],
+    "B_orphan_plain": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_b1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢"
+      }
+    ],
+    "B_orphan_stub_null": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_b1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_b1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢"
+      }
+    ],
+    "B_orphan_stub_empty": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_b1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_b1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢"
+      }
+    ],
+    "C_tool_content_null": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_c1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_c1",
+        "content": null
+      },
+      {
+        "role": "user",
+        "content": "谢谢"
+      }
+    ],
+    "C_tool_content_empty": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_c1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_c1",
+        "content": ""
+      },
+      {
+        "role": "user",
+        "content": "谢谢"
+      }
+    ],
+    "D_pair_without_tools": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "几点"
+      },
+      {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_d1",
+            "type": "function",
+            "function": {
+              "name": "get_time",
+              "arguments": "{\"tz\":\"Asia/Shanghai\"}"
+            }
+          }
+        ]
+      },
+      {
+        "role": "tool",
+        "tool_call_id": "call_d1",
+        "content": "2026-09-22 09:00:00 +08:00"
+      },
+      {
+        "role": "user",
+        "content": "谢谢"
+      }
+    ],
+    "E_plain_chat": [
+      {
+        "role": "system",
+        "content": "你是助手"
+      },
+      {
+        "role": "user",
+        "content": "只回复两个字：收到"
+      }
+    ]
+  },
+  "results": [
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Invalid request: tool_call_id is not found\\\",\\\"type\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"bad_request_error\\\",\\\"message\\\":\\\"invalid params, tool result's tool id(call_a1) not found (2013)\\\",\\\"http_code\\\":\\\"400\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "OK_TEXT",
+      "text": "现在",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "NO_SIGNAL",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "OK_TEXT",
+      "text": "现在是",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"我查一下\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_text"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"我查一下\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_text"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "NO_SIGNAL",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"我查一下\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_text"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"我查一下\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_text"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"我查一下\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_text"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:no-content-key",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_absent"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Invalid request: tool_call_id is not found\\\",\\\"type\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:no-content-key",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_absent"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"bad_request_error\\\",\\\"message\\\":\\\"invalid params, tool result's tool id(call_a1) not found (2013)\\\",\\\"http_code\\\":\\\"400\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:no-content-key",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_absent"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:no-content-key",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_absent"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:no-content-key",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢，直接回答\""
+      ],
+      "shape": "A_call_content_absent"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_plain"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Invalid request: tool_call_id is not found\\\",\\\"type\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_plain"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"bad_request_error\\\",\\\"message\\\":\\\"invalid params, tool result's tool id(call_b1) not found (2013)\\\",\\\"http_code\\\":\\\"400\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_plain"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_plain"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_plain"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Messages with role 'tool' must be a response to a preceding message with 'tool_calls'\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_null"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Invalid request: tool_call_id is not found\\\",\\\"type\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_null"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"bad_request_error\\\",\\\"message\\\":\\\"invalid params, tool result's tool id(call_b1) not found (2013)\\\",\\\"http_code\\\":\\\"400\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_null"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_null"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=null",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_null"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "OK_TEXT",
+      "text": "不",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_empty"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_empty"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "NO_SIGNAL",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_empty"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_empty"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "B_orphan_stub_empty"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"An assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'. (insufficient tool messages following tool_calls message)\\\",\\\"type\\\":\\\"invalid_request_error\\\",\\\"param\\\":null,\\\"code\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=null",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "PROVIDER_ERROR",
+      "text": "{\\\"error\\\":{\\\"message\\\":\\\"Invalid request: an assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'. The following tool_call_ids did not have response messages: get_time:0\\\",\\\"type\\\":\\\"invalid_request_error\\",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=null",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "NO_SIGNAL",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=null",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=null",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=null",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_null"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"\"",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"\"",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "NO_SIGNAL",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"\"",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"\"",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"\"",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "C_tool_content_empty"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "OK_TEXT",
+      "text": "不",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "D_pair_without_tools"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "D_pair_without_tools"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "NO_SIGNAL",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "D_pair_without_tools"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "D_pair_without_tools"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"几点\"",
+        "assistant+tc:content=\"\"",
+        "tool:content=\"2026-09-22 ",
+        "user:content=\"谢谢\""
+      ],
+      "shape": "D_pair_without_tools"
+    },
+    {
+      "via": "direct",
+      "model": "dmodel",
+      "httpStatus": 200,
+      "kind": "OK_TEXT",
+      "text": "收到",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"只回复两个字：收到\""
+      ],
+      "shape": "E_plain_chat"
+    },
+    {
+      "via": "direct",
+      "model": "kmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"只回复两个字：收到\""
+      ],
+      "shape": "E_plain_chat"
+    },
+    {
+      "via": "direct",
+      "model": "mmodel",
+      "httpStatus": 200,
+      "kind": "NO_SIGNAL",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"只回复两个字：收到\""
+      ],
+      "shape": "E_plain_chat"
+    },
+    {
+      "via": "direct",
+      "model": "qmodel",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"只回复两个字：收到\""
+      ],
+      "shape": "E_plain_chat"
+    },
+    {
+      "via": "direct",
+      "model": "auto",
+      "httpStatus": 200,
+      "kind": "OK_EMPTY",
+      "text": "",
+      "requestShapes": [
+        "system:content=\"你是助手\"",
+        "user:content=\"只回复两个字：收到\""
+      ],
+      "shape": "E_plain_chat"
+    }
+  ]
+}

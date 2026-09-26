@@ -1,0 +1,590 @@
+{
+  "ts": "2026-09-21T20:35:36.971Z",
+  "infer": "https://gateway.qoder.com.cn",
+  "cases": [
+    {
+      "label": "tool_call_gen",
+      "note": "先让模型产 tool_calls",
+      "modelKey": "auto",
+      "modelSource": "system",
+      "request": {
+        "model": "auto",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "现在几点？必须调用工具查询，时区用 Asia/Shanghai。"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "用户要求查询当前时间，时区为 Asia/Shanghai。我需要调用 get_current_time 工具，参数 timezone 设置为 \"Asia/Shanghai\"。",
+        "toolCalls": [
+          {
+            "function": {
+              "arguments": "",
+              "name": "get_current_time"
+            },
+            "id": "call_ac8230beef44452dbdb7eabc",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "{\"timezone\": "
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "\"Asia/Shanghai"
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "\""
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "}"
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": ""
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          }
+        ],
+        "finish": "tool_calls",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 62,
+          "completion_tokens_details": {
+            "reasoning_tokens": 31
+          },
+          "credits": 0.009403504,
+          "original_credits": 0.009403504,
+          "prompt_tokens": 281,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 343
+        },
+        "errorObjects": [],
+        "frames": 20,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790022937,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022937,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求查询当前时间\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"，时\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"区为 Asia/Sh\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"anghai。我需要调用\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" get\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"_current_time 工具\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"，参数 timezone \\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"设置为\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" \\\\\\\"Asia/Shanghai\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\\\\"。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\",\\\"name\\\":\\\"get_current_time\\\"},\\\"id\\\":\\\"call_ac8230beef44452dbdb7eabc\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"{\\\\\\\"timezone\\\\\\\": \\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\\\\\"Asia/Shanghai\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\\\\\"\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"}\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{},\\\"finish_reason\\\":\\\"tool_calls\\\",\\\"index\\\":0}],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790022938,\\\"id\\\":\\\"chatcmpl-3087d23c-0c75-9e46-9c9e-c3b5011a014d\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":62,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":31},\\\"credits\\\":0.009403504,\\\"original_credits\\\":0.009403504,\\\"prompt_tokens\\\":281,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":343}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":881,\"totalDuration\":1382,\"serverDuration\":26}\n\n"
+    },
+    {
+      "label": "tool_result_openai_shape",
+      "note": "标准 OpenAI 工具回灌（content:null）",
+      "modelKey": "auto",
+      "modelSource": "system",
+      "request": {
+        "model": "auto",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "现在几点？必须调用工具查询，时区用 Asia/Shanghai。"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_ac8230beef44452dbdb7eabc",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": ""
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_ac8230beef44452dbdb7eabc",
+            "content": "2026-09-22 05:00:00 +08:00"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "",
+        "reasoning": "用户问现在几点，要求调用工具查询，时区用 Asia/Shanghai。\n系统已经返回了结果：2026-09-22 05:00:00 +08:00\n\n我需要调用 get_current_time 工具，时区参数为 Asia/Shanghai。",
+        "toolCalls": [
+          {
+            "function": {
+              "arguments": "",
+              "name": "get_current_time"
+            },
+            "id": "call_015d7156a9904243935acf04",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "{\"timezone\": "
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "\"Asia/Shanghai"
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "\""
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": "}"
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          },
+          {
+            "function": {
+              "arguments": ""
+            },
+            "id": "",
+            "index": 0,
+            "type": "function"
+          }
+        ],
+        "finish": "tool_calls",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 97,
+          "completion_tokens_details": {
+            "reasoning_tokens": 66
+          },
+          "credits": 0.012496528,
+          "original_credits": 0.012496528,
+          "prompt_tokens": 315,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 412
+        },
+        "errorObjects": [],
+        "frames": 30,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"问\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"现在\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"几点，要求\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"调用工具查询，\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"时\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"区用 Asia/Sh\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"anghai。\\\\n系统\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"已经返回了结果\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"：202\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"6-09\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"-22 \\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"05:0\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"0:00\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" +08:\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"00\\\\n\\\\n我需要\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"调用 get\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"_current_time 工具\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"，时区参数\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"为 Asia/Shanghai\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\",\\\"name\\\":\\\"get_current_time\\\"},\\\"id\\\":\\\"call_015d7156a9904243935acf04\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"{\\\\\\\"timezone\\\\\\\": \\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\\\\\"Asia/Shanghai\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\\\\\"\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"}\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"tool_calls\\\":[{\\\"function\\\":{\\\"arguments\\\":\\\"\\\"},\\\"id\\\":\\\"\\\",\\\"index\\\":0,\\\"type\\\":\\\"function\\\"}]},\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{},\\\"finish_reason\\\":\\\"tool_calls\\\",\\\"index\\\":0}],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790022941,\\\"id\\\":\\\"chatcmpl-ef1553bb-25da-9613-8b0e-031e4def2aab\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":97,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":66},\\\"credits\\\":0.012496528,\\\"original_credits\\\":0.012496528,\\\"prompt_tokens\\\":315,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":412}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1238,\"totalDuration\":1892,\"serverDuration\":25}\n\n"
+    },
+    {
+      "label": "tool_result_assistant_empty_string",
+      "note": "assistant content:\"\"（pi-ai 非 reasoning 路径形态）",
+      "modelKey": "auto",
+      "modelSource": "system",
+      "request": {
+        "model": "auto",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "现在几点？必须调用工具查询，时区用 Asia/Shanghai。"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "id": "call_ac8230beef44452dbdb7eabc",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": ""
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_ac8230beef44452dbdb7eabc",
+            "content": "2026-09-22 05:00:00 +08:00"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "根据查询结果，现在的时间是 **2026年9月22日 上午5:00**（时区：Asia/Shanghai，UTC+8）。",
+        "reasoning": "用户问现在几点，我已经调用了工具并获取到了结果。\n当前时间是 2026年9月22日 05:00:00，时区为 Asia/Shanghai（UTC+8）。\n我需要将这个时间以自然语言的方式告诉用户。",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 100,
+          "completion_tokens_details": {
+            "reasoning_tokens": 60
+          },
+          "credits": 0.013118688000000002,
+          "original_credits": 0.013118688000000002,
+          "prompt_tokens": 338,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 438
+        },
+        "errorObjects": [],
+        "frames": 33,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790022944,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022944,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"问\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"现在几点，我已经\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"调\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用了工具并获取\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"到了\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"结果。\\\\n当前\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"时间是 20\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"26年9\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"月22日\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" 05:\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"00:0\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"0，时区\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"为\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" Asia/Shanghai（\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"UTC+8）。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n我需要将这个时间\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"以自然语言的方式\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"告诉用户。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"根据\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"查询结果，现在\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"的时间是 **2\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"0\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"26年9\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"月22日\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\" 上午5:\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"00**\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"（时区：\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"Asia/Shanghai，\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"UTC+8）。\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790022945,\\\"id\\\":\\\"chatcmpl-779c2a52-74e1-9101-bdf3-5db9704709d8\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":100,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":60},\\\"credits\\\":0.013118688000000002,\\\"original_credits\\\":0.013118688000000002,\\\"prompt_tokens\\\":338,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":438}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1252,\"totalDuration\":2083,\"serverDuration\":341}\n\n"
+    },
+    {
+      "label": "tool_result_assistant_text",
+      "note": "assistant 带正文 + tool_calls",
+      "modelKey": "auto",
+      "modelSource": "system",
+      "request": {
+        "model": "auto",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "现在几点？必须调用工具查询，时区用 Asia/Shanghai。"
+          },
+          {
+            "role": "assistant",
+            "content": "我来查一下。",
+            "tool_calls": [
+              {
+                "id": "call_ac8230beef44452dbdb7eabc",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": ""
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_ac8230beef44452dbdb7eabc",
+            "content": "2026-09-22 05:00:00 +08:00"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "现在是 **2026年9月22日 05:00**（Asia/Shanghai 时区）。",
+        "reasoning": "用户问现在几点，工具返回了结果。我需要把结果简洁地告诉用户。",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 48,
+          "completion_tokens_details": {
+            "reasoning_tokens": 18
+          },
+          "credits": 0.00951016,
+          "original_credits": 0.00951016,
+          "prompt_tokens": 343,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 391
+        },
+        "errorObjects": [],
+        "frames": 19,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"问\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"现在\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"几点，工具\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"返回了结果。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"我需要\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"把结果简洁地\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"告诉用户。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"现在是\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\" **202\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"6年9月\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"22日\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022948,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\" 05:\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022949,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"00**（\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022949,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"Asia/Shanghai \\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022949,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"时区）。\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022949,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790022949,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790022949,\\\"id\\\":\\\"chatcmpl-b24e9c89-8589-911c-b77d-5690b6ff3692\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":48,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":18},\\\"credits\\\":0.00951016,\\\"original_credits\\\":0.00951016,\\\"prompt_tokens\\\":343,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":391}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1075,\"totalDuration\":1669,\"serverDuration\":24}\n\n"
+    },
+    {
+      "label": "tool_no_preceding_assistant",
+      "note": "故意坏体：tool 无前置 tool_calls（阳性对照）",
+      "modelKey": "auto",
+      "modelSource": "system",
+      "request": {
+        "model": "auto",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "查询时间"
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_ac8230beef44452dbdb7eabc",
+            "content": "2026-09-22 05:00:00 +08:00"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "当前时间是 **2026年9月22日 05:00:00**（UTC+8）。",
+        "reasoning": "用户要求查询时间，系统已经提供了工具调用的结果。当前时间是 2026-09-22 05:00:00 +08:00。\n\n我需要将这个时间信息以清晰的方式呈现给用户。",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 84,
+          "completion_tokens_details": {
+            "reasoning_tokens": 53
+          },
+          "credits": 0.011341088,
+          "original_credits": 0.011341088,
+          "prompt_tokens": 302,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 386
+        },
+        "errorObjects": [],
+        "frames": 28,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"查询时间，系统\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"已经提供了\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"工具调用的结果\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。当前\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"时间是 20\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"26-0\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"9-22\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" 05:\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"00:0\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"0 +08\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\":00。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n\\\\n我需要将这个时间\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"信息以清晰的方式\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"呈现\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"给用户。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"当前时间是 **\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"20\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"26年9\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"月22日\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\" 05:\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022954,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"00:0\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022955,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"0**（\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022955,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"UTC+8）。\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022955,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790022955,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790022955,\\\"id\\\":\\\"chatcmpl-4ea2eb05-adec-935d-b1cf-250f1316333c\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":84,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":53},\\\"credits\\\":0.011341088,\\\"original_credits\\\":0.011341088,\\\"prompt_tokens\\\":302,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":386}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":2645,\"totalDuration\":3615,\"serverDuration\":914}\n\n"
+    },
+    {
+      "label": "tool_reasoning_content_empty",
+      "note": "pi-ai 补 reasoning_content:\"\" 的形态（auto 是 reasoning 模型）",
+      "modelKey": "auto",
+      "modelSource": "system",
+      "request": {
+        "model": "auto",
+        "stream": true,
+        "stream_options": {
+          "include_usage": true
+        },
+        "messages": [
+          {
+            "role": "user",
+            "content": "现在几点？必须调用工具查询，时区用 Asia/Shanghai。"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "reasoning_content": "",
+            "tool_calls": [
+              {
+                "id": "call_ac8230beef44452dbdb7eabc",
+                "type": "function",
+                "function": {
+                  "name": "get_current_time",
+                  "arguments": ""
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_ac8230beef44452dbdb7eabc",
+            "content": "2026-09-22 05:00:00 +08:00"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_current_time",
+              "description": "查询当前时间",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "timezone": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "timezone"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      },
+      "status": 200,
+      "netErr": null,
+      "dissect": {
+        "text": "根据查询结果，现在的时间是：\n\n**2026年9月22日 05:00:00（北京时间，Asia/Shanghai）**\n\n也就是凌晨5点。",
+        "reasoning": "用户问现在几点，并且要求必须调用工具查询，时区用 Asia/Shanghai。\n我已经得到了工具返回的结果：2026-09-22 05:00:00 +08:00\n\n现在我需要将这个结果以友好的方式告诉用户。当前时间是2026年9月22日凌晨5点（北京时间）。",
+        "toolCalls": [],
+        "finish": "stop",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 124,
+          "completion_tokens_details": {
+            "reasoning_tokens": 79
+          },
+          "credits": 0.014416336,
+          "original_credits": 0.014416336,
+          "prompt_tokens": 315,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 439
+        },
+        "errorObjects": [],
+        "frames": 40,
+        "done": true,
+        "eventErrors": []
+      },
+      "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"问\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"现在\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"几点，并且\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"要求必须调用工具\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"查询，时区\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"用 Asia/Shanghai\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。\\\\n我已经得到了\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"工具返回的结果：\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"2\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"026-\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"09-2\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"2 05\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\":00:\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"00 +0\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"8:00\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n\\\\n现在我需要将这个\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"结果以\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"友好的方式告诉用户\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"。当前时间是2\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"026年\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"9月22\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"日凌晨5点（\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"北京时间）。\\\"},\\\"index\\\":0}],\\\"created\\\":1790022958,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"根据查询结果\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"，现在\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"的时间是：\\\\n\\\\n\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"**20\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"26年9\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"月22日\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\" 05:\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"00\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\":00（\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"北京时间，Asia/Sh\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"anghai）**\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\\n\\\\n也就是凌晨5\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"点。\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790022959,\\\"id\\\":\\\"chatcmpl-f7e023bf-34b6-97d4-a3ee-4dd07b0a9c50\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":124,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":79},\\\"credits\\\":0.014416336,\\\"original_credits\\\":0.014416336,\\\"prompt_tokens\\\":315,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":439}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":1340,\"totalDuration\":2308,\"serverDuration\":33}\n\n"
+    }
+  ]
+}

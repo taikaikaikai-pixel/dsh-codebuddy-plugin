@@ -1,0 +1,2896 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "kind": "trae-solo-cn-state-vscdb",
+    "dbPathFingerprint": "sha256:9a4a3838d6f1",
+    "itemKeyFingerprint": "sha256:de8354b09db3",
+    "userIdFingerprint": "sha256:c214897f3eb1",
+    "generatedAt": "2026-08-23T13:28:11.996Z"
+  },
+  "functions": {
+    "assistant": [
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "solo_agent_lite": [
+      {
+        "id": "Doubao-Seed-Evolving",
+        "displayName": "Seed-Evolving"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Pro",
+        "displayName": "Seed-2.1-Pro"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Turbo",
+        "displayName": "Seed-2.1-Turbo"
+      },
+      {
+        "id": "Doubao-Seed-Code",
+        "displayName": "Seed-Code"
+      },
+      {
+        "id": "glm-5.3",
+        "displayName": "GLM-5.3"
+      },
+      {
+        "id": "glm-5.2",
+        "displayName": "GLM-5.2"
+      },
+      {
+        "id": "DeepSeek-V4-Flash-Official",
+        "displayName": "DeepSeek-V4-Flash 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "DeepSeek-V4-Pro-Official",
+        "displayName": "DeepSeek-V4-Pro 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "kimi-k3",
+        "displayName": "Kimi-K3"
+      },
+      {
+        "id": "kimi-k2.7-code",
+        "displayName": "Kimi-K2.7-Code"
+      },
+      {
+        "id": "kimi-k2.6",
+        "displayName": "Kimi-K2.6"
+      },
+      {
+        "id": "minimax-m3",
+        "displayName": "MiniMax-M3"
+      },
+      {
+        "id": "qwen3.8-max",
+        "displayName": "Qwen3.8-Max"
+      },
+      {
+        "id": "qwen-3.7-plus",
+        "displayName": "Qwen3.7-Plus"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "solo_coder": [
+      {
+        "id": "Doubao-Seed-2.0-Code",
+        "displayName": "Doubao-Seed-2.0-Code"
+      },
+      {
+        "id": "Doubao-Seed-Code",
+        "displayName": "Seed-Code"
+      },
+      {
+        "id": "minimax-m2.7",
+        "displayName": "MiniMax-M2.7"
+      },
+      {
+        "id": "glm-5.1",
+        "displayName": "GLM-5.1"
+      },
+      {
+        "id": "glm-5v-turbo",
+        "displayName": "GLM-5V-Turbo"
+      },
+      {
+        "id": "glm-5",
+        "displayName": "GLM-5"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "DeepSeek-V4-Flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "kimi-k2.6",
+        "displayName": "Kimi-K2.6"
+      },
+      {
+        "id": "kimi-k2.5",
+        "displayName": "Kimi-K2.5"
+      },
+      {
+        "id": "qwen-3.6-plus",
+        "displayName": "Qwen3.6-Plus"
+      },
+      {
+        "id": "qwen-3.5",
+        "displayName": "Qwen3.5-Plus"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "solo_agent_remote": [
+      {
+        "id": "Doubao-Seed-Evolving",
+        "displayName": "Seed-Evolving"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Pro",
+        "displayName": "Seed-2.1-Pro"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Turbo",
+        "displayName": "Seed-2.1-Turbo"
+      },
+      {
+        "id": "Doubao-Seed-Code",
+        "displayName": "Seed-Code"
+      },
+      {
+        "id": "glm-5.3",
+        "displayName": "GLM-5.3"
+      },
+      {
+        "id": "glm-5.2",
+        "displayName": "GLM-5.2"
+      },
+      {
+        "id": "DeepSeek-V4-Flash-Official",
+        "displayName": "DeepSeek-V4-Flash 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "DeepSeek-V4-Pro-Official",
+        "displayName": "DeepSeek-V4-Pro 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "kimi-k3",
+        "displayName": "Kimi-K3"
+      },
+      {
+        "id": "kimi-k2.7-code",
+        "displayName": "Kimi-K2.7-Code"
+      },
+      {
+        "id": "kimi-k2.6",
+        "displayName": "Kimi-K2.6"
+      },
+      {
+        "id": "minimax-m3",
+        "displayName": "MiniMax-M3"
+      },
+      {
+        "id": "qwen3.8-max",
+        "displayName": "Qwen3.8-Max"
+      },
+      {
+        "id": "qwen-3.7-plus",
+        "displayName": "Qwen3.7-Plus"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "solo_work_lite": [
+      {
+        "id": "Doubao-Seed-Evolving",
+        "displayName": "Seed-Evolving"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Pro",
+        "displayName": "Seed-2.1-Pro"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Turbo",
+        "displayName": "Seed-2.1-Turbo"
+      },
+      {
+        "id": "glm-5.3",
+        "displayName": "GLM-5.3"
+      },
+      {
+        "id": "glm-5.2",
+        "displayName": "GLM-5.2"
+      },
+      {
+        "id": "DeepSeek-V4-Flash-Official",
+        "displayName": "DeepSeek-V4-Flash 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "DeepSeek-V4-Pro-Official",
+        "displayName": "DeepSeek-V4-Pro 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "kimi-k3",
+        "displayName": "Kimi-K3"
+      },
+      {
+        "id": "kimi-k2.7-code",
+        "displayName": "Kimi-K2.7-Code"
+      },
+      {
+        "id": "kimi-k2.6",
+        "displayName": "Kimi-K2.6"
+      },
+      {
+        "id": "minimax-m3",
+        "displayName": "MiniMax-M3"
+      },
+      {
+        "id": "qwen3.8-max",
+        "displayName": "Qwen3.8-Max"
+      },
+      {
+        "id": "qwen-3.7-plus",
+        "displayName": "Qwen3.7-Plus"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "solo_work_remote": [
+      {
+        "id": "Doubao-Seed-Evolving",
+        "displayName": "Seed-Evolving"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Pro",
+        "displayName": "Seed-2.1-Pro"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Turbo",
+        "displayName": "Seed-2.1-Turbo"
+      },
+      {
+        "id": "glm-5.3",
+        "displayName": "GLM-5.3"
+      },
+      {
+        "id": "glm-5.2",
+        "displayName": "GLM-5.2"
+      },
+      {
+        "id": "DeepSeek-V4-Flash-Official",
+        "displayName": "DeepSeek-V4-Flash 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "DeepSeek-V4-Pro-Official",
+        "displayName": "DeepSeek-V4-Pro 正式版"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "kimi-k3",
+        "displayName": "Kimi-K3"
+      },
+      {
+        "id": "kimi-k2.7-code",
+        "displayName": "Kimi-K2.7-Code"
+      },
+      {
+        "id": "kimi-k2.6",
+        "displayName": "Kimi-K2.6"
+      },
+      {
+        "id": "minimax-m3",
+        "displayName": "MiniMax-M3"
+      },
+      {
+        "id": "qwen3.8-max",
+        "displayName": "Qwen3.8-Max"
+      },
+      {
+        "id": "qwen-3.7-plus",
+        "displayName": "Qwen3.7-Plus"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "solo_design_lite": [
+      {
+        "id": "Doubao-Seed-2.1-Pro",
+        "displayName": "Seed-2.1-Pro"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Turbo",
+        "displayName": "Seed-2.1-Turbo"
+      },
+      {
+        "id": "glm-5.2",
+        "displayName": "GLM-5.2"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "kimi-k2.7-code",
+        "displayName": "Kimi-K2.7-Code"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "solo_design_remote": [
+      {
+        "id": "Doubao-Seed-2.1-Pro",
+        "displayName": "Seed-2.1-Pro"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Turbo",
+        "displayName": "Seed-2.1-Turbo"
+      },
+      {
+        "id": "glm-5.2",
+        "displayName": "GLM-5.2"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "kimi-k2.7-code",
+        "displayName": "Kimi-K2.7-Code"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ],
+    "agent": [
+      {
+        "id": "Doubao-Seed-Evolving",
+        "displayName": "Seed-Evolving"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Pro",
+        "displayName": "Seed-2.1-Pro"
+      },
+      {
+        "id": "Doubao-Seed-2.1-Turbo",
+        "displayName": "Seed-2.1-Turbo"
+      },
+      {
+        "id": "Doubao-Seed-Code",
+        "displayName": "Seed-Code"
+      },
+      {
+        "id": "minimax-m3",
+        "displayName": "MiniMax-M3"
+      },
+      {
+        "id": "glm-5.2",
+        "displayName": "GLM-5.2"
+      },
+      {
+        "id": "DeepSeek-V4-Pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "DeepSeek-V4-Flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "kimi-k2.7-code",
+        "displayName": "Kimi-K2.7-Code"
+      },
+      {
+        "id": "qwen-3.7-plus",
+        "displayName": "Qwen3.7-Plus"
+      },
+      {
+        "id": "deepseek//deepseek-v4-pro",
+        "displayName": "DeepSeek-V4-Pro"
+      },
+      {
+        "id": "volcengine-agent-plan//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      },
+      {
+        "id": "deepseek//deepseek-v4-flash",
+        "displayName": "DeepSeek-V4-Flash"
+      }
+    ]
+  },
+  "models": [
+    {
+      "id": "DeepSeek-V4-Flash",
+      "openaiCompatibleId": "DeepSeek-V4-Flash",
+      "configName": "DeepSeek-V4-Flash",
+      "displayName": "DeepSeek-V4-Flash",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_coder",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_coder": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": [
+            200000
+          ],
+          "maxOutputTokens": 32000,
+          "maxTurns": 200
+        },
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "agent": {
+          "promptMaxTokens": 45000,
+          "contextWindowDefault": null,
+          "contextWindowMax": null,
+          "maxOutputTokens": 8192,
+          "maxTurns": 35
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.08
+            }
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "deepseek//deepseek-v4-flash",
+      "openaiCompatibleId": "deepseek--deepseek-v4-flash",
+      "configName": "deepseek//deepseek-v4-flash",
+      "displayName": "DeepSeek-V4-Flash",
+      "provider": "deepseek",
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": null,
+      "contextWindowDefault": null,
+      "contextWindowMax": null,
+      "maxOutputTokens": null,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": false,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": null,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "assistant",
+        "solo_agent_lite",
+        "solo_coder",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "assistant": {},
+        "solo_agent_lite": {},
+        "solo_coder": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {},
+        "solo_work_remote": {},
+        "solo_design_lite": {},
+        "solo_design_remote": {},
+        "agent": {}
+      },
+      "technical": {
+        "thinking_enable": 0,
+        "features": {
+          "reasoning": {
+            "enable": true
+          },
+          "provider": {
+            "enable": true,
+            "data": {
+              "provider_name": "deepseek"
+            }
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": null,
+              "max_context": null,
+              "max_context_list": null,
+              "dev_turns": null,
+              "max_turns": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "volcengine-agent-plan//deepseek-v4-flash",
+      "openaiCompatibleId": "volcengine-agent-plan--deepseek-v4-flash",
+      "configName": "volcengine-agent-plan//deepseek-v4-flash",
+      "displayName": "DeepSeek-V4-Flash",
+      "provider": "volcengine-agent-plan",
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": null,
+      "contextWindowDefault": null,
+      "contextWindowMax": null,
+      "maxOutputTokens": null,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": false,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": null,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "assistant",
+        "solo_agent_lite",
+        "solo_coder",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "assistant": {},
+        "solo_agent_lite": {},
+        "solo_coder": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {},
+        "solo_work_remote": {},
+        "solo_design_lite": {},
+        "solo_design_remote": {},
+        "agent": {}
+      },
+      "technical": {
+        "thinking_enable": 1,
+        "features": {
+          "reasoning": {
+            "enable": true
+          },
+          "provider": {
+            "enable": true,
+            "data": {
+              "provider_name": "volcengine-agent-plan"
+            }
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": null,
+              "max_context": null,
+              "max_context_list": null,
+              "dev_turns": null,
+              "max_turns": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "DeepSeek-V4-Flash-Official",
+      "openaiCompatibleId": "DeepSeek-V4-Flash-Official",
+      "configName": "DeepSeek-V4-Flash-Official",
+      "displayName": "DeepSeek-V4-Flash 正式版",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.08
+            }
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "DeepSeek-V4-Pro",
+      "openaiCompatibleId": "DeepSeek-V4-Pro",
+      "configName": "DeepSeek-V4-Pro",
+      "displayName": "DeepSeek-V4-Pro",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_coder",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_coder": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": [
+            200000
+          ],
+          "maxOutputTokens": 32000,
+          "maxTurns": 200
+        },
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_design_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_design_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "agent": {
+          "promptMaxTokens": 45000,
+          "contextWindowDefault": null,
+          "contextWindowMax": null,
+          "maxOutputTokens": 8192,
+          "maxTurns": 35
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.72
+            }
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "deepseek//deepseek-v4-pro",
+      "openaiCompatibleId": "deepseek--deepseek-v4-pro",
+      "configName": "deepseek//deepseek-v4-pro",
+      "displayName": "DeepSeek-V4-Pro",
+      "provider": "deepseek",
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": null,
+      "contextWindowDefault": null,
+      "contextWindowMax": null,
+      "maxOutputTokens": null,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": false,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": null,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "assistant",
+        "solo_agent_lite",
+        "solo_coder",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "assistant": {},
+        "solo_agent_lite": {},
+        "solo_coder": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {},
+        "solo_work_remote": {},
+        "solo_design_lite": {},
+        "solo_design_remote": {},
+        "agent": {}
+      },
+      "technical": {
+        "thinking_enable": 0,
+        "features": {
+          "reasoning": {
+            "enable": true
+          },
+          "provider": {
+            "enable": true,
+            "data": {
+              "provider_name": "deepseek"
+            }
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": null,
+              "max_context": null,
+              "max_context_list": null,
+              "dev_turns": null,
+              "max_turns": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "DeepSeek-V4-Pro-Official",
+      "openaiCompatibleId": "DeepSeek-V4-Pro-Official",
+      "configName": "DeepSeek-V4-Pro-Official",
+      "displayName": "DeepSeek-V4-Pro 正式版",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.72
+            }
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "Doubao-Seed-2.0-Code",
+      "openaiCompatibleId": "Doubao-Seed-2-0-Code",
+      "configName": "Doubao-Seed-2.0-Code",
+      "displayName": "Doubao-Seed-2.0-Code",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 184000,
+      "contextWindowMax": [
+        184000
+      ],
+      "maxOutputTokens": 16000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [
+          "Beta"
+        ],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "beta": {
+            "enable": true
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.39
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 184000,
+              "max_context": 184000,
+              "max_context_list": [
+                184000
+              ],
+              "dev_turns": 200,
+              "max_turns": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "glm-5",
+      "openaiCompatibleId": "glm-5",
+      "configName": "glm-5",
+      "displayName": "GLM-5",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [
+          "Beta"
+        ],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "beta": {
+            "enable": true
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.7
+            }
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 200,
+              "max_turns": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "glm-5.1",
+      "openaiCompatibleId": "glm-5-1",
+      "configName": "glm-5.1",
+      "displayName": "GLM-5.1",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [
+          "Beta"
+        ],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "beta": {
+            "enable": true
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.83
+            }
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 200,
+              "max_turns": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "glm-5.2",
+      "openaiCompatibleId": "glm-5-2",
+      "configName": "glm-5.2",
+      "displayName": "GLM-5.2",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_design_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_design_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "agent": {
+          "promptMaxTokens": 100000,
+          "contextWindowDefault": 116000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 16000,
+          "maxTurns": 70
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.4
+            }
+          },
+          "discount": {
+            "enable": true,
+            "subKey": "exclusive_discount",
+            "data": {}
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "glm-5.3",
+      "openaiCompatibleId": "glm-5-3",
+      "configName": "glm-5.3",
+      "displayName": "GLM-5.3",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.4
+            }
+          },
+          "discount": {
+            "enable": true,
+            "subKey": "exclusive_discount",
+            "data": {}
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "glm-5v-turbo",
+      "openaiCompatibleId": "glm-5v-turbo",
+      "configName": "glm-5v-turbo",
+      "displayName": "GLM-5V-Turbo",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [
+          "Beta"
+        ],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "beta": {
+            "enable": true
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.51
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 200,
+              "max_turns": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "kimi-k2.5",
+      "openaiCompatibleId": "kimi-k2-5",
+      "configName": "kimi-k2.5",
+      "displayName": "Kimi-K2.5",
+      "provider": null,
+      "modelType": "chat_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.48
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 200,
+              "max_turns": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "kimi-k2.6",
+      "openaiCompatibleId": "kimi-k2-6",
+      "configName": "kimi-k2.6",
+      "displayName": "Kimi-K2.6",
+      "provider": null,
+      "modelType": "chat_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_coder",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_coder": {
+          "maxTurns": 200
+        },
+        "solo_agent_remote": {
+          "contextWindowMax": null
+        },
+        "solo_work_lite": {
+          "contextWindowMax": null
+        },
+        "solo_work_remote": {
+          "contextWindowMax": null
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.69
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "video_multimodal": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "kimi-k2.7-code",
+      "openaiCompatibleId": "kimi-k2-7-code",
+      "configName": "kimi-k2.7-code",
+      "displayName": "Kimi-K2.7-Code",
+      "provider": null,
+      "modelType": "chat_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": null,
+      "maxOutputTokens": 32000,
+      "maxTurns": 500,
+      "isDefault": true,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {},
+        "solo_work_remote": {},
+        "solo_design_lite": {},
+        "solo_design_remote": {},
+        "agent": {
+          "promptMaxTokens": 100000,
+          "contextWindowDefault": 116000,
+          "maxOutputTokens": 16000,
+          "maxTurns": 70
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.62
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "video_multimodal": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": null,
+              "max_context_list": null,
+              "dev_turns": 500,
+              "max_turns": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "kimi-k3",
+      "openaiCompatibleId": "kimi-k3",
+      "configName": "kimi-k3",
+      "displayName": "Kimi-K3",
+      "provider": null,
+      "modelType": "chat_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                1,
+                2,
+                3,
+                100
+              ]
+            },
+            "enable": true
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 1.65
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "video_multimodal": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "minimax-m2.7",
+      "openaiCompatibleId": "minimax-m2-7",
+      "configName": "minimax-m2.7",
+      "displayName": "MiniMax-M2.7",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": false,
+      "input": [
+        "text"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [
+          "Beta"
+        ],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "beta": {
+            "enable": true
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.27
+            }
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 200,
+              "max_turns": 200
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "minimax-m3",
+      "openaiCompatibleId": "minimax-m3",
+      "configName": "minimax-m3",
+      "displayName": "MiniMax-M3",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "agent": {
+          "promptMaxTokens": 45000,
+          "contextWindowDefault": null,
+          "contextWindowMax": null,
+          "maxOutputTokens": 16000,
+          "maxTurns": 35
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.26
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "qwen-3.5",
+      "openaiCompatibleId": "qwen-3-5",
+      "configName": "qwen-3.5",
+      "displayName": "Qwen3.5-Plus",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": null,
+      "maxOutputTokens": 32000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.26
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": null,
+              "max_context_list": null,
+              "dev_turns": 200,
+              "max_turns": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "qwen-3.6-plus",
+      "openaiCompatibleId": "qwen-3-6-plus",
+      "configName": "qwen-3.6-plus",
+      "displayName": "Qwen3.6-Plus",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": null,
+      "maxOutputTokens": 32000,
+      "maxTurns": 200,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_coder"
+      ],
+      "categoryProfiles": {
+        "solo_coder": {}
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.26
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": null,
+              "max_context_list": null,
+              "dev_turns": 200,
+              "max_turns": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "qwen-3.7-plus",
+      "openaiCompatibleId": "qwen-3-7-plus",
+      "configName": "qwen-3.7-plus",
+      "displayName": "Qwen3.7-Plus",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "agent": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000,
+          "maxTurns": 200
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.25
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "qwen3.8-max",
+      "openaiCompatibleId": "qwen3-8-max",
+      "configName": "qwen3.8-max",
+      "displayName": "Qwen3.8-Max",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 168000,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32000
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 1.5
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "Doubao-Seed-2.1-Pro",
+      "openaiCompatibleId": "Doubao-Seed-2-1-Pro",
+      "configName": "Doubao-Seed-2.1-Pro",
+      "displayName": "Seed-2.1-Pro",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {
+          "contextWindowMax": null
+        },
+        "solo_work_lite": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "solo_design_lite": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "solo_design_remote": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "agent": {
+          "promptMaxTokens": 45000,
+          "contextWindowDefault": null,
+          "contextWindowMax": null,
+          "maxOutputTokens": 16000,
+          "maxTurns": 50
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.77
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "Doubao-Seed-2.1-Turbo",
+      "openaiCompatibleId": "Doubao-Seed-2-1-Turbo",
+      "configName": "Doubao-Seed-2.1-Turbo",
+      "displayName": "Seed-2.1-Turbo",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        200000
+      ],
+      "maxOutputTokens": 32000,
+      "maxTurns": 500,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "solo_design_lite",
+        "solo_design_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {
+          "contextWindowMax": null
+        },
+        "solo_work_lite": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "solo_design_lite": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "solo_design_remote": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768
+        },
+        "agent": {
+          "promptMaxTokens": 45000,
+          "contextWindowDefault": null,
+          "contextWindowMax": null,
+          "maxOutputTokens": 16000,
+          "maxTurns": 50
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.39
+            }
+          },
+          "discount": {
+            "enable": true,
+            "subKey": "member_discount",
+            "data": {
+              "original_consumption_rate": 0.39,
+              "consumption_rate": 0.1,
+              "member_discount": 25,
+              "is_discount_matched": false
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 200000,
+              "max_context_list": [
+                200000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "Doubao-Seed-Code",
+      "openaiCompatibleId": "Doubao-Seed-Code",
+      "configName": "Doubao-Seed-Code",
+      "displayName": "Seed-Code",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 168000,
+      "contextWindowDefault": 184000,
+      "contextWindowMax": [
+        184000
+      ],
+      "maxOutputTokens": 16000,
+      "maxTurns": 500,
+      "isDefault": true,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_coder",
+        "solo_agent_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_coder": {
+          "maxTurns": 200
+        },
+        "solo_agent_remote": {
+          "contextWindowMax": null
+        },
+        "agent": {
+          "promptMaxTokens": 45000,
+          "contextWindowDefault": null,
+          "contextWindowMax": null,
+          "maxTurns": 50
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                0,
+                5,
+                1,
+                2,
+                3,
+                100
+              ]
+            }
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.12
+            }
+          },
+          "discount": {
+            "enable": true,
+            "subKey": "member_discount",
+            "data": {
+              "original_consumption_rate": 0.12,
+              "consumption_rate": 0.03,
+              "member_discount": 25,
+              "is_discount_matched": false
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 184000,
+              "max_context": 184000,
+              "max_context_list": [
+                184000
+              ],
+              "dev_turns": 500,
+              "max_turns": 500
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "Doubao-Seed-Evolving",
+      "openaiCompatibleId": "Doubao-Seed-Evolving",
+      "configName": "Doubao-Seed-Evolving",
+      "displayName": "Seed-Evolving",
+      "provider": null,
+      "modelType": "reasoning_model",
+      "multimodal": true,
+      "input": [
+        "text",
+        "image"
+      ],
+      "promptMaxTokens": 936000,
+      "contextWindowDefault": 200000,
+      "contextWindowMax": [
+        1000000
+      ],
+      "maxOutputTokens": 64000,
+      "maxTurns": 2000,
+      "isDefault": false,
+      "isPreset": true,
+      "selectable": true,
+      "status": true,
+      "feeModelLevel": 2,
+      "reasoningEffortOptions": null,
+      "categories": [
+        "solo_agent_lite",
+        "solo_agent_remote",
+        "solo_work_lite",
+        "solo_work_remote",
+        "agent"
+      ],
+      "categoryProfiles": {
+        "solo_agent_lite": {},
+        "solo_agent_remote": {},
+        "solo_work_lite": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768,
+          "maxTurns": 500
+        },
+        "solo_work_remote": {
+          "promptMaxTokens": 200000,
+          "contextWindowDefault": 232768,
+          "contextWindowMax": null,
+          "maxOutputTokens": 32768,
+          "maxTurns": 500
+        },
+        "agent": {
+          "promptMaxTokens": 45000,
+          "contextWindowDefault": null,
+          "contextWindowMax": null,
+          "maxOutputTokens": 16000,
+          "maxTurns": 50
+        }
+      },
+      "technical": {
+        "tags": [],
+        "features": {
+          "access": {
+            "data": {
+              "identity_list": [
+                1,
+                2,
+                3,
+                100
+              ]
+            },
+            "enable": true
+          },
+          "consumption_rate": {
+            "enable": true,
+            "data": {
+              "rate": 0.77
+            }
+          },
+          "multimodal": {
+            "enable": true
+          },
+          "reasoning": {
+            "enable": true
+          },
+          "context_windows": {
+            "enable": true,
+            "data": {
+              "dev_context": 200000,
+              "max_context": 1000000,
+              "max_context_list": [
+                1000000
+              ],
+              "dev_turns": 500,
+              "max_turns": 2000
+            }
+          }
+        }
+      }
+    }
+  ],
+  "warnings": [
+    "已忽略非白名单字段：auth_type",
+    "已忽略非白名单字段：base_url",
+    "已忽略非白名单字段：builder",
+    "已忽略非白名单字段：client_connect",
+    "已忽略非白名单字段：commercial_info",
+    "已忽略非白名单字段：config_source",
+    "已忽略非白名单字段：core_memory_enable_type",
+    "已忽略非白名单字段：custom_config",
+    "已忽略非白名单字段：custom_model_id",
+    "已忽略非白名单字段：custom_model_type",
+    "已忽略非白名单字段：enable_show_widget",
+    "已忽略非白名单字段：enable_todo_thought_extract",
+    "已忽略非白名单字段：feedback_group_link",
+    "已忽略非白名单字段：hot_info",
+    "已忽略非白名单字段：icon",
+    "已忽略非白名单字段：is_beta",
+    "已忽略非白名单字段：is_custom_base_url",
+    "已忽略非白名单字段：is_dollar_max",
+    "已忽略非白名单字段：is_internal_usage_limit",
+    "已忽略非白名单字段：is_l4_repo_restricted",
+    "已忽略非白名单字段：is_max_default",
+    "已忽略非白名单字段：is_new",
+    "已忽略非白名单字段：max_mode",
+    "已忽略非白名单字段：region",
+    "已忽略非白名单字段：saas_usage",
+    "已忽略非白名单字段：tob_commercial_info",
+    "已忽略非白名单字段：todo_thought_extract_threshold",
+    "已忽略非白名单字段：use_remote_service",
+    "已移除敏感字段：ak",
+    "已移除敏感字段：sk"
+  ]
+}

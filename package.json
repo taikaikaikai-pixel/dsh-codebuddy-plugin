@@ -1,7 +1,7 @@
 {
-  "name": "dsh-codebuddy-plugin",
-  "version": "0.7.4",
-  "description": "CodeBuddy (copilot.tencent.com) provider bundle for DeepSeek Harness (dsh): 18 models (DeepSeek, GLM, Kimi, MiniMax, Hunyuan, auto) with adjustable reasoning efforts, CodeBuddy web search / web fetch backends for the stock dsh tools, and a settings card in the Web UI.",
+  "name": "dsh-tap",
+  "version": "0.10.1",
+  "description": "Unofficial upstream bundle for DeepSeek Harness (dsh): CodeBuddy (copilot.tencent.com) with a runtime-synced model catalogue, web search/fetch, image generation and a streaming bridge; TraeWork CN and Qoder CN subscription channels via local OpenAI translation gateways; plus a key-type OpenAI-compatible provider registry - all managed from a 4-block accordion settings card.",
   "type": "module",
   "main": "index.js",
   "exports": {
@@ -11,10 +11,20 @@
   },
   "files": [
     "index.js",
+    "local-scan.js",
+    "host-config.js",
+    "core/",
+    "providers/",
     "lib/client.js",
     "cordis.patch.yml",
     "scripts/",
-    "docs/",
+    "docs/goals/",
+    "docs/reverse/",
+    "docs/rules/",
+    "docs/pitfalls.md",
+    "docs/diagnosis-cache-quota.md",
+    "docs/diagnosis-trae-3003.md",
+    "docs/diagnosis-qoder-flash.md",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
@@ -22,7 +32,13 @@
   ],
   "scripts": {
     "verify": "node scripts/verify-models.mjs",
-    "verify:bridge": "node scripts/verify-bridge.mjs"
+    "verify:bridge": "node scripts/verify-bridge.mjs",
+    "verify:core": "node scripts/verify-core-generic.mjs",
+    "verify:providers": "node scripts/verify-providers.mjs",
+    "verify:trae": "node scripts/verify-trae-model-catalog.mjs",
+    "verify:trae-provider": "node scripts/verify-trae-provider.mjs",
+    "verify:qoder": "node scripts/verify-qoder-provider.mjs",
+    "verify:host-config": "node scripts/verify-host-config.mjs"
   },
   "keywords": [
     "dsh-plugin",
@@ -46,7 +62,6 @@
     },
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-slots"
       ],
       "platform": "web"

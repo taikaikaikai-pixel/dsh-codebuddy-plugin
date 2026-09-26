@@ -1,0 +1,49 @@
+{
+  "at": "2026-08-23T23:29:33.838Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "模型测试1787527769"
+            }
+          ]
+        }
+      ],
+      "model": "DeepSeek-V4-Pro",
+      "function": "inline_chat",
+      "request_id": "639c2075-a5c4-4d8a-8ac5-abda6e86eb1b",
+      "session_id": "probe-live",
+      "stream": true
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sun, 23 Aug 2026 23:29:31 GMT",
+      "server": "volc-dcdn",
+      "server-timing": "inner; dur=2012, cdn-cache;desc=MISS, origin;dur=2049, edge;dur=0",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "transfer-encoding": "chunked",
+      "via": "<redacted:via>",
+      "x-dsa-origin-status": "200",
+      "x-dsa-trace-id": "178752776911c49d5d549d66eee627814c9b4d80fc",
+      "x-request-ip": "<redacted:x-request-ip>",
+      "x-tt-logid": "202608240729293DC0EAB7D35C4A539434",
+      "x-tt-timestamp": "1787527771.293",
+      "x-tt-trace-host": "0127b0cf403cfc4744f72d0413359221a6d67282eff41e10003807176557ec6c1627ea106cabcdd2bd6a06ce4f6c084640327632c03cb6da04f2530c81718641748212a8d171f0d62fafe1003c1c2116e205736e0cf4296683826822b08647cb74",
+      "x-tt-trace-id": "00-2608240729293DC0EAB7D35C4A539434-2ABC9BE2627F1A00-00",
+      "x-tt-trace-tag": "id=5"
+    },
+    "bodyHead": "id:1\nevent:progress_notice\ndata:\"Processing_1787527771\"\n\nid:2\nevent:metadata\ndata:{\"model\":\"\",\"session_id\":\"probe-live\",\"prompt_completion_id\":0,\"ab_versions\":null,\"app_version\":\"\",\"ide_version\":null,\"ide_version_type\":null,\"prompt_cache_pool_record\":null}\n\nid:3\nevent:timing_cost\ndata:{\"name\":\"llm_raw_chat_v2\",\"preprocess_timing\":77,\"postprocess_timing\":24,\"queue_timing\":0,\"platform_first_token_timing\":2106,\"account_type\":\"\",\"is_retry\":false,\"middleware_processing_time\":39,\"server_processing_time\":2247,\"first_sse_event_time\":2222,\"preprocessing_detail\":{\"check_risk\":17,\"build_llm_prompt\":0,\"chat_completion_prepare\":0,\"other\":60},\"platform_detail\":{\"preprocess_timing\":24,\"first_token_timing\":2051,\"network_latency\":31,\"provider_first_token\":0,\"provider_network_latency\":0,\"other\":0},\"post_processing_detail\":{\"post_security_check\":23,\"other\":1},\"provider_model_name\":\"kimi-k2.6\"}\n\nid:4\nevent:output\ndata:{\"response\":\"您好\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:5\nevent:output\ndata:{\"response\":\"！您发送的内容\\\"模型测试178752776\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:6\nevent:output\ndata:{\"response\":\"9\\\"看起来是一个测试消息或标识符。\\n\\n\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:7\nevent:output\ndata:{\"response\":\"请问您需要我帮助您什么？例如：\\n\\n\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:8\nevent:output\ndata:{\"response\":\"1. **测试模型功能** - 您可以\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:9\nevent:output\ndata:{\"response\":\"尝试让我完成特定任务（写作、翻译、\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:10\nevent:output\ndata:{\"response\":\"编程、推理等）\\n2.\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:11\nevent:output\ndata:{\"response\":\" **验证响应质量** - 提出具体问题来\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:12\nevent:output\ndata:{\"response\":\"评估回答效果\\n3.\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:13\nevent:output\ndata:{\"response\":\" **技术对接测试** - 检查API或\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:14\nevent:output\ndata:{\"response\":\"系统连接是否正常\\n\\n如果您能说明具体的测试目的\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:15\nevent:output\ndata:{\"response\":\"，我可以更好地配合您完成测试。\",\"reasoning_content\":null,\"tool_calls\":null,\"multimodal_contents\":null,\"phase\":null}\n\nid:16\nevent:token_usage\ndata:{\"name\":\"\",\"prompt_tokens\":15,\"completion_tokens\":103,\"total_tokens\":118,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":7,\"reasoning_tokens\":0,\"prompt_tokens_total\":0,\"completion_tokens_total\":0,\"total_tokens_total\":0,\"cache_creation_input_tokens_total\":0,\"cache_read_input_tokens_total\":0,\"reasoning_tokens_total\":0,\"cluster\":\"normal_context\"}\n\nid:17\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 3008
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "ts": "2026-08-24T07:24:53.217Z",
+  "probes": [
+    {
+      "label": "A-raw-kimi-k3",
+      "status": 400,
+      "error": "{\"code\":4001,\"message\":\"bad request: binding: expr_path=app_version_code, cause=missing required parameter\"}"
+    },
+    {
+      "label": "B-raw-custom_model",
+      "status": 400,
+      "error": "{\"code\":4001,\"message\":\"bad request: binding: expr_path=app_version_code, cause=missing required parameter\"}"
+    },
+    {
+      "label": "C-remote-custom_model",
+      "status": 200,
+      "session_id": "6a8bf1f1f3500c830a3f36af",
+      "message_id": "6a8bf1f1f3500c830a3f36b0",
+      "createResp": {
+        "code": 0,
+        "data": {
+          "chat_session_id": "6a8bf1f1f3500c830a3f36af",
+          "status": 2,
+          "message_id": "6a8bf1f1f3500c830a3f36b0"
+        },
+        "message": "success"
+      },
+      "eventsStatus": 200,
+      "eventsRaw": "id: 6a8bf1f1f3500c830a3f36af-status-1787556340825415967\nevent: status_changed\ndata: {\"chat_session_id\":\"6a8bf1f1f3500c830a3f36af\",\"new_status\":6,\"old_status\":2,\"timestamp\":1787556340825}\n\n"
+    }
+  ]
+}

@@ -1,0 +1,435 @@
+{
+  "at": "2026-09-21T21:31:11.136Z",
+  "openapi": "https://openapi.qoder.com.cn",
+  "chatModel": "q37fmodel",
+  "steps": [
+    {
+      "step": "before",
+      "data": {
+        "quotaUsage": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 192,
+            "remaining": 4208,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "quotaUsageOuter": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [
+            {
+              "provider": "cmcc"
+            }
+          ],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 192,
+            "remaining": 4208,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "meUsage": {
+          "displayMode": "qoder",
+          "qoderUsage": {
+            "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+            "userType": "personal_standard",
+            "usageType": "credits",
+            "totalUsagePercentage": 0.05,
+            "isQuotaExceeded": false,
+            "expiresAt": 253402214400000,
+            "upgradeUrl": "https://qoder.com/pricing?client=qoder",
+            "userQuota": {
+              "total": 0,
+              "used": 0,
+              "remaining": 0,
+              "percentage": 0,
+              "unit": "credits"
+            },
+            "addOnQuota": {
+              "total": 4400,
+              "used": 192,
+              "remaining": 4208,
+              "percentage": 0.05,
+              "unit": "credits",
+              "detailUrl": "https://qoder.com/account/usage"
+            },
+            "isPlanQuotaProrated": false
+          }
+        },
+        "creditsHeatmap": {
+          "items": [
+            {
+              "date": "2026-09-22",
+              "value": 0
+            }
+          ],
+          "levels": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "total": 0,
+          "unit": "credits",
+          "year": 2026
+        },
+        "creditsSummary": {
+          "peakCredits": 318.4620101696,
+          "peakDate": "2026-07-23",
+          "totalCredits": 2004.69313754842,
+          "unit": "credits"
+        },
+        "userPlan": {
+          "user_type": "personal_standard",
+          "plan_tier_name": "Free",
+          "is_personal_version": true,
+          "is_paid_plan": false,
+          "is_highest_tier": false,
+          "feature_allowed": {
+            "wiki": false,
+            "quest": true,
+            "code_review": false,
+            "commit_indexing": false
+          },
+          "start_date": 1784964389025,
+          "end_date": 0
+        }
+      }
+    },
+    {
+      "step": "chat",
+      "data": {
+        "model": "q37fmodel",
+        "url": "https://gateway.qoder.com.cn/algo/api/v2/service/pro/sse/agent_chat_generation?FetchKeys=llm_model_result&AgentId=agent_common&Encode=1",
+        "status": 200,
+        "raw": "data:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\",\\\"role\\\":\\\"assistant\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"Here\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"'s\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" a thinking\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" process:\\\\n\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"1.  **\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"Analyze User Input\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\":**\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n   - User\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" says\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\": \\\\\\\"只回复\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"两个字：收到\\\\\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" (Only reply with\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" two characters: \\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到)\\\\n  \\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" - Constraint: Only\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" two Chinese characters,\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" exactly\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" \\\\\\\"收到\\\\\\\".\\\\n\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"2.  **\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"Identify Key Constraints\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\":**\\\\n\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"   - Must be\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" exactly two characters.\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n  \\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" - Must be \\\\\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到\\\\\\\".\\\\n  \\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" -\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" No extra text,\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" explanations\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\", or formatting.\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\\n\\\\n3.\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"  **Formulate\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" Response:**\\\\n  \\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" - Just output:\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" \\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"收到\\\\n\\\\n4.\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"  **Verify Compliance\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\":**\\\\n   -\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" Checks out. Exactly\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" matches\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\" the constraint. Ready\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\".✅\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"收到\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[{\\\"delta\\\":{\\\"content\\\":\\\"\\\",\\\"reasoning_content\\\":\\\"\\\"},\\\"finish_reason\\\":\\\"stop\\\",\\\"index\\\":0}],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\"}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"{\\\"choices\\\":[],\\\"created\\\":1790026275,\\\"id\\\":\\\"chatcmpl-02903bc5-0b65-9381-b77c-d6dad594e148\\\",\\\"model\\\":\\\"auto\\\",\\\"object\\\":\\\"chat.completion.chunk\\\",\\\"usage\\\":{\\\"billable\\\":true,\\\"completion_tokens\\\":134,\\\"completion_tokens_details\\\":{\\\"reasoning_tokens\\\":131},\\\"credits\\\":0.0024486440000000003,\\\"original_credits\\\":0.0024486440000000003,\\\"prompt_tokens\\\":15,\\\"prompt_tokens_details\\\":{\\\"cached_tokens\\\":0},\\\"total_tokens\\\":149}}\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\ndata:{\"headers\":{\"Content-Type\":[\"application/json\"]},\"body\":\"[DONE]\",\"statusCodeValue\":200,\"statusCode\":\"OK\"}\n\nevent:finish\ndata:{\"firstTokenDuration\":699,\"totalDuration\":2311,\"serverDuration\":115}\n\n",
+        "text": "收到",
+        "usage": {
+          "billable": true,
+          "completion_tokens": 134,
+          "completion_tokens_details": {
+            "reasoning_tokens": 131
+          },
+          "credits": 0.0024486440000000003,
+          "original_credits": 0.0024486440000000003,
+          "prompt_tokens": 15,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "total_tokens": 149
+        }
+      }
+    },
+    {
+      "step": "after5s",
+      "data": {
+        "quotaUsage": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 192,
+            "remaining": 4208,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "quotaUsageOuter": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [
+            {
+              "provider": "cmcc"
+            }
+          ],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 192,
+            "remaining": 4208,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "meUsage": {
+          "displayMode": "qoder",
+          "qoderUsage": {
+            "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+            "userType": "personal_standard",
+            "usageType": "credits",
+            "totalUsagePercentage": 0.05,
+            "isQuotaExceeded": false,
+            "expiresAt": 253402214400000,
+            "upgradeUrl": "https://qoder.com/pricing?client=qoder",
+            "userQuota": {
+              "total": 0,
+              "used": 0,
+              "remaining": 0,
+              "percentage": 0,
+              "unit": "credits"
+            },
+            "addOnQuota": {
+              "total": 4400,
+              "used": 192,
+              "remaining": 4208,
+              "percentage": 0.05,
+              "unit": "credits",
+              "detailUrl": "https://qoder.com/account/usage"
+            },
+            "isPlanQuotaProrated": false
+          }
+        },
+        "creditsHeatmap": {
+          "items": [
+            {
+              "date": "2026-09-22",
+              "value": 0
+            }
+          ],
+          "levels": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "total": 0,
+          "unit": "credits",
+          "year": 2026
+        },
+        "creditsSummary": {
+          "peakCredits": 318.4620101696,
+          "peakDate": "2026-07-23",
+          "totalCredits": 2004.69313754842,
+          "unit": "credits"
+        },
+        "userPlan": {
+          "user_type": "personal_standard",
+          "plan_tier_name": "Free",
+          "is_personal_version": true,
+          "is_paid_plan": false,
+          "is_highest_tier": false,
+          "feature_allowed": {
+            "wiki": false,
+            "quest": true,
+            "code_review": false,
+            "commit_indexing": false
+          },
+          "start_date": 1784964389025,
+          "end_date": 0
+        }
+      }
+    },
+    {
+      "step": "after25s",
+      "data": {
+        "quotaUsage": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 192,
+            "remaining": 4208,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "quotaUsageOuter": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [
+            {
+              "provider": "cmcc"
+            }
+          ],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 192,
+            "remaining": 4208,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "meUsage": {
+          "displayMode": "qoder",
+          "qoderUsage": {
+            "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+            "userType": "personal_standard",
+            "usageType": "credits",
+            "totalUsagePercentage": 0.05,
+            "isQuotaExceeded": false,
+            "expiresAt": 253402214400000,
+            "upgradeUrl": "https://qoder.com/pricing?client=qoder",
+            "userQuota": {
+              "total": 0,
+              "used": 0,
+              "remaining": 0,
+              "percentage": 0,
+              "unit": "credits"
+            },
+            "addOnQuota": {
+              "total": 4400,
+              "used": 192,
+              "remaining": 4208,
+              "percentage": 0.05,
+              "unit": "credits",
+              "detailUrl": "https://qoder.com/account/usage"
+            },
+            "isPlanQuotaProrated": false
+          }
+        },
+        "creditsHeatmap": {
+          "items": [
+            {
+              "date": "2026-09-22",
+              "value": 0
+            }
+          ],
+          "levels": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "total": 0,
+          "unit": "credits",
+          "year": 2026
+        },
+        "creditsSummary": {
+          "peakCredits": 318.4620101696,
+          "peakDate": "2026-07-23",
+          "totalCredits": 2004.69313754842,
+          "unit": "credits"
+        },
+        "userPlan": {
+          "user_type": "personal_standard",
+          "plan_tier_name": "Free",
+          "is_personal_version": true,
+          "is_paid_plan": false,
+          "is_highest_tier": false,
+          "feature_allowed": {
+            "wiki": false,
+            "quest": true,
+            "code_review": false,
+            "commit_indexing": false
+          },
+          "start_date": 1784964389025,
+          "end_date": 0
+        }
+      }
+    }
+  ],
+  "diffs": [
+    {
+      "counter": "quotaUsage.addOnQuota.used",
+      "before": 192,
+      "after": 192
+    },
+    {
+      "counter": "quotaUsage.userQuota.used",
+      "before": 0,
+      "after": 0
+    },
+    {
+      "counter": "quotaUsageOuter.addOnQuota.used",
+      "before": 192,
+      "after": 192
+    },
+    {
+      "counter": "quotaUsageOuter.userQuota.used",
+      "before": 0,
+      "after": 0
+    }
+  ],
+  "verdict": "not-counted：计数器不动——服务端对缺归因信封的请求可能不计入配额，需在聊天 body 明文补归因字段复测"
+}

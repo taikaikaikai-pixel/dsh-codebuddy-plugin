@@ -1,0 +1,1011 @@
+{
+  "expect": {
+    "P1": "无参（omit）就产 reasoning_content 的模型：kimi-k2.7/k3/k3-1/minimax-m2.7 —— 这四家档位表不含 off",
+    "P2": "off/low/medium/high/max 五种拼写对思考型模型全部 HTTP 200 可接受（不出现 400/11102 类拒绝）",
+    "P3": "目录新 CLI 模型（glm-5.3 / glm-5.3-flash / kimi-k2.8-preview / hy3-x / hy4-preview / deepseek-v4.1-flash）同样接受五档拼写",
+    "P4": "各档 reasoning 长度自适应、非严格单调（off < max 不必然成立）",
+    "P5": "目录 reasoning 只给默认档，不含档位清单（即档位表无法从目录派生）——2026-09-22 复查已被推翻：新模型带 supportedEfforts/canDisableThinking/defaultEffort"
+  },
+  "catalog": {
+    "fetchedAt": "2026-09-22T02:56:40.138Z",
+    "models": [
+      {
+        "id": "default",
+        "name": "Default",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 24000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "deepseek-v4-pro",
+        "name": "Deepseek-V4-Pro",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 128000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v4-flash",
+        "name": "Deepseek-V4-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 50000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v4.1-flash",
+        "name": "Deepseek-V4.1-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 128000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "deepseek-v3-2-volc",
+        "name": "DeepSeek-V3.2",
+        "maxInputTokens": 96000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m2.5",
+        "name": "MiniMax-M2.5",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m3",
+        "name": "MiniMax-M3",
+        "maxInputTokens": 512000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "minimax-m2.7",
+        "name": "MiniMax-M2.7",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.3",
+        "name": "GLM-5.3",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.3-flash",
+        "name": "GLM-5.3-Flash",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": true,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "low",
+            "high",
+            "max"
+          ]
+        }
+      },
+      {
+        "id": "glm-5.2",
+        "name": "GLM-5.2",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.1",
+        "name": "GLM-5.1",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5.0",
+        "name": "GLM-5.0",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-5.0-turbo",
+        "name": "GLM-5.0-Turbo",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-5v-turbo",
+        "name": "GLM-5v-Turbo",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "glm-4.7",
+        "name": "GLM-4.7",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 48000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-4.6",
+        "name": "GLM-4.6",
+        "maxInputTokens": 168000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "glm-4.6v",
+        "name": "GLM-4.6V",
+        "maxInputTokens": 128000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k3-1",
+        "name": "Kimi-K3",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.8-preview",
+        "name": "Kimi-K2.8-Preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": true,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "low",
+            "high",
+            "max"
+          ]
+        }
+      },
+      {
+        "id": "kimi-k2.7",
+        "name": "Kimi-K2.7-Code",
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.6",
+        "name": "Kimi-K2.6",
+        "maxInputTokens": 256000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "medium",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2.5",
+        "name": "Kimi-K2.5",
+        "maxInputTokens": 164000,
+        "maxOutputTokens": 32000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "kimi-k2-thinking",
+        "name": "Kimi-K2-Thinking",
+        "maxInputTokens": 164000,
+        "maxOutputTokens": 32000,
+        "images": false,
+        "cli": false,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy3",
+        "name": "Hy3",
+        "maxInputTokens": 192000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy3-x",
+        "name": "Hy3",
+        "maxInputTokens": 192000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "effort": "high",
+          "summary": "auto"
+        }
+      },
+      {
+        "id": "hy4-preview",
+        "name": "Hy4 preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": true,
+        "reasoning": {
+          "canDisableThinking": false,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "high"
+          ]
+        }
+      },
+      {
+        "id": "hy4-preview-x",
+        "name": "Hy4 preview",
+        "maxInputTokens": 1000000,
+        "maxOutputTokens": 64000,
+        "images": true,
+        "cli": false,
+        "reasoning": {
+          "canDisableThinking": false,
+          "defaultEffort": "high",
+          "summary": "auto",
+          "supportedEfforts": [
+            "high"
+          ]
+        }
+      },
+      {
+        "id": "hunyuan-chat",
+        "name": "Hunyuan-Turbos",
+        "maxInputTokens": 200000,
+        "maxOutputTokens": 8192,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "hunyuan-image-alpha",
+        "name": "Hunyuan Image Alpha",
+        "maxInputTokens": null,
+        "maxOutputTokens": null,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      },
+      {
+        "id": "hunyuan-image-alpha-edit",
+        "name": "Hunyuan Image Alpha Edit",
+        "maxInputTokens": null,
+        "maxOutputTokens": null,
+        "images": false,
+        "cli": false,
+        "reasoning": null
+      }
+    ]
+  },
+  "arms": [
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1241,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 397,
+      "reasoningTokens": 396,
+      "totalTokens": 430,
+      "ms": 10672
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1436,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 401,
+      "reasoningTokens": 400,
+      "totalTokens": 430,
+      "ms": 4075
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1288,
+      "contentChars": 29,
+      "finish": "length",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 400,
+      "reasoningTokens": 379,
+      "totalTokens": 430,
+      "ms": 9642
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "minimal",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 94,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 72,
+      "reasoningTokens": 0,
+      "totalTokens": 106,
+      "ms": 2956
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "minimal",
+      "http": 200,
+      "reasonChars": 11,
+      "contentChars": 105,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 80,
+      "reasoningTokens": 5,
+      "totalTokens": 111,
+      "ms": 4785
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "minimal",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 111,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 81,
+      "reasoningTokens": 0,
+      "totalTokens": 112,
+      "ms": 1819
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "none",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 105,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 76,
+      "reasoningTokens": 0,
+      "totalTokens": 108,
+      "ms": 2907
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "none",
+      "http": 200,
+      "reasonChars": 101,
+      "contentChars": 128,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 120,
+      "reasoningTokens": 29,
+      "totalTokens": 152,
+      "ms": 5416
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "none",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 166,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 116,
+      "reasoningTokens": 0,
+      "totalTokens": 147,
+      "ms": 5336
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 36,
+      "contentChars": 129,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 115,
+      "reasoningTokens": 21,
+      "totalTokens": 146,
+      "ms": 4225
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 19,
+      "contentChars": 112,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 96,
+      "reasoningTokens": 12,
+      "totalTokens": 129,
+      "ms": 3608
+    },
+    {
+      "id": "glm-5.3-flash",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 0,
+      "contentChars": 100,
+      "finish": "stop",
+      "echoModel": "glm-5.3-flash",
+      "streamErr": null,
+      "chunks": 70,
+      "reasoningTokens": 0,
+      "totalTokens": 106,
+      "ms": 3335
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 242,
+      "contentChars": 6,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 172,
+      "reasoningTokens": 165,
+      "totalTokens": 286,
+      "ms": 6886
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1126,
+      "contentChars": 47,
+      "finish": "length",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 394,
+      "reasoningTokens": 362,
+      "totalTokens": 501,
+      "ms": 16287
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "omit",
+      "http": 200,
+      "reasonChars": 1047,
+      "contentChars": 105,
+      "finish": "length",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 394,
+      "reasoningTokens": 322,
+      "totalTokens": 501,
+      "ms": 15754
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "minimal",
+      "http": 200,
+      "reasonChars": 112,
+      "contentChars": 35,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 112,
+      "reasoningTokens": 82,
+      "totalTokens": 227,
+      "ms": 19212
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "minimal",
+      "http": 200,
+      "reasonChars": 139,
+      "contentChars": 7,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 103,
+      "reasoningTokens": 95,
+      "totalTokens": 218,
+      "ms": 10109
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "minimal",
+      "http": 200,
+      "reasonChars": 167,
+      "contentChars": 7,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 120,
+      "reasoningTokens": 112,
+      "totalTokens": 235,
+      "ms": 6131
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "none",
+      "http": 200,
+      "reasonChars": 876,
+      "contentChars": 169,
+      "finish": "length",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 394,
+      "reasoningTokens": 279,
+      "totalTokens": 501,
+      "ms": 17528
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "none",
+      "http": 200,
+      "reasonChars": 749,
+      "contentChars": 134,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 330,
+      "reasoningTokens": 235,
+      "totalTokens": 444,
+      "ms": 19027
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "none",
+      "http": 200,
+      "reasonChars": 1140,
+      "contentChars": 0,
+      "finish": "length",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 399,
+      "reasoningTokens": 397,
+      "totalTokens": 501,
+      "ms": 13016
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 1,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 194,
+      "contentChars": 40,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 176,
+      "reasoningTokens": 141,
+      "totalTokens": 291,
+      "ms": 9566
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 2,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 69,
+      "contentChars": 71,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 94,
+      "reasoningTokens": 36,
+      "totalTokens": 209,
+      "ms": 8383
+    },
+    {
+      "id": "kimi-k2.8-preview",
+      "catalogReasoning": {
+        "canDisableThinking": true,
+        "defaultEffort": "high",
+        "summary": "auto",
+        "supportedEfforts": [
+          "low",
+          "high",
+          "max"
+        ]
+      },
+      "cli": true,
+      "rep": 3,
+      "level": "low",
+      "http": 200,
+      "reasonChars": 161,
+      "contentChars": 23,
+      "finish": "stop",
+      "echoModel": "kimi-k2.8-preview",
+      "streamErr": null,
+      "chunks": 133,
+      "reasoningTokens": 113,
+      "totalTokens": 248,
+      "ms": 12084
+    }
+  ]
+}

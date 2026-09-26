@@ -1,0 +1,40 @@
+{
+  "at": "2026-08-24T09:42:17.931Z",
+  "steps": {
+    "C_inline_doubao": {
+      "label": "C-inline-doubao",
+      "fn": "inline_chat",
+      "model": "Doubao-Seed-Code",
+      "status": 200,
+      "sseError": null,
+      "providerModel": null,
+      "textHead": "",
+      "ms": 356
+    },
+    "D_inline_nomodel": {
+      "label": "D-inline-nomodel",
+      "fn": "inline_chat",
+      "model": "(omitted)",
+      "status": 200,
+      "sseError": null,
+      "providerModel": null,
+      "textHead": "",
+      "ms": 436
+    },
+    "E_chatv3_glm53": {
+      "label": "E-chatv3-glm53",
+      "fn": "chat_v3",
+      "model": "glm-5.3",
+      "status": 200,
+      "sseError": null,
+      "providerModel": null,
+      "textHead": "\n我现在需要严格按照要求只回复“成功”两个字，直接输出就行。成功",
+      "ms": 1842
+    },
+    "F_remote_glm53": {
+      "ok": false,
+      "error": "trae remote create_session [404]: Not Found"
+    }
+  },
+  "verdict": "INLINE-RECOVERED: inline_chat 恢复服务（时变行为又翻转）"
+}

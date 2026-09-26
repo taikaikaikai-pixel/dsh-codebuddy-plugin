@@ -1,0 +1,49 @@
+{
+  "at": "2026-08-23T21:44:15.798Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "conversation_id": "probe-live",
+      "session_id": "probe-live",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "你好，请用一句话自我介绍。"
+            }
+          ]
+        }
+      ],
+      "model_name": "glm-5.3",
+      "is_custom_model": false,
+      "scene_params": "{}",
+      "request_seq": 1
+    }
+  },
+  "response": {
+    "status": 200,
+    "contentType": "text/event-stream",
+    "headers": {
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sun, 23 Aug 2026 21:44:15 GMT",
+      "eagleid": "7544534617875214556991406e",
+      "server": "Tengine",
+      "server-timing": "inner; dur=20, cdn-cache;desc=MISS,edge;dur=19,origin;dur=64",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "timing-allow-origin": "*",
+      "transfer-encoding": "chunked",
+      "via": "cache62.l2nu20-17[64,0], ens-dynamic6.cn8729[83,0]",
+      "x-tt-logid": "202608240544158D3EF0A513A8697A8537",
+      "x-tt-timestamp": "1787521455.762",
+      "x-tt-trace-host": "018676c8b73937823bbf7715100573b82fdc66b6711add2e83515d6564f5693b8a7d1b9f9628e3db2aabfdc2dd8f0fa5323c59053f9b31d7c0f9b3f5713d1e63782f29052d6215861521b86be97f9062e8caabf7fe365a982398581490c5ca8e00",
+      "x-tt-trace-id": "00-2608240544158D3EF0A513A8697A8537-143810628F0FD900-00",
+      "x-tt-trace-tag": "id=03;cdn-cache=miss;type=dyn"
+    },
+    "bodyHead": "event:error\ndata:{\"code\":2001,\"message\":\"[LLMUtilsChat.resolveByUsage] function is empty, cannot resolve model by usage=\",\"extra\":null}\n\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+    "bodyBytes": 179
+  }
+}

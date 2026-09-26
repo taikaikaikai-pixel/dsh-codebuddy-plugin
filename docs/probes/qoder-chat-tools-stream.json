@@ -1,0 +1,36 @@
+{
+  "request": {
+    "model": "auto",
+    "stream": true,
+    "messages": [
+      {
+        "role": "user",
+        "content": "现在几点了？必须调用工具查询。"
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_current_time",
+          "description": "查询指定时区当前时间",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "timezone": {
+                "type": "string",
+                "description": "IANA 时区"
+              }
+            },
+            "required": [
+              "timezone"
+            ]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto"
+  },
+  "status": 404,
+  "body": ""
+}

@@ -1,5 +1,5 @@
 /**
- * dsh-codebuddy-plugin
+ * dsh-tap — composition root.
  *
  * Three layers:
  *
@@ -8,16 +8,27 @@
  *    chat path shares this module's credential resolution), the default
  *    model on `agent-default-model`, the provider pins on the `web` row,
  *    and the entry-list `insert` that makes the loader run this module at all.
- * 2. This module — runtime registration: backs dsh's stock `web_search` /
- *    `web_fetch` tools with the CodeBuddy gateway's own /agenttool endpoints,
- *    and runs a loopback stream bridge for tools that need classic
- *    non-streaming OpenAI JSON (the gateway is stream-only, error 11101).
- *    The bridge owns ALL credential resolution (OAuth or API key) — callers
- *    (llm-pi-ai's chat path included) send a sentinel Authorization the
- *    bridge replaces per request. It also meters every billed request
- *    (`usage.credit` + cache counters → ~/.dsh/codebuddy-plugin-usage.json)
- *    for the settings card's live usage section.
+ * 2. This module — composition + runtime registration. The provider-agnostic
+ *    machinery lives in core/ (json-store / rotation / usage-meter / bridge);
+ *    every CodeBuddy gateway fact lives in providers/codebuddy/ (headers,
+ *    error codes, OAuth flow, catalog/quota dialect, agenttool, images) —
+ *    adjudicated per-field by docs/rules/*.md. This file wires them together:
+ *    backs dsh's stock `web_search` / `web_fetch` tools with the gateway's
+ *    /agenttool endpoints, and runs the loopback stream bridge for tools that
+ *    need classic non-streaming OpenAI JSON (the gateway is stream-only,
+ *    error 11101). The bridge owns ALL credential resolution (OAuth or API
+ *    key) — callers (llm-pi-ai's chat path included) send a sentinel
+ *    Authorization the bridge replaces per request. It also meters every
+ *    billed request (usage.credit + cache counters →
+ *    ~/.dsh/codebuddy-plugin-usage.json) for the settings card.
  * 3. lib/client.js — browser half: a settings card in Settings → 插件配置.
+ *
+ * 官方缝使用说明（红线：能用 ctx.credentials / ctx.llm / ctx.web 的地方不自建）：
+ * - ctx.web：已用（搜索/抓取后端经 registerSearchProvider/registerFetchProvider）。
+ * - ctx.credentials：不能用——主聊天经 patch 指向本地桥，pi-ai 侧只认静态哨兵
+ *   Authorization（机制见 docs/pitfalls.md #11）；每请求的多 Key 轮询/冷却/failover
+ *   与 OAuth 刷新必须在桥内完成，宿主凭据缝无法覆盖这条路径，故凭据解析自建于此。
+ * - ctx.llm：未用——桥是传输层代理不是模型提供方，模型清单走 cordis.patch.yml。
  *
  * Config surface (Settings → 插件配置 → CodeBuddy, file-backed in
  * ~/.dsh/codebuddy-plugin.json): login mode (multiple API keys with an
@@ -33,24 +44,47 @@
  *   via the refresh token with a single-flight lock.
  */
 
-import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from 'node:fs'
+import { chmodSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join, dirname } from 'node:path'
-import { createServer } from 'node:http'
-import { createHash } from 'node:crypto'
+import { join, dirname, isAbsolute, normalize, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import z from '@deepseek-ai/schemastery'
 
-export const name = 'dsh-codebuddy-plugin'
+import { readJson, writeJson, writeTextAtomic, resolveEnvKey } from './core/json-store.js'
+import { KeyRotator } from './core/rotation.js'
+import { createUsageMeter } from './core/usage-meter.js'
+import { createBridge } from './core/bridge.js'
+import { createCodeBuddyProvider } from './providers/codebuddy/index.js'
+import { CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/codebuddy/errors.js'
+import { createTraeProvider } from './providers/trae/index.js'
+import { TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/trae/errors.js'
+import { PROVIDER_ID_RE, createOpenAICompatProvider } from './providers/openai-compat.js'
+import { QODER_CLIENT_ID } from './providers/qoder/oauth.js'
+import { createQoderProvider } from './providers/qoder/index.js'
+import { applyQoderContextVariant } from './providers/qoder/catalog.js'
+import { scanLocalCredentials, readImportCredential } from './local-scan.js'
+import { createHostConfigLayer } from './host-config.js'
+import arkProvider from './providers/ark/index.js'
+import bailianProvider from './providers/bailian/index.js'
+import deepseekProvider from './providers/deepseek/index.js'
+import bigmodelProvider from './providers/bigmodel/index.js'
+import moonshotProvider from './providers/moonshot/index.js'
+import openrouterProvider from './providers/openrouter/index.js'
+import qwenProvider from './providers/qwen/index.js'
+
+export const name = 'dsh-tap'
 
 /** web providers via ctx.web; the settings route rides ctx.webServer when present. */
 export const inject = ['web']
 
 const DSH_HOME = process.env.DSH_HOME ?? join(homedir(), '.dsh')
-export const SETTINGS_PATH = join(DSH_HOME, 'codebuddy-plugin.json')
-export const AUTH_PATH = join(DSH_HOME, 'codebuddy-plugin-auth.json')
+const SETTINGS_PATH = join(DSH_HOME, 'codebuddy-plugin.json')
+const AUTH_PATH = join(DSH_HOME, 'codebuddy-plugin-auth.json')
+const TRAE_AUTH_PATH = join(DSH_HOME, 'trae-plugin-auth.json')
+const QODER_AUTH_PATH = join(DSH_HOME, 'qoder-plugin-auth.json')
 const DSH_SETTINGS_PATH = join(DSH_HOME, 'settings.yaml')
+const DSH_CREDENTIALS_PATH = join(DSH_HOME, '.credentials.yaml')
 const PATCH_FILE = join(dirname(fileURLToPath(import.meta.url)), 'cordis.patch.yml')
 
 /**
@@ -77,6 +111,45 @@ export const Config = z.object({
   imageGenEnabled: z.boolean().default(true),
   imageGenModel: z.string().default('hunyuan-image-v3.0-art'),
   keyCooldownMs: z.number().step(100).min(100).default(60000),
+  // G3 估算档：api-key 模式下用户手填的总额度（credit），卡片显示
+  // 「手填总额 − 本插件计量累计」并标注"估算"；0 = 未设置。OAuth 模式不用
+  // （真实数值来自 /billing/meter/get-user-resource，quota-signals.md R-Q7）。
+  quotaTotalManual: z.number().min(0).default(0),
+  // G8 逐模型思考强度：{ [modelId]: 档位名 }。桥出站对未显式携带
+  // reasoning_effort 的请求按静态清单的 reasoningEfforts 表注入线值；
+  // off 的线值是 null（= 省略参数）或无表模型/非法档位都不注入。
+  effortByModel: z.dict(z.string(), z.string()).default({}),
+  // ---- TraeWork CN（Trae 订阅额度通道，v0.8.x）----
+  // 默认关闭：开启后同步本机 state.vscdb 模型目录到选择器（providers.trae），
+  // 并在 traeBridgePort 上启动 OpenAI↔Trae 翻译网关；主聊天经 patch 的 trae
+  // 路由（哨兵 Authorization）走该网关消耗 Trae 订阅额度。
+  traeEnabled: z.boolean().default(false),
+  traeAuthBaseURL: z.string().default('https://api.trae.cn'),
+  traeChatBaseURL: z.string().default('https://trae-api-cn.mchost.guru'),
+  traeLoginHost: z.string().default('https://www.trae.cn'),
+  traeBridgePort: z.number().step(1).min(1).max(65535).default(3902),
+  // 聊天传输：inline（默认，llm_utils_chat+inline_chat——模型恒为账户默认，
+  // 原生 tools，耗 IDE 额度池）| remote（chat_sessions——模型选择真实生效，
+  // 不支持 tools，每请求起云端沙箱 agent，耗 work 额度池）。2026-08-24 探测
+  // 定论见 providers/trae/remote.js 文件头。
+  traeChatTransport: z.union([z.const('inline'), z.const('remote')]).default('inline'),
+  // inline 上游首字节护栏（毫秒）：边缘/本地代理"收下请求不回应"时快速失败，
+  // 避免用户请求无限挂死（2026-08-24 故障取证 docs/diagnosis-trae-3003.md §8）。
+  // 仅约束响应头到达前；SSE 长流在头到达后不受影响。
+  upstreamFirstByteTimeoutMs: z.number().step(1).min(1000).max(300_000).default(45_000),
+  // ---- Qoder CN（第三上游）----
+  // 设备流事实见 providers/qoder/oauth.js 文件头与 docs/goals/qoder-cn-provider-design.md。
+  // 默认关闭：开启后同步网关模型目录到选择器（providers.qoder），并在
+  // qoderBridgePort 上起 OpenAI↔COSY 翻译网关；主聊天经镜像路由（哨兵
+  // Authorization）走该网关。qoderClientId 默认官方 prod 值，一般无需改。
+  qoderLoginHost: z.string().default('https://qoder.cn'),
+  qoderOpenapiBaseURL: z.string().default('https://openapi.qoder.com.cn'),
+  qoderClientId: z.string().default(QODER_CLIENT_ID),
+  qoderEnabled: z.boolean().default(false),
+  qoderBridgePort: z.number().step(1).min(1).max(65535).default(3903),
+  // infer 节点（region 发现服务实测 CN = gateway.qoder.com.cn；不是
+  // api2-v2.qoder.sh——那个 OpenAI 面对本通道 401，见设计文档 §5b 修订）。
+  qoderInferBaseURL: z.string().default('https://gateway.qoder.com.cn'),
 })
 
 /** Field metadata the settings card renders (labels live client-side). */
@@ -97,7 +170,44 @@ export const SETTINGS_FIELDS = [
   { key: 'imageGenEnabled', kind: 'boolean' },
   { key: 'imageGenModel', kind: 'text' },
   { key: 'keyCooldownMs', kind: 'number' },
+  { key: 'quotaTotalManual', kind: 'number' },
+  { key: 'effortByModel', kind: 'dict' },
+  { key: 'traeEnabled', kind: 'boolean' },
+  { key: 'traeAuthBaseURL', kind: 'text' },
+  { key: 'traeChatBaseURL', kind: 'text' },
+  { key: 'traeLoginHost', kind: 'text' },
+  { key: 'traeBridgePort', kind: 'number' },
+  { key: 'traeChatTransport', kind: 'select' },
+  { key: 'upstreamFirstByteTimeoutMs', kind: 'number' },
+  { key: 'qoderLoginHost', kind: 'text' },
+  { key: 'qoderOpenapiBaseURL', kind: 'text' },
+  { key: 'qoderClientId', kind: 'text' },
+  { key: 'qoderEnabled', kind: 'boolean' },
+  { key: 'qoderBridgePort', kind: 'number' },
+  { key: 'qoderInferBaseURL', kind: 'text' },
 ]
+
+/**
+ * Hostnames that count as "this machine" for the local-only HTTP surfaces
+ * (bridge Host gate, settings-route guard, plaintext-http baseURLs).
+ * `::1` (bare) is accepted for raw Host values; a URL-parsed IPv6 hostname
+ * keeps its brackets (`[::1]`).
+ */
+const LOOPBACK_HOSTNAMES = new Set(['127.0.0.1', 'localhost', '::1', '[::1]'])
+
+/** Parse a Host header (may carry a port) into a bare hostname, or null. */
+function hostHeaderHostname(host) {
+  try {
+    return new URL(`http://${host}`).hostname
+  } catch {
+    return null
+  }
+}
+
+/** True when the URL hostname is loopback (plaintext http allowance). */
+function isLoopbackHostname(hostname) {
+  return LOOPBACK_HOSTNAMES.has(hostname)
+}
 
 /** Validate a baseURL candidate before it can reach a provider. */
 function validateBaseURL(value) {
@@ -107,23 +217,17 @@ function validateBaseURL(value) {
   } catch {
     throw new Error('baseURL 必须是绝对 http(s) 地址')
   }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+  if (parsed.protocol === 'https:') return
+  if (parsed.protocol !== 'http:') {
     throw new Error('baseURL 必须使用 http 或 https')
   }
-}
-
-function readJson(path) {
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8'))
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
-  } catch {
-    return {}
+  // 安全审计 [29]：明文 http 仅限回环——本插件的本地桥都绑 127.0.0.1；
+  // 指向远程明文端点会把 Bearer 凭据裸奔上网络。https 恒可。
+  if (!isLoopbackHostname(parsed.hostname)) {
+    throw new Error(
+      `baseURL 明文 http 仅允许回环地址（127.0.0.1/localhost/::1），收到 ${parsed.hostname}——远程上游必须使用 https`,
+    )
   }
-}
-
-function writeJson(path, value) {
-  mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, JSON.stringify(value, null, 2) + '\n')
 }
 
 const readFileLayer = () => readJson(SETTINGS_PATH)
@@ -154,21 +258,157 @@ function readStaticModels() {
 function readModelState() {
   const layer = readFileLayer()
   const state = layer.modelState
-  if (!state || typeof state !== 'object') return { disabled: {}, extra: {} }
+  if (!state || typeof state !== 'object') return { disabled: {}, extra: {}, overrides: {} }
   return {
     disabled: state.disabled && typeof state.disabled === 'object' && !Array.isArray(state.disabled)
       ? state.disabled : {},
     extra: state.extra && typeof state.extra === 'object' && !Array.isArray(state.extra)
       ? state.extra : {},
+    // G5：每模型上下文/输出上限覆盖值 { [id]: { contextWindow?, maxTokens? } }。
+    overrides: state.overrides && typeof state.overrides === 'object' && !Array.isArray(state.overrides)
+      ? state.overrides : {},
+  }
+}
+
+/**
+ * 安全审计 [22]：POST 供给的模型 id 会成为对象键（state.extra/overrides[id]）
+ * 并镜像进 settings.yaml 的映射键。Object.prototype 关键段一律拒收——
+ * `extra['__proto__'] = <object>` 是真实原型污染写入；含这些关键段的
+ * “子路径”形式（a.constructor、x[__proto__] 等）同样拒绝。
+ */
+function assertSafeModelId(id) {
+  const unsafe = /(?:^|[.[\]])+(?:__proto__|constructor|prototype)(?:$|[.[\]])+/.test(id)
+  if (unsafe) {
+    throw new Error(`非法模型 id（保留键 ${JSON.stringify(id)} 拒绝写入）`)
   }
 }
 
 /** Effective models = static base + enabled catalog extras − disabled ids. */
-export function computeEffectiveModels() {
-  const { disabled, extra } = readModelState()
+/**
+ * G4 动态目录：启动时（及设置卡手动刷新）从 /v3/config 同步的模型清单。
+ * null = 未同步或同步失败（离线兜底 = 静态清单，computeEffectiveModels 回落）。
+ * 实例状态：模块作用域每插件实例一份（踩坑 #20 纪律同 rotator/meter）。
+ */
+let dynamicCatalog = null // { profiles: [...], fetchedAt, count }
+
+/**
+ * 思考档位的规范顺序（选择器/卡片展示用；pi-ai 自己按 THINKING_LEVELS 排，
+ * 目录声明的键序不必与之一致）。
+ */
+const EFFORT_TIER_ORDER = ['off', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']
+const effortRank = (level) => {
+  const i = EFFORT_TIER_ORDER.indexOf(level)
+  return i === -1 ? EFFORT_TIER_ORDER.length : i
+}
+
+/**
+ * 目录声明的"关思考"线值——**实测为 null（没有这样的拼写）**，故
+ * `canDisableThinking:true` 的模型不出 off 档（不臆造线值）。依据
+ * docs/probes/codebuddy-efforts-{disable,offconfirm}-2026-09-22.json：
+ * 这类模型**省略参数照常思考**（与 defaultEffort 一致），显式
+ * off/disabled/auto 被 200 接受但推理量不变，minimal/none 跨模型不一致
+ * （glm-5.3-flash≈0 / kimi-k2.8-preview≈140，基线≈1k）。哪天定论了真正的
+ * 关思考线值，把这里改成该拼写即可（表里会自动多出 off 档）。
+ */
+const CATALOG_OFF_WIRE = null
+
+/**
+ * 目录思考强度声明 → 档位表（键 = 档位名，值 = 出站线值；null = 省略参数）。
+ * 只有带 `supportedEfforts` 的新形态声明才产出表——legacy 形态
+ * （{"effort":"high"}）只声明默认档，不构成能力清单，档位表继续由
+ * cordis.patch.yml 静态清单提供（合并优先级见 computeBaseModels）。
+ */
+function catalogReasoningEfforts(m) {
+  const supported = Array.isArray(m?.supportedEfforts)
+    ? m.supportedEfforts.filter((s) => typeof s === 'string' && s)
+    : []
+  if (!supported.length) return null
+  const table = {}
+  if (m.canDisableThinking === true && CATALOG_OFF_WIRE) table.off = CATALOG_OFF_WIRE
+  for (const level of [...supported].sort((a, b) => effortRank(a) - effortRank(b))) table[level] = level
+  return table
+}
+
+/** 目录条目 → 模型 profile（尺寸/图像来自目录；思考档位表见上）。 */
+function catalogToProfile(m) {
+  const p = { id: m.id, name: typeof m.name === 'string' && m.name ? m.name : m.id }
+  if (m.maxInputTokens != null) p.contextWindow = m.maxInputTokens
+  if (m.maxOutputTokens != null) p.maxTokens = m.maxOutputTokens
+  if (m.images === true) p.input = ['text', 'image']
+  const efforts = catalogReasoningEfforts(m)
+  if (efforts) p.reasoningEfforts = efforts
+  return p
+}
+
+/**
+ * 某模型可用的档位表 = 基清单（静态清单 ∪ 动态目录）里的 reasoningEfforts。
+ * 目录声明优先（computeBaseModels 的展开顺序），静态表兜底。
+ * 缓存以 dynamicCatalog 引用为键（每次同步换新；静态清单运行期不变）。
+ */
+let effortTableCache = null
+function effortTableFor(model) {
+  if (!effortTableCache || effortTableCache.source !== dynamicCatalog) {
+    const map = new Map()
+    for (const m of computeBaseModels()) {
+      if (m.reasoningEfforts && typeof m.reasoningEfforts === 'object') map.set(m.id, m.reasoningEfforts)
+    }
+    effortTableCache = { source: dynamicCatalog, map }
+  }
+  return effortTableCache.map.get(model) ?? null
+}
+
+/** 档位名 → 展示用清单：过滤掉"off 但线值为空"（那是省略参数 = 默认态）。 */
+function effortTiersFor(model) {
+  const table = effortTableFor(model)
+  if (!table) return []
+  return Object.entries(table)
+    .filter(([level, wire]) => (level === 'off' ? typeof wire === 'string' && wire : true))
+    .map(([level]) => level)
+    .sort((a, b) => effortRank(a) - effortRank(b))
+}
+
+/**
+ * G8：模型当前该注入的 reasoning_effort 线值。文件层的 effortByModel 只存
+ * 档位名，线值查该模型的档位表（静态 reasoningEfforts ∪ 目录声明）——
+ * off 的线值可能是 null（= 省略参数，不注入），也可能是显式"关思考"拼写；
+ * 无表模型/非法档位同样不注入（UI 之外的写入路径不会把脏档位送上线）。
+ */
+function effortWireFor(model) {
+  const level = Config({ ...readFileLayer() }).effortByModel[model]
+  if (!level) return undefined
+  const wire = effortTableFor(model)?.[level]
+  return typeof wire === 'string' && wire ? wire : undefined
+}
+
+/**
+ * 动态基清单 = 目录 ∪ 静态：目录条目刷新同名静态条目的名称/尺寸/图像能力
+ * （静态的 reasoningEfforts 档位表保留——目录没有该信息）；纯静态 id 保留
+ * （目录与可路由性三方互斥，routing.md R-R3：deepseek-v3 不在目录但可用，
+ * 而 agent-default-model 钉的正是它——盲从目录会把默认模型弄丢）。
+ */
+function computeBaseModels() {
+  if (!dynamicCatalog) return readStaticModels()
+  const staticById = new Map(readStaticModels().map((m) => [m.id, m]))
+  const seen = new Set()
+  const list = []
+  for (const p of dynamicCatalog.profiles) {
+    if (seen.has(p.id)) continue
+    seen.add(p.id)
+    const st = staticById.get(p.id)
+    // p（目录）不含 reasoningEfforts 键，展开不会覆盖静态档位表。
+    list.push(st ? { ...st, ...p } : p)
+  }
+  for (const m of readStaticModels()) {
+    if (!seen.has(m.id)) list.push(m)
+  }
+  return list
+}
+
+function computeEffectiveModels() {
+  const { disabled, extra, overrides } = readModelState()
   const ids = new Set()
   const list = []
-  for (const m of readStaticModels()) {
+  for (const m of computeBaseModels()) {
     if (disabled[m.id]) continue
     ids.add(m.id)
     list.push(m)
@@ -178,181 +418,381 @@ export function computeEffectiveModels() {
     ids.add(id)
     list.push({ ...profile, id })
   }
-  return list
+  // G5：应用每模型覆盖值（contextWindow/maxTokens），覆盖随镜像即时生效。
+  return list.map((m) => {
+    const o = overrides[m.id]
+    if (!o) return m
+    return {
+      ...m,
+      ...(o.contextWindow != null ? { contextWindow: o.contextWindow } : null),
+      ...(o.maxTokens != null ? { maxTokens: o.maxTokens } : null),
+    }
+  })
 }
 
 /**
- * Mirror the effective model list into ~/.dsh/settings.yaml under
- * llm-pi-ai.providers.codebuddy.models (the settings-driven override over the
- * patch layer). Uses a comment-preserving YAML document edit. When the state
- * is pristine (nothing disabled, no extras) the override is REMOVED instead —
- * a stale settings list would shadow future patch updates.
+ * 宿主配置层通道（dsh 0.1.7 起 = Settings forms seam，写落 profile 的
+ * cordis.patch.yml；≤0.1.6 回退 ~/.dsh/settings.yaml 文档编辑）。
+ * 详见 host-config.js 的头注释——两代宿主的差异全部收在那一处。
  */
-export function syncModelsToDshSettings() {
-  let doc
+const hostConfig = createHostConfigLayer({
+  settingsPath: DSH_SETTINGS_PATH,
+  schema: Config,
+  log: (m) => process.stderr.write(`${m}\n`),
+})
+
+/**
+ * Mirror the effective model list into the host config layer under
+ * llm-pi-ai.providers.codebuddy.models (the user-layer override over the
+ * patch layer). dsh 0.1.7+ 走 Settings forms（volatile 字段，写 profile
+ * patch 即时生效）；旧宿主走注释保留的 settings.yaml 文档编辑。
+ * When the state is pristine (nothing disabled, no extras) AND no dynamic
+ * catalog is synced, the override is REMOVED instead — a stale override would
+ * shadow future patch updates. G4: a synced dynamic catalog intentionally keeps
+ * the override non-pristine (the list follows the gateway, refreshed every boot).
+ */
+async function syncModelsToDshSettings() {
   try {
-    doc = YAML.parseDocument(readFileSync(DSH_SETTINGS_PATH, 'utf8'))
-  } catch {
-    doc = new YAML.Document()
+    const state = readModelState()
+    const pristine = Object.keys(state.disabled).length === 0
+      && Object.keys(state.extra).length === 0
+      && Object.keys(state.overrides ?? {}).length === 0
+      && dynamicCatalog == null
+    const path = ['providers', 'codebuddy', 'models']
+    if (pristine) return await hostConfig.applyOps([{ op: 'unset', path }])
+    const next = computeEffectiveModels()
+    // Defensive (0.8.7): an empty effective list must never be mirrored —
+    // llm-pi-ai (dsh 0.1.1-rc.2+) rejects it at apply time. setModelEnabled
+    // guards the last model already; this fallback drops the override (the
+    // patch static list then serves) instead of poisoning the namespace.
+    if (next.length === 0) return await hostConfig.applyOps([{ op: 'unset', path }])
+    return await hostConfig.applyOps([{ op: 'set', path, value: next }])
+  } catch (err) {
+    process.stderr.write(`[dsh-tap] model mirror failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
   }
-  const state = readModelState()
-  const pristine = Object.keys(state.disabled).length === 0
-    && Object.keys(state.extra).length === 0
-  const path = ['llm-pi-ai', 'providers', 'codebuddy', 'models']
-  if (pristine) {
-    if (!doc.getIn(path)) return false
-    doc.deleteIn(path)
-    writeFileSync(DSH_SETTINGS_PATH, String(doc))
-    return true
-  }
-  const next = YAML.parse(YAML.stringify(computeEffectiveModels()))
-  const current = doc.getIn(path)
-  if (YAML.stringify(current ?? null) === YAML.stringify(next)) return false
-  doc.setIn(path, next)
-  writeFileSync(DSH_SETTINGS_PATH, String(doc))
-  return true
 }
 
 /** Apply one enable/disable toggle and sync the effective list. */
-function setModelEnabled({ id, enabled, profile }) {
+async function setModelEnabled({ id, enabled, profile }) {
   if (typeof id !== 'string' || !id.trim()) throw new Error('modelSetEnabled 需要 id')
+  assertSafeModelId(id)
   const layer = readFileLayer()
   const state = readModelState()
-  const isStatic = readStaticModels().some((m) => m.id === id)
+  // G4：基清单 = 静态 ∪ 动态目录。基清单内的模型启停只动 disabled 标记，
+  // 不写 extra（否则状态永远非纯净，且与动态基重复）。
+  const isBase = computeBaseModels().some((m) => m.id === id)
   if (enabled) {
     delete state.disabled[id]
-    if (!isStatic) {
+    if (!isBase) {
       if (!profile || typeof profile !== 'object') {
         throw new Error('启用目录新增模型需要 profile（来自模型列表条目）')
       }
       state.extra[id] = profile
     }
   } else {
-    // Static ids need an explicit disabled mark; a catalog extra simply
+    // Guard (0.8.7): disabling the LAST effective model would mirror an
+    // empty models list into settings.yaml, which llm-pi-ai (dsh 0.1.1-rc.2+)
+    // rejects at apply time — taking down the whole llm-pi-ai fiber and
+    // with it the main chat. Keep at least one servable model.
+    const effective = computeEffectiveModels()
+    if (effective.length <= 1 && effective.some((m) => m.id === id)) {
+      throw new Error('不能禁用最后一个模型：dsh 0.1.1-rc.2 起 llm-pi-ai 拒绝空模型清单（整域不可用）')
+    }
+    // Base ids need an explicit disabled mark; a catalog extra simply
     // drops out of the extras map — marking it disabled would keep the
     // state non-pristine (and the settings override) forever.
-    if (isStatic) state.disabled[id] = true
+    if (isBase) state.disabled[id] = true
     delete state.extra[id]
   }
   layer.modelState = state
   writeFileLayer(layer)
-  syncModelsToDshSettings()
+  await syncModelsToDshSettings()
   return state
 }
 
+/**
+ * G5：设置/清除单模型上下文与输出上限覆盖值。字段值为 null = 清除该字段
+ * 覆盖（回目录/静态基值）。覆盖值必须是正整数，且不得超过基清单（目录或
+ * 静态 profile）给定的该模型实际上限；基清单无尺寸信息时不设上限。
+ * 覆盖经 computeEffectiveModels 即时重铺 settings.yaml，下次请求生效。
+ */
+async function setModelLimits({ id, contextWindow, maxTokens }) {
+  if (typeof id !== 'string' || !id.trim()) throw new Error('modelSetLimits 需要 id')
+  assertSafeModelId(id)
+  const base = computeBaseModels().find((m) => m.id === id)
+    ?? readModelState().extra[id]
+    ?? null
+  const check = (v, ceiling, label) => {
+    if (!Number.isInteger(v) || v <= 0) throw new Error(`${label}必须是正整数`)
+    if (ceiling != null && v > ceiling) {
+      throw new Error(`${label}超出该模型实际上限 ${ceiling}`)
+    }
+    return v
+  }
+  const layer = readFileLayer()
+  const state = readModelState()
+  const o = { ...(state.overrides[id] || {}) }
+  if (contextWindow === null) delete o.contextWindow
+  else if (contextWindow !== undefined) o.contextWindow = check(contextWindow, base?.contextWindow, '上下文长度')
+  if (maxTokens === null) delete o.maxTokens
+  else if (maxTokens !== undefined) o.maxTokens = check(maxTokens, base?.maxTokens, '输出上限')
+  if (Object.keys(o).length) state.overrides[id] = o
+  else delete state.overrides[id]
+  layer.modelState = state
+  writeFileLayer(layer)
+  await syncModelsToDshSettings()
+  return state
+}
+
+/**
+ * G4：从 /v3/config 同步模型清单（启动自动 + 设置卡手动刷新共用，单飞）。
+ * 成功：dynamicCatalog 换新并重铺 settings.yaml 镜像（选择器跟网关走）。
+ * 失败：已有动态目录时保留（重铺它，选择器不掉模型）；否则回落静态清单
+ * 并按纯净态纪律清理镜像——任何失败都不让选择器变空。
+ */
+let modelSyncInFlight = null
+function syncModelsFromGateway(resolveNow) {
+  if (modelSyncInFlight) return modelSyncInFlight
+  modelSyncInFlight = (async () => {
+    try {
+      const catalog = await provider.catalog.fetchModelCatalog(resolveNow)
+      const profiles = catalog.models.map(catalogToProfile)
+      if (!profiles.length) throw new Error('网关目录为空（保持现有清单）')
+      dynamicCatalog = { profiles, fetchedAt: catalog.fetchedAt, count: profiles.length }
+      await syncModelsToDshSettings()
+      return { ok: true, fetchedAt: dynamicCatalog.fetchedAt, count: dynamicCatalog.count, source: 'gateway' }
+    } catch (err) {
+      // kept=false → dynamicCatalog 为 null，sync 落静态清单 + 纯净态纪律；
+      // kept=true  → 以旧动态目录重铺（选择器不因一次拉取失败掉模型）。
+      const kept = dynamicCatalog != null
+      await syncModelsToDshSettings()
+      return { ok: false, error: err?.message ?? String(err), kept, source: kept ? 'gateway-stale' : 'static' }
+    } finally {
+      modelSyncInFlight = null
+    }
+  })()
+  return modelSyncInFlight
+}
+
 // ---------------------------------------------------------------------------
-// Credential resolution: api-key list > legacy env ref, or OAuth with refresh.
+// G6 多服务商注册表：key 型 OpenAI 兼容上游（preset 见下 + 自定义）。
+// 机制与官方 CustomProviderCard 相同：provider 块写**宿主配置层**的
+// llm-pi-ai.providers.<id>（dsh 0.1.7+ = Settings forms seam，落 profile 的
+// cordis.patch.yml 即时生效；≤0.1.6 = ~/.dsh/settings.yaml，chokidar 热加载），
+// 选路细节全在 host-config.js；key 写 ~/.dsh/.credentials.yaml 的
+// <ID>_API_KEY（凭据缝每请求活解析，免重启）。
+// 插件文件层只存登记册 managedProviders（无 secret）；key 永不回传浏览器。
+// 纪律：写块前必过 validateProviderSpec + 实测 GET /models——llm-pi-ai
+// 命名空间解析失败会整域冻结（dsh-settings publish catch），坏块连坐
+// codebuddy 路由。
+// ---------------------------------------------------------------------------
+
+const PROVIDER_PRESETS = [
+  arkProvider, bailianProvider,
+  deepseekProvider, bigmodelProvider, moonshotProvider, openrouterProvider,
+  qwenProvider,
+]
+
+function readManagedProviders() {
+  const list = readFileLayer().managedProviders
+  if (!Array.isArray(list)) return []
+  return list.filter((p) => p && typeof p.id === 'string' && typeof p.keyRef === 'string')
+}
+
+function writeManagedProviders(list) {
+  const layer = readFileLayer()
+  if (list.length) layer.managedProviders = list
+  else delete layer.managedProviders
+  writeFileLayer(layer)
+}
+
+/** ~/.dsh/.credentials.yaml 写入（dsh-credentials-local 要求文件 0600）。 */
+function writeCredential(ref, value) {
+  let doc
+  try {
+    doc = YAML.parseDocument(readFileSync(DSH_CREDENTIALS_PATH, 'utf8'))
+  } catch {
+    doc = new YAML.Document()
+  }
+  doc.set(ref, value)
+  writeTextAtomic(DSH_CREDENTIALS_PATH, String(doc), 0o600)
+  chmodSync(DSH_CREDENTIALS_PATH, 0o600)
+}
+
+function deleteCredential(ref) {
+  let doc
+  try {
+    doc = YAML.parseDocument(readFileSync(DSH_CREDENTIALS_PATH, 'utf8'))
+  } catch {
+    return
+  }
+  if (doc.delete(ref)) writeTextAtomic(DSH_CREDENTIALS_PATH, String(doc), 0o600)
+}
+
+/** 有效 provider 块视图（登记册对账/重名判定）。新宿主读 describe 的 live value。 */
+function readSettingsProviders() {
+  return hostConfig.readProviders()
+}
+
+/**
+ * 写/删（block=null）llm-pi-ai.providers.<id>。
+ * dsh 0.1.7+ = Settings forms 的 mutate（落 profile patch，即时生效）；
+ * ≤0.1.6 = 注释保留的 settings.yaml 文档编辑。
+ */
+async function writeProviderBlock(id, block) {
+  try {
+    return await hostConfig.applyOps(block === null
+      ? [{ op: 'unset', path: ['providers', id] }]
+      : [{ op: 'set', path: ['providers', id], value: block }])
+  } catch (err) {
+    process.stderr.write(`[dsh-tap] provider block write failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
+  }
+}
+
+/**
+ * 添加上游：本地校验 → 实测 GET /models（验 key 兼拿目录）→ 写凭据 →
+ * 写 provider 块 → 登记。任何一步失败都不留半成品（凭据先写是因为
+ * 可服务性校验不查凭据，块后写保证热加载看到的是完整配置）。
+ */
+async function addExtraProvider({ preset, id, baseURL, displayName, apiKey }) {
+  let adapter
+  let presetId = null
+  if (preset != null) {
+    const found = PROVIDER_PRESETS.find((p) => p.id === preset)
+    if (!found) throw new Error(`未知 preset：${preset}`)
+    adapter = found
+    presetId = found.id
+  } else {
+    if (typeof id !== 'string' || !PROVIDER_ID_RE.test(id)) {
+      throw new Error('id 必须小写字母/数字开头（小写字母、数字、中划线）')
+    }
+    if (typeof baseURL !== 'string') throw new Error('需要 baseURL')
+    validateBaseURL(baseURL)
+    adapter = createOpenAICompatProvider({
+      id,
+      displayName: typeof displayName === 'string' && displayName.trim() ? displayName.trim() : id,
+      baseURL: baseURL.replace(/\/+$/, ''),
+    })
+  }
+  const pid = adapter.id
+  if (pid === 'codebuddy') throw new Error('codebuddy 是本插件保留路由')
+  if (readManagedProviders().some((p) => p.id === pid)) throw new Error(`${pid} 已在注册表里`)
+  if (readSettingsProviders()[pid]) throw new Error(`宿主配置层已存在 ${pid} 提供商（先手动清理或换 id）`)
+  if (typeof apiKey !== 'string' || !apiKey.trim()) throw new Error('需要 API Key')
+  const key = apiKey.trim()
+  // 实测目录：key/URL 错误在这里就炸，不落任何文件。
+  const models = await adapter.fetchModels(key)
+  writeCredential(adapter.keyRef, key)
+  await writeProviderBlock(pid, adapter.modelBlock(models))
+  writeManagedProviders(readManagedProviders().concat([{
+    id: pid,
+    displayName: adapter.displayName,
+    baseURL: adapter.baseURL,
+    preset: presetId ?? 'custom',
+    keyRef: adapter.keyRef,
+    addedAt: Date.now(),
+  }]))
+  return { id: pid, modelCount: models.length }
+}
+
+/** 移除上游：删块 + 删凭据 + 出登记册（外部已删块也照常清理）。 */
+async function removeExtraProvider(id) {
+  const entry = readManagedProviders().find((p) => p.id === id)
+  if (!entry) throw new Error(`${id} 不在注册表里`)
+  await writeProviderBlock(id, null)
+  deleteCredential(entry.keyRef)
+  writeManagedProviders(readManagedProviders().filter((p) => p.id !== id))
+}
+
+/** 重新拉取模型清单（key 从 .credentials.yaml 活解析）。 */
+async function refreshExtraProviderModels(id) {
+  const entry = readManagedProviders().find((p) => p.id === id)
+  if (!entry) throw new Error(`${id} 不在注册表里`)
+  const key = resolveEnvKey(entry.keyRef, DSH_CREDENTIALS_PATH)
+  if (!key) throw new Error(`凭据 ${entry.keyRef} 不在环境或 .credentials.yaml 里`)
+  // preset 条目带上 fallbackModels/staticCatalog：无 /models 或静态目录的
+  // 上游刷新 = 探针复验 + 沿用兜底/内置清单。
+  const presetHit = PROVIDER_PRESETS.find((p) => p.id === entry.preset)
+  const adapter = createOpenAICompatProvider({ ...entry, fallbackModels: presetHit?.fallbackModels, staticCatalog: presetHit?.staticCatalog })
+  const models = await adapter.fetchModels(key)
+  await writeProviderBlock(id, adapter.modelBlock(models))
+  return { id, modelCount: models.length }
+}
+
+/** 设置卡视图：登记册 × settings.yaml 实况对账（外部删块 → 自动出册）。 */
+function extraProvidersView() {
+  const providers = readSettingsProviders()
+  const stale = []
+  const list = []
+  for (const p of readManagedProviders()) {
+    const block = providers[p.id]
+    if (!block) {
+      stale.push(p.id)
+      continue
+    }
+    const key = resolveEnvKey(p.keyRef, DSH_CREDENTIALS_PATH)
+    list.push({
+      id: p.id,
+      displayName: typeof block.displayName === 'string' ? block.displayName : p.displayName,
+      baseURL: typeof block.baseURL === 'string' ? block.baseURL : p.baseURL,
+      preset: p.preset,
+      keyRef: p.keyRef,
+      maskedKey: key ? maskKey(key) : null,
+      modelCount: Array.isArray(block.models) ? block.models.length : 0,
+    })
+  }
+  if (stale.length) {
+    writeManagedProviders(readManagedProviders().filter((p) => !stale.includes(p.id)))
+  }
+  return list
+}
+
+// ---------------------------------------------------------------------------
+// Credential composition (core rotation engine + provider OAuth flow).
+// api-key mode: apiKeys list > legacy env ref; ≥2 keys round-robin with
+// cooldown failover. OAuth: single candidate, never rotated.
 // ---------------------------------------------------------------------------
 
 /** Legacy single-key path: process env, then ~/.dsh/.credentials.yaml. */
-function resolveEnvKey(envName) {
-  if (envName && process.env[envName]) return process.env[envName]
-  const credFile = join(DSH_HOME, '.credentials.yaml')
-  if (envName && existsSync(credFile)) {
-    const m = readFileSync(credFile, 'utf8').match(
-      new RegExp(`^\\s*${envName}:\\s*["']?([^"'\\s]+)["']?\\s*$`, 'm'),
-    )
-    if (m) return m[1]
-  }
-  return null
-}
+const envKey = (envName) => resolveEnvKey(envName, join(DSH_HOME, '.credentials.yaml'))
 
-let refreshInFlight = null
+const rotator = new KeyRotator()
+const meter = createUsageMeter({ path: join(DSH_HOME, 'codebuddy-plugin-usage.json') })
 
 /**
- * Exchange the refresh token for a fresh access token (single-flight).
- * Mirrors the official CLI: Bearer <old access>, X-Refresh-Token, plus the
- * identity headers. Returns the updated auth store or undefined on refusal.
+ * The provider instance for this module instance. `withKeyRotation` /
+ * `resolveCredential` are late-bound arrows over the hoisted function
+ * declarations below — the provider needs them for outbound calls, they need
+ * the provider for the OAuth branch; this is the deliberate cycle break.
  */
-async function refreshOAuth(baseURL, auth) {
-  if (refreshInFlight) return refreshInFlight
-  refreshInFlight = (async () => {
-    try {
-      const headers = {
-        Accept: 'application/json',
-        Authorization: `Bearer ${auth.accessToken}`,
-        'X-Domain': auth.domain ?? '',
-        'X-Refresh-Token': auth.refreshToken ?? '',
-      }
-      if (auth.uid) headers['X-User-Id'] = auth.uid
-      if (auth.enterpriseId) headers['X-Enterprise-Id'] = auth.enterpriseId
-      const res = await fetch(`${baseURL}/v2/plugin/auth/token/refresh`, {
-        method: 'POST',
-        headers,
-      })
-      if (!res.ok) return undefined
-      const body = await res.json().catch(() => null)
-      if (!body || body.code !== 0 || !body.data?.accessToken) return undefined
-      const store = readAuth()
-      store.auth = {
-        accessToken: body.data.accessToken,
-        expiresAt: Date.now() + (body.data.expiresIn ?? 3600) * 1000,
-        refreshToken: body.data.refreshToken ?? auth.refreshToken,
-        refreshExpiresAt: body.data.refreshExpiresAt != null
-          ? Date.now() + body.data.refreshExpiresAt * 1000
-          : auth.refreshExpiresAt,
-        domain: body.data.domain ?? auth.domain,
-      }
-      writeAuth(store)
-      return store.auth
-    } catch {
-      return undefined
-    } finally {
-      refreshInFlight = null
-    }
-  })()
-  return refreshInFlight
-}
+const provider = createCodeBuddyProvider({
+  meter,
+  readAuth,
+  writeAuth,
+  envKey,
+  withKeyRotation: (settings, attempt) => withKeyRotation(settings, attempt),
+  resolveCredential: (settings) => resolveCredential(settings),
+  effortWireFor: (model) => effortWireFor(model),
+  dshHome: DSH_HOME,
+})
 
-/** OAuth branch, extracted so both resolution flavors share it. */
-async function resolveOAuthCredential(s) {
-  const store = readAuth()
-  const auth = store.auth
-  if (!auth?.accessToken) return null
-  let current = auth
-  if (auth.expiresAt && auth.expiresAt - Date.now() < 60_000) {
-    const refreshed = await refreshOAuth(s.baseURL, auth)
-    if (!refreshed) return null
-    current = refreshed
-  }
-  const headers = { 'X-Domain': current.domain ?? '' }
-  if (store.account?.uid) headers['X-User-Id'] = store.account.uid
-  if (store.account?.enterpriseId) headers['X-Enterprise-Id'] = store.account.enterpriseId
-  return { authorization: `Bearer ${current.accessToken}`, headers }
-}
+export const makeSearchProvider = provider.makeSearchProvider
 
 /**
- * Resolve the credential every outbound call should use.
+ * Resolve the credential every outbound call should use (no rotation —
+ * the catalog/quota dialect endpoints authenticate by raw key).
  * @returns {Promise<{authorization: string, headers: Record<string,string>} | null>}
  */
 async function resolveCredential(settings) {
   const s = settings()
-  if (s.authMode === 'oauth') return resolveOAuthCredential(s)
+  if (s.authMode === 'oauth') return provider.oauth.resolveOAuthCredential(s)
   // api-key mode: the active list entry wins, legacy env ref is the fallback.
   const active = s.apiKeys.find((k) => k.name === s.activeApiKey)
-  const key = active?.key ?? resolveEnvKey(s.apiKeyEnv)
+  const key = active?.key ?? envKey(s.apiKeyEnv)
   if (!key) return null
   return { authorization: `Bearer ${key}`, headers: {} }
-}
-
-// ---------------------------------------------------------------------------
-// Multi-key rotation (api-key mode only; the OAuth path is never rotated):
-// requests round-robin across apiKeys, a key that answers 401/403/429/5xx or
-// drops the connection is cooled for keyCooldownMs, then rejoins on its own.
-// ---------------------------------------------------------------------------
-
-/** keyName → cooldown-until epoch ms. */
-const keyCooldowns = new Map()
-/** Round-robin cursor over the apiKeys list (advanced once per request). */
-let keyCursor = 0
-
-function markKeyCooling(name, cooldownMs) {
-  keyCooldowns.set(name, Date.now() + cooldownMs)
-}
-
-/** Statuses that fail a request over to the next key. */
-function isKeyFailoverStatus(status) {
-  return status === 401 || status === 403 || status === 429 || status >= 500
 }
 
 /**
@@ -361,1186 +801,314 @@ function isKeyFailoverStatus(status) {
  * api-key: 0 keys → the legacy env ref (single candidate); 1 key → that key;
  * ≥2 keys → every key exactly once, non-cooling first in round-robin order,
  * cooling keys appended as last resort.
- * @returns {Promise<Array<{authorization: string, headers: Record<string,string>, keyName: string|null}>>}
  */
 async function resolveCredentialCandidates(settings) {
   const s = settings()
   if (s.authMode === 'oauth') {
-    const single = await resolveOAuthCredential(s)
+    const single = await provider.oauth.resolveOAuthCredential(s)
     return single ? [{ ...single, keyName: null }] : []
   }
   const keys = (s.apiKeys ?? []).filter((k) => typeof k?.key === 'string' && k.key.length > 0)
   if (keys.length === 0) {
-    const env = resolveEnvKey(s.apiKeyEnv)
+    const env = envKey(s.apiKeyEnv)
     return env ? [{ authorization: `Bearer ${env}`, headers: {}, keyName: null }] : []
   }
   if (keys.length === 1) {
     return [{ authorization: `Bearer ${keys[0].key}`, headers: {}, keyName: keys[0].name }]
   }
-  const now = Date.now()
-  const n = keys.length
-  const start = keyCursor % n
-  keyCursor = (keyCursor + 1) % n
-  const ordered = Array.from({ length: n }, (_, i) => keys[(start + i) % n])
-  const fresh = ordered.filter((k) => (keyCooldowns.get(k.name) ?? 0) <= now)
-  const cooling = ordered.filter((k) => (keyCooldowns.get(k.name) ?? 0) > now)
-  return [...fresh, ...cooling].map((k) => ({
-    authorization: `Bearer ${k.key}`,
-    headers: {},
-    keyName: k.name,
-  }))
+  return rotator.ordered(keys)
 }
 
 /**
- * Run `attempt(cred)` over the rotation candidates with failover: a key that
- * throws a network error or answers a failover status is cooled and the next
- * candidate takes over. The LAST candidate's response/error is returned
- * as-is (no retry). `attempt(cred)` must return the fetch Response (body
- * unconsumed on error statuses — the helper cancels it before failing over)
- * or throw. Resolves { cred, res, err }: exactly one of res/err is set.
+ * Run `attempt(cred)` over the rotation candidates with failover (see
+ * core/rotation.js). The empty-candidate error is flagged
+ * `credentialUnavailable` so the bridge/provider layers recognize it without
+ * matching on the message text (the text itself stays for users).
  */
 async function withKeyRotation(settings, attempt) {
   const candidates = await resolveCredentialCandidates(settings)
-  if (candidates.length === 0) return { cred: null, res: null, err: new Error('CodeBuddy 凭据不可用（检查插件配置卡的登录设置）') }
-  const cooldownMs = settings().keyCooldownMs
-  let lastErr = null
-  for (let i = 0; i < candidates.length; i++) {
-    const cred = candidates[i]
-    const isLast = i === candidates.length - 1
-    let res
-    try {
-      res = await attempt(cred)
-    } catch (err) {
-      // Caller-side aborts are not the key's fault: no cooldown, no failover.
-      if (err?.name === 'AbortError') return { cred, res: null, err }
-      // Network-layer failure: cool the key and fail over (unless last).
-      if (cred.keyName) markKeyCooling(cred.keyName, cooldownMs)
-      lastErr = err
-      if (isLast) return { cred, res: null, err }
-      continue
-    }
-    if (!isLast && isKeyFailoverStatus(res.status)) {
-      if (cred.keyName) markKeyCooling(cred.keyName, cooldownMs)
-      await res.body?.cancel().catch(() => {})
-      lastErr = null
-      continue
-    }
-    return { cred, res, err: null }
-  }
-  return { cred: null, res: null, err: lastErr }
-}
-
-// ---------------------------------------------------------------------------
-// Browser-OAuth handshake (flow verified against the official CLI):
-//   POST /v2/plugin/auth/state?platform=CLI  → {state, authUrl}
-//   GET  /v2/plugin/auth/token?state=…       → code 11217 pending, 0 → tokens
-//   GET  /v2/plugin/login/account?state=…    → {uid, nickname, …}
-// ---------------------------------------------------------------------------
-
-const AUTH_PENDING_CODE = 11217
-const LOGIN_TIMEOUT_MS = 10 * 60 * 1000
-const LOGIN_POLL_INTERVAL_MS = 1000
-
-const oauthPending = { active: false, authUrl: '', error: '' }
-
-async function startOAuth(baseURL) {
-  if (oauthPending.active) return { started: true, authUrl: oauthPending.authUrl }
-  const res = await fetch(`${baseURL}/v2/plugin/auth/state?platform=CLI`, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'X-No-Authorization': 'true',
-      'X-No-User-Id': 'true',
-      'X-No-Enterprise-Id': 'true',
-    },
+  const emptyError = new Error(CREDENTIAL_UNAVAILABLE_MESSAGE)
+  emptyError.credentialUnavailable = true
+  return rotator.run(candidates, attempt, {
+    cooldownMs: settings().keyCooldownMs,
+    emptyError,
   })
-  if (!res.ok) throw new Error(`auth state HTTP ${res.status}`)
-  const body = await res.json()
-  if (body.code !== 0 || !body.data?.state) {
-    throw new Error(`auth state error: ${body.code} ${body.msg ?? ''}`)
-  }
-  const { state, authUrl } = body.data
-  oauthPending.active = true
-  oauthPending.authUrl = authUrl
-  oauthPending.error = ''
-
-  const poll = async () => {
-    const deadline = Date.now() + LOGIN_TIMEOUT_MS
-    try {
-      while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, LOGIN_POLL_INTERVAL_MS))
-        let response
-        try {
-          response = await fetch(`${baseURL}/v2/plugin/auth/token?state=${encodeURIComponent(state)}`, {
-            headers: { Accept: 'application/json', 'X-No-Authorization': 'true' },
-          })
-        } catch {
-          continue
-        }
-        if (!response.ok) continue
-        const body = await response.json().catch(() => null)
-        if (!body) continue
-        if (body.code === AUTH_PENDING_CODE) continue
-        if (body.code !== 0 || !body.data?.accessToken) {
-          oauthPending.error = `登录失败：${body.code} ${body.msg ?? ''}`
-          return
-        }
-        const token = body.data
-        // Fetch the account facts before persisting.
-        let account = {}
-        try {
-          const accRes = await fetch(`${baseURL}/v2/plugin/login/account?state=${encodeURIComponent(state)}`, {
-            headers: {
-              Accept: 'application/json',
-              Authorization: `Bearer ${token.accessToken}`,
-              'X-No-User-Id': 'true',
-              'X-No-Enterprise-Id': 'true',
-              'X-Domain': token.domain ?? '',
-            },
-          })
-          const accBody = await accRes.json().catch(() => null)
-          if (accBody?.code === 0 && accBody.data) account = accBody.data
-        } catch {
-          // account facts are best-effort; tokens alone still work
-        }
-        writeAuth({
-          auth: {
-            accessToken: token.accessToken,
-            expiresAt: Date.now() + (token.expiresIn ?? 3600) * 1000,
-            refreshToken: token.refreshToken,
-            refreshExpiresAt: token.refreshExpiresAt != null
-              ? Date.now() + token.refreshExpiresAt * 1000
-              : undefined,
-            domain: token.domain,
-          },
-          account,
-        })
-        return
-      }
-      oauthPending.error = '登录超时（10 分钟未完成）'
-    } finally {
-      oauthPending.active = false
-    }
-  }
-  poll()
-  return { started: true, authUrl }
-}
-
-/** OAuth view for the card — tokens never leave the host. */
-function oauthStatus() {
-  const store = readAuth()
-  const auth = store.auth
-  return {
-    pending: oauthPending.active,
-    authUrl: oauthPending.active ? oauthPending.authUrl : '',
-    error: oauthPending.error,
-    signedIn: Boolean(auth?.accessToken),
-    account: store.account?.nickname ? {
-      nickname: store.account.nickname,
-      uid: store.account.uid,
-      enterpriseName: store.account.enterpriseName ?? '',
-    } : null,
-    accessTokenExpiresAt: auth?.expiresAt ?? null,
-  }
 }
 
 // ---------------------------------------------------------------------------
-// Gateway clients: agenttool providers + the stream bridge.
+// TraeWork CN 通道（v0.8.x）：第二上游 = OAuth 订阅额度 + 私有协议翻译网关。
+// 凭据只有 OAuth 一支（Trae 订阅跟账号走）；设备密钥自持（providers/trae/
+// oauth.js）。模型目录来自本机 state.vscdb（提取器纯函数复用），镜像进
+// settings.yaml 的 llm-pi-ai.providers.trae.models——patch 层只带路由不带
+// 模型，清单永远由镜像独占（无"陈旧遮蔽"问题，纯净态=删镜像路径）。
 // ---------------------------------------------------------------------------
 
-// /agenttool rejected the /v2 client UA with error 12403 ("check ua"); it
-// expects the CLI's own UA shape (verified from @tencent-ai/codebuddy-code).
-const USER_AGENT = 'CLI/unknown CodeBuddy/2.136.0'
-const CLIENT_HEADERS = {
-  'User-Agent': USER_AGENT,
-  'X-IDE-Type': 'CLI',
-  'X-IDE-Name': 'CLI',
-  'X-IDE-Version': '2.133.1',
-  'X-Product-Version': '2.133.1',
-  'X-Requested-With': 'XMLHttpRequest',
-  'X-Private-Data': 'false',
-}
+const readTraeAuth = () => readJson(TRAE_AUTH_PATH)
+const writeTraeAuth = (v) => writeJson(TRAE_AUTH_PATH, v)
 
-async function callAgentTool(settings, path, payload, signal) {
-  const { res, err } = await withKeyRotation(settings, (cred) => fetch(`${settings().baseURL}${path}`, {
-    method: 'POST',
-    signal,
-    headers: {
-      Authorization: cred.authorization,
-      ...cred.headers,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'User-Agent': USER_AGENT,
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    body: JSON.stringify(payload),
-  }))
-  if (err) {
-    if (err.message === 'CodeBuddy 凭据不可用（检查插件配置卡的登录设置）') throw err
-    if (signal?.aborted) throw err
-    // undici hides the real reason in err.cause (ECONNRESET, terminated,
-    // certificate errors …) — a bare "fetch failed" is undebuggable.
-    const causes = []
-    for (let e = err; e; e = e.cause) causes.push(e.code ?? e.message ?? String(e))
-    throw new Error(`CodeBuddy agenttool ${path} network error: ${causes.join(' ← ')}`)
-  }
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    // The gateway answers errors as JSON with code/msg — surface both.
-    let codeMsg = ''
-    try { const j = JSON.parse(body); if (j?.code != null) codeMsg = ` code ${j.code}: ${j.msg ?? ''}` } catch { /* not JSON */ }
-    throw new Error(`CodeBuddy agenttool ${path} HTTP ${res.status}${codeMsg || ` ${body.slice(0, 160)}`}`)
-  }
-  const data = await res.json().catch(() => null)
-  if (data && data.code != null && data.code !== 0) {
-    throw new Error(`CodeBuddy agenttool ${path} error ${data.code}: ${data.msg ?? ''}`)
-  }
-  return data
-}
+const traeRuntime = { running: false, port: null, lastError: null }
 
-/** Search backend: POST /agenttool/v1/search {query, type, max_results}. */
-export function makeSearchProvider(settings) {
-  return {
-    id: 'codebuddy',
-    available() {
-      return true // cheap check only; real failures surface per request
-    },
-    async search(request, signal) {
-      const s = settings()
-      const data = await callAgentTool(
-        settings,
-        '/agenttool/v1/search',
-        {
-          query: request.query,
-          type: 'text2text',
-          max_results: request.maxResults ?? s.searchMaxResults,
-        },
-        signal,
-      )
-      if (data?.usage) recordUsage({ ts: Date.now(), kind: 'search', model: null, usage: data.usage })
-      const results = Array.isArray(data?.results) ? data.results : []
-      return {
-        sources: results
-          .filter((r) => typeof r?.url === 'string' && r.url.length > 0)
-          .map((r) => ({
-            url: r.url,
-            ...(typeof r.title === 'string' && r.title.length > 0 ? { title: r.title } : {}),
-            ...(typeof r.snippet === 'string' && r.snippet.length > 0 ? { snippet: r.snippet } : {}),
-          })),
-        // The seam itself truncates to maxResults; we already passed it
-        // through as max_results, so nothing extra was cut here.
-        truncated: false,
-      }
-    },
-  }
-}
-
-/**
- * Fetch backend: POST /agenttool/v1/webfetch {url} → {url, title, content}.
- * The endpoint answers with decoded content or a JSON error, never the
- * target page's HTTP status, so a successful call reports statusCode 200
- * and the body is classified as text.
- */
-export function makeFetchProvider(settings) {
-  return {
-    id: 'codebuddy',
-    available() {
-      return true
-    },
-    async fetch(request, signal) {
-      const s = settings()
-      const data = await callAgentTool(settings, '/agenttool/v1/webfetch', { url: request.url }, signal)
-      if (data?.usage) recordUsage({ ts: Date.now(), kind: 'fetch', model: null, usage: data.usage })
-      const content = typeof data?.content === 'string' ? data.content : ''
-      const cap = s.fetchBodyCap
-      return {
-        url: typeof data?.url === 'string' && data.url.length > 0 ? data.url : request.url,
-        statusCode: 200,
-        body: { kind: 'text', content: content.slice(0, cap) },
-        truncated: content.length > cap,
-      }
-    },
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Image generation tool: registers dsh-native `image_generate` on the tools
-// seam, backed by the gateway's POST /v2/images/generations (probed working
-// 2026-08-17 with hunyuan-image-v3.0-art, ~22s/image; samples in
-// docs/probes/). The gateway has a /v2/3d/generations route shape but no 3D
-// model is routed for this account (14407 "route config not found") — 3D is
-// documented as unavailable, not integrated.
-// ---------------------------------------------------------------------------
-
-/** Where generated images land: the session workspace when the agent loop
- * exposes one, else ~/.dsh/generated-images. */
-function resolveImageSaveDir(exec) {
-  const a = exec?.agent
-  const dir = a?.workspaceDir ?? a?.workDir ?? a?.cwd ?? a?.workspace?.dir ?? null
-  return dir && typeof dir === 'string'
-    ? join(dir, 'generated-images')
-    : join(DSH_HOME, 'generated-images')
-}
-
-/** dsh tool definition for `image_generate` (plain object — the plugin must
- * not import @deepseek-ai/*; the registry accepts the structural shape). */
-export function makeImageGenTool(settings) {
-  return {
-    name: 'image_generate',
-    description:
-      'Generate an image from a text prompt (CodeBuddy hunyuan-image backend). ' +
-      'Returns the local file path of the saved image and its source URL. ' +
-      'Takes ~20s per image; one image per call.',
-    // Schemas here are FINAL JSON Schema (the registry's defineTool shorthand
-    // converter is not importable from a plugin — see AGENTS.md 踩坑 #9).
-    parameters: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        prompt: { type: 'string', description: 'What to draw; be concrete about subject, style, and colors.' },
-        size: { type: 'string', description: 'WxH pixels, e.g. "1024x1024" (default), "768x768", "1280x720".' },
-      },
-      required: ['prompt'],
-    },
-    output: {
-      schema: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          path: { type: 'string' },
-          url: { type: 'string' },
-          model: { type: 'string' },
-          ms: { type: 'number' },
-        },
-        required: ['path', 'model', 'ms'],
-      },
-      render: (_args, value) => [{
-        type: 'text',
-        text: `image generated (${value.model}, ${(value.ms / 1000).toFixed(1)}s)\nsaved: ${value.path}\nsource: ${value.url ?? 'n/a'}`,
-      }],
-    },
-    // Generation measured at ~22s end-to-end; keep headroom for slow runs.
-    timeoutMs: 180_000,
-    isConcurrencySafe: () => true,
-    async execute(args, exec) {
-      const prompt = typeof args?.prompt === 'string' ? args.prompt.trim() : ''
-      if (!prompt) throw new Error('image_generate: prompt 不能为空')
-      const size = typeof args?.size === 'string' && /^\d{3,4}x\d{3,4}$/.test(args.size)
-        ? args.size : '1024x1024'
-      const s = settings()
-      const t0 = Date.now()
-      const { res, err } = await withKeyRotation(settings, (cred) => fetch(`${s.baseURL}/v2/images/generations`, {
-        method: 'POST',
-        signal: exec?.signal,
-        headers: {
-          Authorization: cred.authorization,
-          ...cred.headers,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({ model: s.imageGenModel, prompt, size, n: 1 }),
-      }))
-      if (err) {
-        if (err.message === 'CodeBuddy 凭据不可用（检查插件配置卡的登录设置）') throw err
-        if (exec?.signal?.aborted) throw err
-        const causes = []
-        for (let e = err; e; e = e.cause) causes.push(e.code ?? e.message ?? String(e))
-        throw new Error(`image_generate network error: ${causes.join(' ← ')}`)
-      }
-      const body = await res.json().catch(() => null)
-      if (!res.ok) {
-        throw new Error(`image_generate HTTP ${res.status}${body?.code != null ? ` code ${body.code}: ${body.msg ?? ''}` : ''}`)
-      }
-      if (!body || body.code !== 0) {
-        throw new Error(`image_generate error ${body?.code ?? '?'}: ${body?.msg ?? 'empty or malformed response'}`)
-      }
-      if (body.data?.usage) recordUsage({ ts: t0, kind: 'image', model: s.imageGenModel, usage: body.data.usage })
-      const item = body.data?.data?.[0]
-      const url = typeof item?.url === 'string' ? item.url : null
-      const b64 = typeof item?.b64_json === 'string' ? item.b64_json : null
-      if (!url && !b64) throw new Error('image_generate: 响应既无 url 也无 b64_json')
-      const dir = resolveImageSaveDir(exec)
-      mkdirSync(dir, { recursive: true })
-      const file = join(dir, `image-${t0}.png`)
-      if (url) {
-        const img = await fetch(url, { signal: exec?.signal })
-        if (!img.ok) throw new Error(`image_generate: 下载图片失败 HTTP ${img.status}`)
-        writeFileSync(file, Buffer.from(await img.arrayBuffer()))
-      } else {
-        writeFileSync(file, Buffer.from(b64, 'base64'))
-      }
-      return { path: file, url: url ?? undefined, model: s.imageGenModel, ms: Date.now() - t0 }
-    },
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Optional request forensics: point CODEBUDDY_BRIDGE_LOG at a JSONL path and
-// the bridge records every inbound request (body/header hashes, header traits,
-// prompt markers) and its outcome (status, queue wait, timings, upstream usage
-// incl. the gateway's cache counters). Off by default. Payload text is never
-// logged — only hashes and a short preview, enough to classify duplicates.
-// Diagnostics must never break the bridge: every failure is swallowed.
-// ---------------------------------------------------------------------------
-
-let bridgeLogSeq = 0
-let bridgeDumpSeq = 0
-
-function bridgeLog(record) {
-  const path = process.env.CODEBUDDY_BRIDGE_LOG
-  if (!path) return
+/** Trae 凭据候选（OAuth 单候选，无轮换）；空候选错误带稳定标记。 */
+async function withTraeCredentials(settingsFn, attempt) {
+  const s = settingsFn()
+  let cred = null
   try {
-    appendFileSync(path, JSON.stringify(record) + '\n')
-  } catch {
-    // logging is best-effort
+    cred = await traeProvider.oauth.resolveTraeCredential(s)
+  } catch (err) {
+    const e = new Error(`trae credential error: ${err?.message ?? err}`)
+    e.credentialUnavailable = true
+    return { cred: null, res: null, err: e }
+  }
+  if (!cred) {
+    const e = new Error(TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE)
+    e.credentialUnavailable = true
+    return { cred: null, res: null, err: e }
+  }
+  try {
+    const res = await attempt(cred)
+    return { cred, res, err: null }
+  } catch (err) {
+    return { cred, res: null, err }
   }
 }
 
-/** Full-body dump for cache/prompt forensics: CODEBUDDY_BRIDGE_DUMP=<dir>
- * writes every inbound chat body verbatim (req-NNNN-<ts>.json). Unlike the
- * hash-only log this is plaintext by design — local-only, opt-in. */
-function bridgeDump(rawBody) {
-  const dir = process.env.CODEBUDDY_BRIDGE_DUMP
-  if (!dir) return
-  try {
-    mkdirSync(dir, { recursive: true })
-    writeFileSync(join(dir, `req-${String(++bridgeDumpSeq).padStart(4, '0')}-${Date.now()}.json`), rawBody)
-  } catch {
-    // dump is best-effort
-  }
-}
+// 迟绑定：网关需要"本代"的 settings 解析函数；apply() 每代重设该模块级
+// 变量（与 codebuddy 侧 hoisted 函数的迟绑定等价，形态不同只因工厂签名）。
+let traeSettingsFn = () => ({ traeEnabled: false })
+
+const traeProvider = createTraeProvider({
+  readAuth: readTraeAuth,
+  writeAuth: writeTraeAuth,
+  settings: () => traeSettingsFn(),
+  withCredentials: (attempt) => withTraeCredentials(() => traeSettingsFn(), attempt),
+  meter,
+  runtime: traeRuntime,
+  forensics: { logPath: () => process.env.TRAE_BRIDGE_LOG },
+})
 
 // ---------------------------------------------------------------------------
-// Usage metering. The gateway reports per-request billing (`usage.credit`)
-// plus cache counters on every chat SSE stream; the bridge scans for it
-// ALWAYS (not only under CODEBUDDY_BRIDGE_LOG) and accumulates into
-// ~/.dsh/codebuddy-plugin-usage.json so the settings card can show live
-// consumption. Tokens/credits only — never message content. Metering must
-// never break the data path: every failure is swallowed, writes debounced.
+// Qoder CN 通道（2026-09-19 Phase 1 登录；2026-09-20 Phase 2 聊天面打通）：
+// 设备流 OAuth（凭据存 ~/.dsh/qoder-plugin-auth.json）+ COSY WASM 签名
+// （providers/qoder/cosy.js）+ 翻译网关（OpenAI↔COSY SSE 信封）+ 网关目录
+// 镜像 providers.qoder 整块（路由存在性管理，同 trae 踩坑 #25 纪律）。
 // ---------------------------------------------------------------------------
 
-const USAGE_PATH = join(DSH_HOME, 'codebuddy-plugin-usage.json')
-const USAGE_RECENT_CAP = 100
-const USAGE_DAYS_CAP = 31
-const USAGE_FLUSH_MS = 5000
-/** Two requests further apart than this belong to different (approximate) turns. */
-const TURN_GAP_MS = 45_000
+const readQoderAuth = () => readJson(QODER_AUTH_PATH)
+const writeQoderAuth = (v) => writeJson(QODER_AUTH_PATH, v)
 
-/** Local-day key (YYYY-MM-DD) — the display groups by the user's day. */
-function dayKey(ts) {
-  const d = new Date(ts)
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${mm}-${dd}`
-}
+const qoderRuntime = { running: false, port: null, lastError: null }
 
-function normalizeUsageStore(raw) {
-  const store = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
-  store.since = typeof store.since === 'number' ? store.since : Date.now()
-  store.totalCredit = typeof store.totalCredit === 'number' ? store.totalCredit : 0
-  store.totalRequests = typeof store.totalRequests === 'number' ? store.totalRequests : 0
-  store.days = store.days && typeof store.days === 'object' && !Array.isArray(store.days) ? store.days : {}
-  store.recent = Array.isArray(store.recent) ? store.recent.slice(-USAGE_RECENT_CAP) : []
-  return store
-}
+// 迟绑定：网关/目录需要"本代"的 settings 解析函数；apply() 每代重设。
+let qoderSettingsFn = () => ({ qoderEnabled: false })
 
-const usageStore = normalizeUsageStore(readJson(USAGE_PATH))
-let usageFlushTimer = null
+const qoderProvider = createQoderProvider({
+  readAuth: readQoderAuth,
+  writeAuth: writeQoderAuth,
+  settings: () => qoderSettingsFn(),
+  meter,
+  runtime: qoderRuntime,
+  forensics: { logPath: () => process.env.QODER_GATEWAY_LOG },
+  getModelPrefs: () => readQoderModelPrefs(),
+})
 
-function flushUsage() {
-  try {
-    writeJson(USAGE_PATH, usageStore)
-  } catch {
-    // persistence is best-effort
-  }
-}
-
-/** Debounced: a tool-loop burst produces one write, not one per request. */
-function scheduleUsageFlush() {
-  if (usageFlushTimer) return
-  usageFlushTimer = setTimeout(() => {
-    usageFlushTimer = null
-    flushUsage()
-  }, USAGE_FLUSH_MS)
-  usageFlushTimer.unref?.()
-}
-
-const roundCredit = (n) => Math.round(n * 10000) / 10000
-
-/**
- * Record one billed request. `usage` is the gateway's SSE usage object; only
- * requests that actually produced one are recorded (failed/error responses
- * carry no billing signal). kind: chat | title | compaction | image | search | fetch.
- */
-function recordUsage({ ts, kind, model, usage }) {
-  if (!usage || typeof usage !== 'object') return
-  try {
-    const credit = typeof usage.credit === 'number' && Number.isFinite(usage.credit) ? usage.credit : 0
-    const entry = {
-      ts,
-      kind,
-      model: typeof model === 'string' ? model : null,
-      prompt: usage.prompt_tokens ?? 0,
-      hit: usage.prompt_cache_hit_tokens ?? 0,
-      miss: usage.prompt_cache_miss_tokens ?? 0,
-      completion: usage.completion_tokens ?? 0,
-      credit,
-    }
-    usageStore.totalCredit = roundCredit(usageStore.totalCredit + credit)
-    usageStore.totalRequests += 1
-    const day = dayKey(ts)
-    const bucket = usageStore.days[day] ?? { credit: 0, requests: 0 }
-    bucket.credit = roundCredit(bucket.credit + credit)
-    bucket.requests += 1
-    usageStore.days[day] = bucket
-    const dayKeys = Object.keys(usageStore.days).sort()
-    while (dayKeys.length > USAGE_DAYS_CAP) delete usageStore.days[dayKeys.shift()]
-    usageStore.recent.push(entry)
-    if (usageStore.recent.length > USAGE_RECENT_CAP) {
-      usageStore.recent = usageStore.recent.slice(-USAGE_RECENT_CAP)
-    }
-    scheduleUsageFlush()
-  } catch {
-    // metering is best-effort
-  }
-}
-
-/**
- * Group recent requests into approximate turns: entries closer than
- * TURN_GAP_MS merge into one row (a title call lands in the turn that
- * triggered it; tool-loop steps are seconds apart by construction). The
- * bridge cannot see dsh's turn boundaries (no session ids on the wire), so
- * this is a disclosed approximation.
- */
-function groupTurns(recent) {
-  const turns = []
-  for (const r of recent) {
-    const last = turns[turns.length - 1]
-    if (last && r.ts - last.end <= TURN_GAP_MS) {
-      last.end = r.ts
-      last.requests += 1
-      last.credit = roundCredit(last.credit + r.credit)
-      last.prompt += r.prompt
-      last.hit += r.hit
-      last.miss += r.miss
-      if (r.model && !last.models.includes(r.model)) last.models.push(r.model)
-      if (!last.kinds.includes(r.kind)) last.kinds.push(r.kind)
-    } else {
-      turns.push({
-        start: r.ts,
-        end: r.ts,
-        requests: 1,
-        credit: r.credit,
-        prompt: r.prompt,
-        hit: r.hit,
-        miss: r.miss,
-        models: r.model ? [r.model] : [],
-        kinds: [r.kind],
-      })
-    }
-  }
-  return turns
-}
-
-/** The action:'usage' payload: totals + approximate turns + exact recent rows. */
-function buildUsageView() {
-  const today = usageStore.days[dayKey(Date.now())] ?? { credit: 0, requests: 0 }
+function readQoderModelState() {
+  const state = readFileLayer().qoderModelState
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return { disabled: {} }
   return {
-    since: usageStore.since,
-    totalCredit: usageStore.totalCredit,
-    totalRequests: usageStore.totalRequests,
-    today: { day: dayKey(Date.now()), credit: today.credit, requests: today.requests },
-    recent: usageStore.recent.slice(-20).reverse(),
-    turns: groupTurns(usageStore.recent).slice(-10).reverse(),
-    turnGapMs: TURN_GAP_MS,
+    disabled: state.disabled && typeof state.disabled === 'object' && !Array.isArray(state.disabled)
+      ? state.disabled : {},
   }
 }
 
-const sha16 = (text) => createHash('sha256').update(text).digest('hex').slice(0, 16)
+// 逐模型偏好：{ [id]: { effort?, contextVariant? } }，与 qoderModelState 并列的
+// 独立文件层键（其形状是 disabled 集合字典，与 prefs 记录不对称，故不扩它）。
+// 只存已设置的键、空记录不落盘（= 默认）。effort 档位拼写 off/low/medium/high/
+// max（cordis.patch.yml verified 表）；contextVariant 是目录 context_config 变体名，
+// 镜像时换成 contextWindow（applyQoderContextVariant）。
+const QODER_EFFORT_LEVELS = ['off', 'low', 'medium', 'high', 'max']
 
-/** Headers worth forensically recording; authorization is classified, never logged. */
-const LOG_HEADER_NAMES = [
-  'user-agent', 'content-type',
-  'x-conversation-id', 'x-session-id', 'session_id', 'x-client-request-id', 'x-session-affinity',
-  'x-ide-type', 'x-ide-name', 'x-ide-version', 'x-product-version',
-  'x-requested-with', 'x-private-data',
-]
-
-function pickLogHeaders(headers) {
+function readQoderModelPrefs() {
+  const raw = readFileLayer().qoderModelPrefs
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
   const out = {}
-  for (const name of LOG_HEADER_NAMES) {
-    const value = headers[name]
-    if (typeof value === 'string' && value.length > 0) out[name] = value
-  }
-  const auth = headers.authorization
-  if (typeof auth === 'string' && auth.length > 0) {
-    out.authorization = auth === 'Bearer dsh-codebuddy-bridge' ? 'sentinel' : 'caller-set'
+  for (const [id, v] of Object.entries(raw)) {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) continue
+    const rec = {}
+    if (typeof v.effort === 'string' && QODER_EFFORT_LEVELS.includes(v.effort)) rec.effort = v.effort
+    if (typeof v.contextVariant === 'string' && v.contextVariant) rec.contextVariant = v.contextVariant
+    if (Object.keys(rec).length) out[id] = rec
   }
   return out
 }
 
-/** Text of one chat message, whether content is a string or typed parts. */
-function messageText(message) {
-  if (!message || typeof message !== 'object') return ''
-  const content = message.content
-  if (typeof content === 'string') return content
-  if (!Array.isArray(content)) return ''
-  return content
-    .filter((p) => p?.type === 'text' && typeof p.text === 'string')
-    .map((p) => p.text)
-    .join('\n')
-}
-
-/**
- * Classify a chat payload by its prompt shape — dsh's auxiliary LLM calls
- * (session title, compaction) reuse the main route and are recognizable only
- * by their prompt text (verified against dsh-session-title-llm /
- * dsh-compaction-basic sources).
- */
-function detectPayloadMarker(messages) {
-  const first = messages[0]
-  if (first?.role === 'system'
-    && messageText(first).startsWith('Create a concise title for an AI coding-assistant session')) {
-    return 'session-title'
-  }
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i]?.role !== 'user') continue
-    if (messageText(messages[i]).startsWith('You are now acting as a compaction engine')) {
-      return 'compaction'
-    }
-    break
-  }
-  return null
-}
-
-/** Metering kind for a parsed chat payload: dsh's auxiliary calls (title,
- * compaction) get their own kinds so the usage view can tell them apart. */
-function chatUsageKind(payload) {
-  const marker = detectPayloadMarker(Array.isArray(payload?.messages) ? payload.messages : [])
-  return marker === 'session-title' ? 'title' : marker === 'compaction' ? 'compaction' : 'chat'
-}
-
-/** Hash-and-shape summary of a parsed chat payload (no message text logged). */
-function summarizeChatPayload(rawBody, payload) {
-  const messages = Array.isArray(payload.messages) ? payload.messages : []
-  const sysText = messages[0]?.role === 'system' ? messageText(messages[0]) : ''
-  let lastUserText = ''
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i]?.role === 'user') {
-      lastUserText = messageText(messages[i])
-      break
-    }
-  }
-  return {
-    model: typeof payload.model === 'string' ? payload.model : null,
-    stream: payload.stream === true,
-    msgs: messages.length,
-    bytes: rawBody.length,
-    bodySha: sha16(rawBody),
-    msgsSha: sha16(JSON.stringify(payload.messages ?? null)),
-    sysSha: sysText.length > 0 ? sha16(sysText) : null,
-    sysBytes: sysText.length,
-    lastUserSha: lastUserText.length > 0 ? sha16(lastUserText) : null,
-    lastUserPreview: lastUserText.replace(/\s+/g, ' ').slice(0, 60),
-    marker: detectPayloadMarker(messages),
-    maxTokens: payload.max_tokens ?? payload.max_completion_tokens ?? null,
-    reasoningEffort: payload.reasoning_effort ?? null,
-    tools: Array.isArray(payload.tools) ? payload.tools.length : 0,
-    promptCacheKey: typeof payload.prompt_cache_key === 'string' ? payload.prompt_cache_key : null,
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Stream bridge = a smart loopback proxy and the single credential owner:
-// llm-pi-ai's codebuddy route points here (cordis.patch.yml), so the main
-// chat path crosses it too. It passes any request path through to the
-// gateway, and on POST /chat/completions it can (a) inject the gateway's
-// session-attribution headers from the incoming session id, (b) cap
-// concurrent in-flight requests per session id (excess queue, FIFO), and
-// (c) aggregate the stream into classic JSON for non-streaming callers.
-// ---------------------------------------------------------------------------
-
-const SESSION_HEADER_SETS = {
-  openai: ['session_id', 'x-client-request-id', 'x-session-affinity'],
-  openrouter: ['x-session-id'],
-}
-
-/** Extract the session id from headers or a body hint, in precedence order. */
-function extractSessionId(headers, payload) {
-  const candidates = [
-    headers['x-conversation-id'],
-    headers['x-session-id'],
-    headers['session_id'],
-    headers['x-client-request-id'],
-    headers['x-session-affinity'],
-    payload?.conversation_id,
-    payload?.session_id,
-  ]
-  for (const c of candidates) {
-    if (typeof c === 'string' && c.trim().length > 0) return c.trim()
-  }
-  return null
-}
-
-/**
- * Per-session concurrency governor: per-id in-flight counters with FIFO
- * waiting queues. acquire() resolves once this call may proceed.
- */
-class SessionLimiter {
-  constructor() {
-    this.inflight = new Map()
-    this.queues = new Map()
-  }
-  acquire(id, limit) {
-    if (id === null) return Promise.resolve(() => {})
-    const running = this.inflight.get(id) ?? 0
-    if (running < limit) {
-      this.inflight.set(id, running + 1)
-      return Promise.resolve(() => this.release(id))
-    }
-    return new Promise((resolve) => {
-      const q = this.queues.get(id) ?? []
-      q.push(() => resolve(() => this.release(id)))
-      this.queues.set(id, q)
-    })
-  }
-  release(id) {
-    const running = (this.inflight.get(id) ?? 0) - 1
-    const q = this.queues.get(id) ?? []
-    // One release frees exactly one slot; hand it to the oldest waiter.
-    // The woken call inherits the slot, so the in-flight count is restored
-    // BEFORE its callback runs (it will release again when done).
-    const next = q.shift()
-    if (next !== undefined) {
-      this.inflight.set(id, running + 1)
-      next()
-    } else if (running <= 0) {
-      this.inflight.delete(id)
-    } else {
-      this.inflight.set(id, running)
-    }
-    if (q.length === 0) this.queues.delete(id)
-  }
-}
-
-const limiter = new SessionLimiter()
-
-/**
- * Aggregate one streamed upstream chat completion into a classic
- * chat.completion JSON for non-streaming callers (describe-image et al.).
- * The gateway is stream-only (error 11101), so the bridge always speaks
- * SSE upstream and translates back here.
- */
-async function aggregateChatCompletion(upstream, res, model, tap = null) {
-  if (!upstream.ok) {
-    const errBody = await upstream.text().catch(() => '')
-    res.writeHead(upstream.status, { 'Content-Type': 'application/json' })
-    res.end(errBody)
-    return
-  }
-  let content = ''
-  let finishReason = null
-  let buf = ''
-  const reader = upstream.body.getReader()
-  const decoder = new TextDecoder()
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    buf += decoder.decode(value, { stream: true })
-    let nl
-    while ((nl = buf.indexOf('\n')) >= 0) {
-      const line = buf.slice(0, nl).trim()
-      buf = buf.slice(nl + 1)
-      if (!line.startsWith('data:')) continue
-      const data = line.slice(5).trim()
-      if (data === '[DONE]') continue
-      try {
-        const chunk = JSON.parse(data)
-        if (tap && chunk.usage) tap.usage = chunk.usage
-        if (chunk.error || (chunk.code != null && chunk.code !== 0)) {
-          res.writeHead(502, { 'Content-Type': 'application/json' })
-          res.end(data)
-          return
-        }
-        const choice = chunk.choices?.[0]
-        if (choice?.delta?.content) content += choice.delta.content
-        if (choice?.finish_reason) finishReason = choice.finish_reason
-      } catch {
-        // incomplete JSON inside a complete SSE line — skip
-      }
-    }
-  }
-  res.writeHead(200, { 'Content-Type': 'application/json' })
-  res.end(
-    JSON.stringify({
-      id: 'codebuddy-stream-bridge',
-      object: 'chat.completion',
-      created: Math.floor(Date.now() / 1000),
-      model,
-      choices: [
-        {
-          index: 0,
-          message: { role: 'assistant', content },
-          finish_reason: finishReason ?? 'stop',
-        },
-      ],
-      usage: {},
-    }),
-  )
-}
-
-/**
- * Proxy one request upstream. Passes through non-chat paths verbatim; on
- * POST /chat/completions injects session headers (from the incoming session
- * id, unless the caller already set one) and gates per-session concurrency.
- * Inbound stream:true gets the SSE passed through; anything else (classic
- * non-streaming callers) gets the stream aggregated into a chat.completion
- * JSON. Credentials are always resolved host-side (withKeyRotation — api-key
- * mode rotates over apiKeys with failover; OAuth stays single-credential);
- * the caller's Authorization is never forwarded.
- */
-async function proxyUpstream(settings, req, res, rawBody) {
-  const s = settings()
-  const isChat = req.url?.endsWith('/chat/completions') === true
-  const logId = process.env.CODEBUDDY_BRIDGE_LOG ? ++bridgeLogSeq : 0
-  const t0 = Date.now()
-
-  // Parse the body only for chat (the session hint may live there); other
-  // paths pass the bytes through untouched.
-  let payload = null
-  if (isChat && rawBody.length > 0) {
-    try { payload = JSON.parse(rawBody) } catch { payload = null }
-  }
-
-  const sessionId = isChat ? extractSessionId(req.headers, payload) : null
-  if (logId) {
-    bridgeLog({
-      seq: logId,
-      dir: 'in',
-      ts: t0,
-      method: req.method,
-      path: req.url,
-      hdr: pickLogHeaders(req.headers),
-      chat: payload ? summarizeChatPayload(rawBody, payload) : null,
-      bytes: payload ? undefined : rawBody.length,
-      bodySha: payload ? undefined : sha16(rawBody),
-      sessionIn: sessionId,
-    })
-  }
-  if (isChat && payload !== null) bridgeDump(rawBody)
-  const outHeaders = {
-    'Content-Type': 'application/json',
-    ...CLIENT_HEADERS,
-  }
-  // Session attribution: per header, a value the caller already set wins;
-  // missing headers are filled with the extracted session id. (The bridge
-  // rebuilds the header set from scratch — an all-or-nothing "preserve"
-  // would silently DROP the caller's headers instead of forwarding them.)
-  const sessionOut = {}
-  if (isChat && s.sessionHeadersEnabled === true && sessionId !== null) {
-    const names = SESSION_HEADER_SETS[s.sessionHeaderFormat] ?? SESSION_HEADER_SETS.openai
-    for (const name of names) {
-      const existing = req.headers[name]
-      outHeaders[name] = typeof existing === 'string' && existing.length > 0 ? existing : sessionId
-      sessionOut[name] = outHeaders[name]
-    }
-  }
-
-  // Credentials resolve per request; with ≥2 api keys the candidates rotate
-  // (round-robin + cooldown failover), OAuth stays a single candidate.
-  let body = rawBody
-  // Only an explicit stream:true passes SSE through; classic non-streaming
-  // callers (stream:false or absent — the OpenAI default) get aggregation.
-  const aggregate = isChat && payload !== null && payload.stream !== true
-  if (isChat && payload !== null) {
-    payload.stream = true
-    // pi-ai serializes the system prompt as role "developer" for reasoning
-    // models (openai-completions.js: useDeveloperRole = model.reasoning &&
-    // compat.supportsDeveloperRole). Since 2026-08-18 ~16:24 UTC the
-    // gateway's content moderation rejects any chat payload containing a
-    // developer-role message with finish_reason=content_filter, while the
-    // byte-identical payload with role "system" passes (bisected against a
-    // CODEBUDDY_BRIDGE_DUMP capture). Rewrite developer -> system on the way
-    // out; the gateway treats them equivalently for instruction purposes.
-    if (Array.isArray(payload.messages)) {
-      for (const m of payload.messages) {
-        if (m?.role === 'developer') m.role = 'system'
-      }
-    }
-    body = JSON.stringify(payload)
-  }
-
-  /** Outcome record shared by every exit path below. */
-  const logOut = (extra) => {
-    if (!logId) return
-    bridgeLog({
-      seq: logId,
-      dir: 'out',
-      ts: Date.now(),
-      ms: Date.now() - t0,
-      ...(Object.keys(sessionOut).length > 0 ? { sessionOut } : {}),
-      ...extra,
-    })
-  }
-
-  // Concurrency gate only applies to chat (LLM calls).
-  const release = isChat ? await limiter.acquire(sessionId, s.maxConcurrentPerSession) : () => {}
-  const waitMs = Date.now() - t0
+/** 镜像 providers.qoder **整块**（路由存在性管理，同 trae 镜像纪律）。 */
+async function syncQoderModelsToDshSettings() {
   try {
-    const { cred, res: upstream0, err } = await withKeyRotation(settings, (c) => {
-      outHeaders.Authorization = c.authorization
-      for (const name of Object.keys(outHeaders)) {
-        // OAuth identity headers ride cred.headers; stale ones from a prior
-        // candidate must not leak across attempts.
-        if (name.startsWith('X-User-Id') || name.startsWith('X-Enterprise-Id') || name === 'X-Domain') delete outHeaders[name]
-      }
-      Object.assign(outHeaders, c.headers)
-      return fetch(`${s.baseURL}${req.url}`, {
-        method: req.method,
-        headers: outHeaders,
-        body: req.method === 'GET' || req.method === 'HEAD' ? undefined : body,
-      })
-    })
-    if (!cred || err) {
-      // No credential at all (503) or every candidate failed at the network
-      // layer (502) — the caller gets a classic JSON error either way.
-      const isCred = err?.message === 'CodeBuddy 凭据不可用（检查插件配置卡的登录设置）'
-      const status = isCred ? 503 : 502
-      res.writeHead(status, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: { message: isCred ? 'codebuddy credential unavailable' : `upstream unreachable: ${err?.message ?? 'unknown'}` } }))
-      logOut({ status, waitMs, err: err?.message ?? 'credential unavailable' })
-      return
+    const s = Config({ ...readFileLayer() })
+    const view = qoderProvider.catalogView()
+    const disabled = readQoderModelState().disabled
+    const prefs = readQoderModelPrefs()
+    const models = s.qoderEnabled === true && view
+      ? view.profiles
+          .filter((p) => !disabled[p.id])
+          .map((p) => applyQoderContextVariant(p, prefs[p.id]?.contextVariant, view.variants?.[p.id]))
+      : null
+    const path = ['providers', 'qoder']
+    if (!models || models.length === 0) return await hostConfig.applyOps([{ op: 'unset', path }])
+    const block = {
+      displayName: 'Qoder CN',
+      api: 'openai-completions',
+      baseURL: `http://127.0.0.1:${s.qoderBridgePort}/v1`,
+      headers: { Authorization: 'Bearer dsh-qoder-bridge' },
+      models: YAML.parse(YAML.stringify(models)),
     }
-    const upstream = upstream0
-    const ttfbMs = Date.now() - t0
-    if (aggregate) {
-      const tap = { usage: null }
-      await aggregateChatCompletion(upstream, res, payload.model, tap)
-      if (tap.usage) recordUsage({ ts: t0, kind: chatUsageKind(payload), model: payload.model ?? null, usage: tap.usage })
-      logOut({ status: upstream.status, waitMs, ttfbMs, aggregated: true, usage: tap?.usage ?? null, keyName: cred.keyName ?? undefined })
-      return
-    }
-    res.writeHead(upstream.status, { 'Content-Type': upstream.headers.get('content-type') ?? 'application/json' })
-    if (upstream.body === null) {
-      res.end()
-      logOut({ status: upstream.status, waitMs, ttfbMs })
-      return
-    }
-    // Tee chat SSE bytes through a line scanner that keeps the last usage
-    // object (the gateway repeats usage on every chunk). Always on for chat:
-    // the usage meter feeds the settings card; the forensic log reuses the
-    // same scan when CODEBUDDY_BRIDGE_LOG is set.
-    const reader = upstream.body.getReader()
-    const decoder = isChat ? new TextDecoder() : null
-    let scanBuf = ''
-    let usage = null
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      if (decoder) {
-        scanBuf += decoder.decode(value, { stream: true })
-        let nl
-        while ((nl = scanBuf.indexOf('\n')) >= 0) {
-          const line = scanBuf.slice(0, nl).trim()
-          scanBuf = scanBuf.slice(nl + 1)
-          if (!line.startsWith('data:') || !line.includes('"usage"')) continue
-          try {
-            const chunk = JSON.parse(line.slice(5).trim())
-            if (chunk.usage) usage = chunk.usage
-          } catch {
-            // incomplete JSON inside a complete SSE line — skip
-          }
-        }
-      }
-      if (!res.write(value)) {
-        await new Promise((resolve) => res.once('drain', resolve))
-      }
-    }
-    res.end()
-    if (usage && isChat && payload) {
-      recordUsage({ ts: t0, kind: chatUsageKind(payload), model: payload.model ?? null, usage })
-    }
-    logOut({ status: upstream.status, waitMs, ttfbMs, usage })
+    return await hostConfig.applyOps([{ op: 'set', path, value: block }])
   } catch (err) {
-    logOut({ err: String(err?.message ?? err) })
-    throw err
-  } finally {
-    release()
+    process.stderr.write(`[dsh-tap] qoder mirror failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
+  }
+}
+
+async function setQoderModelEnabled({ id, enabled }) {
+  if (typeof id !== 'string' || !id.trim()) throw new Error('qoderModelSetEnabled 需要 id')
+  assertSafeModelId(id)
+  const view = qoderProvider.catalogView()
+  if (!view || !view.profiles.some((p) => p.id === id)) throw new Error(`${id} 不在 Qoder 目录里（先同步目录）`)
+  const layer = readFileLayer()
+  const state = readQoderModelState()
+  if (enabled) delete state.disabled[id]
+  else state.disabled[id] = true
+  layer.qoderModelState = state
+  writeFileLayer(layer)
+  await syncQoderModelsToDshSettings()
+  return state
+}
+
+/**
+ * qoderModelSetPrefs 写路径（UI 契约：patch.qoderModelSetPrefs = { id, prefs }）。
+ * prefs 是该模型记录的**完整替换**——只存已设置的键，空对象 = 删记录回默认。
+ * effort 校验档位拼写；contextVariant 必须命中该模型目录变体（无变体模型拒收）。
+ */
+async function setQoderModelPrefs({ id, prefs }) {
+  if (typeof id !== 'string' || !id.trim()) throw new Error('qoderModelSetPrefs 需要 id')
+  assertSafeModelId(id)
+  const view = qoderProvider.catalogView()
+  if (!view || !view.profiles.some((p) => p.id === id)) throw new Error(`${id} 不在 Qoder 目录里（先同步目录）`)
+  if (!prefs || typeof prefs !== 'object' || Array.isArray(prefs)) throw new Error('qoderModelSetPrefs 需要 prefs 对象')
+  const unknown = Object.keys(prefs).filter((k) => k !== 'effort' && k !== 'contextVariant')
+  if (unknown.length) throw new Error(`prefs 不支持的键：${unknown.join(', ')}`)
+  const rec = {}
+  if (prefs.effort !== undefined) {
+    if (!QODER_EFFORT_LEVELS.includes(prefs.effort)) {
+      throw new Error(`effort 档位必须是 ${QODER_EFFORT_LEVELS.join('/')} 之一`)
+    }
+    rec.effort = prefs.effort
+  }
+  if (prefs.contextVariant !== undefined) {
+    const variants = view.variants?.[id] ?? []
+    if (!variants.some((v) => v?.name === prefs.contextVariant)) {
+      throw new Error(`${id} 没有名为 ${prefs.contextVariant} 的上下文变体`)
+    }
+    rec.contextVariant = prefs.contextVariant
+  }
+  const state = readQoderModelPrefs()
+  if (Object.keys(rec).length) state[id] = rec
+  else delete state[id]
+  const layer = readFileLayer()
+  layer.qoderModelPrefs = state
+  writeFileLayer(layer)
+  await syncQoderModelsToDshSettings()
+  return state
+}
+
+function readTraeModelState() {
+  const state = readFileLayer().traeModelState
+  if (!state || typeof state !== 'object' || Array.isArray(state)) return { disabled: {} }
+  return {
+    disabled: state.disabled && typeof state.disabled === 'object' && !Array.isArray(state.disabled)
+      ? state.disabled : {},
   }
 }
 
 /**
- * Bridge runtime state for the settings view. `lastError` records a listen
- * failure (typically EADDRINUSE — another dsh instance already holds the
- * port; its bridge still serves this instance's traffic, since the route in
- * cordis.patch.yml points at the port, not the process). A listen failure
- * must NEVER crash the host: an unhandled 'error' event on the server used
- * to take the whole dsh process down (even `dsh web --help` loads plugins).
+ * 镜像 providers.trae **整块**（0.8.7 / dsh 0.1.1-rc.2 适配，取代"恒铺
+ * models 路径 + 空数组遮蔽"）：llm-pi-ai 收紧了目录校验——非目录路由的空
+ * models 清单在 apply 时直接 throw（连坐整棵 llm-pi-ai 纤维，主聊天全挂），
+ * 热加载路径也被 onChange 拒绝并保持旧值，"空数组遮蔽"彻底失效（踩坑 #25
+ * 修订）。新策略 = **路由存在性管理**：patch 不再带 trae 静态基线，镜像独占
+ * 该路由的完整定义——
+ *   启用+已同步 → 铺完整块（displayName/api/baseURL/headers/models），
+ *     baseURL 跟随 traeBridgePort（改端口重铺镜像即热生效，优于旧 patch 静态式）；
+ *   禁用/未同步/全部模型禁用 → 删除 providers.trae 整块（路由消失，选择器
+ *     隐藏通道，免重启：0.1.7+ 经 forms seam 落 profile patch 即时生效，
+ *     ≤0.1.6 靠 settings.yaml 的 chokidar 热加载）。无 patch 基线即无回落，
+ *     删块即干净。
+ * 升级注意：<=0.8.5 写的 trae 块只带 models 路径（其余字段靠 patch 深合并），
+ * 重启前须先清掉旧块（见 cordis.patch.yml 的 UPGRADE NOTE）。
  */
-const bridgeRuntime = { running: false, port: null, lastError: null }
+async function syncTraeModelsToDshSettings() {
+  try {
+    const s = Config({ ...readFileLayer() }) // entry 侧无 trae 字段，schema 默认补齐
+    const view = traeProvider.catalogView()
+    const disabled = readTraeModelState().disabled
+    const models = s.traeEnabled === true && view
+      ? view.profiles.filter((p) => !disabled[p.id])
+      : null
+    const path = ['providers', 'trae']
+    if (!models || models.length === 0) return await hostConfig.applyOps([{ op: 'unset', path }])
+    const block = {
+      displayName: 'TraeWork CN',
+      api: 'openai-completions',
+      baseURL: `http://127.0.0.1:${s.traeBridgePort}/v1`,
+      headers: { Authorization: 'Bearer dsh-trae-bridge' },
+      models: YAML.parse(YAML.stringify(models)),
+    }
+    return await hostConfig.applyOps([{ op: 'set', path, value: block }])
+  } catch (err) {
+    process.stderr.write(`[dsh-tap] trae mirror failed: ${err?.message ?? err}\n`)
+    return { ok: false, error: String(err?.message ?? err) }
+  }
+}
 
 /**
- * The bridge listens on 127.0.0.1 only. Passes any path through; POST
- * /chat/completions gets session-header injection and per-session concurrency
- * gating on top of the credential resolution. Managed by syncBridge():
- * restarted when bridgePort or bridgeEnabled moves.
+ * 安全审计 [18]：state.vscdb 路径纵深防御（CSRF 已被 settings 路由本地门
+ * 挡住，这里是第二道）。规则：绝对路径、规范化后不含 .. 段、扩展名限
+ * .db/.vscdb。不校验存在性——不存在的路径沿用既有同步错误路径报错。
  */
-function startBridge(settings, port) {
-  const server = createServer((req, res) => {
-    let rawBody = ''
-    req.on('data', (c) => {
-      rawBody += c
-      if (rawBody.length > 32 * 1024 * 1024) req.destroy()
-    })
-    req.on('end', () => {
-      proxyUpstream(settings, req, res, rawBody).catch((err) => {
-        if (!res.headersSent) res.writeHead(500)
-        res.end(`stream bridge error: ${err.message}`)
-      })
-    })
-  })
-  server.on('error', (err) => {
-    bridgeRuntime.running = false
-    bridgeRuntime.lastError = err?.code ?? String(err?.message ?? err)
-    process.stderr.write(`[dsh-codebuddy-plugin] bridge :${port} unavailable: ${bridgeRuntime.lastError}（插件其余功能不受影响；若占用者是另一个 dsh 实例，其桥仍会代管本实例流量）\n`)
-  })
-  server.on('listening', () => {
-    bridgeRuntime.running = true
-    bridgeRuntime.lastError = null
-  })
-  server.listen(port, '127.0.0.1')
-  return () =>
-    new Promise((resolve) => {
-      server.close(() => resolve())
-      server.closeAllConnections?.()
-    })
+function isSafeStateDbPath(p) {
+  if (typeof p !== 'string' || !p || !isAbsolute(p)) return false
+  const normalized = normalize(p)
+  if (normalized.split(/[\\/]/).includes('..')) return false
+  const ext = extname(normalized).toLowerCase()
+  return ext === '.db' || ext === '.vscdb'
 }
+
+async function setTraeModelEnabled({ id, enabled }) {
+  if (typeof id !== 'string' || !id.trim()) throw new Error('traeModelSetEnabled 需要 id')
+  assertSafeModelId(id)
+  const view = traeProvider.catalogView()
+  if (!view || !view.profiles.some((p) => p.id === id)) throw new Error(`${id} 不在 Trae 目录里（先同步目录）`)
+  const layer = readFileLayer()
+  const state = readTraeModelState()
+  if (enabled) delete state.disabled[id]
+  else state.disabled[id] = true
+  layer.traeModelState = state
+  writeFileLayer(layer)
+  await syncTraeModelsToDshSettings()
+  return state
+}
+
+// ---------------------------------------------------------------------------
+// Bridge runtime state (module-level, shared across apply() generations —
+// production runs one plugin instance per process, so last-apply-wins is
+// correct; scripts/verify-bridge.mjs §10 pins the semantics).
+// ---------------------------------------------------------------------------
+
+const bridgeRuntime = { running: false, port: null, lastError: null }
 
 // ---------------------------------------------------------------------------
 // Settings route consumed by the Web UI card.
 // ---------------------------------------------------------------------------
-
-/**
- * Fetch the gateway's own model catalog (GET /v3/config). Same dialect the
- * official CLI uses: the UA must match the CLI shape (a /v2 client UA is
- * rejected with 12403) and API keys ride the x-api-key header.
- */
-async function fetchModelCatalog(settings) {
-  const s = settings()
-  const cred = await resolveCredential(settings)
-  if (!cred) throw new Error('凭据不可用：请先在登录区配置 API Key 或完成 OAuth 登录')
-  const headers = {
-    Accept: 'application/json',
-    Authorization: cred.authorization,
-    'User-Agent': USER_AGENT,
-    'X-Product': 'SaaS',
-  }
-  // api-key mode additionally carries the raw key in x-api-key, which the
-  // catalog endpoint expects; OAuth tokens work through Authorization.
-  const active = s.apiKeys.find((k) => k.name === s.activeApiKey)
-  if (s.authMode !== 'oauth' && active?.key) headers['x-api-key'] = active.key
-  else if (s.authMode !== 'oauth') {
-    const env = resolveEnvKey(s.apiKeyEnv)
-    if (env) headers['x-api-key'] = env
-  }
-  const res = await fetch(`${s.baseURL}/v3/config`, { headers })
-  if (!res.ok) throw new Error(`模型目录 HTTP ${res.status}`)
-  const body = await res.json()
-  if (body?.code !== 0) throw new Error(`模型目录错误：${body?.code} ${body?.msg ?? ''}`)
-  const data = body.data ?? {}
-  const cliEnabled = new Set(
-    (data.agents ?? []).find((a) => a.name === 'cli')?.models ?? [],
-  )
-  const models = (data.models ?? [])
-    .filter((m) => typeof m?.id === 'string')
-    .map((m) => ({
-      id: m.id,
-      name: typeof m.name === 'string' ? m.name : m.id,
-      maxInputTokens: m.maxInputTokens ?? null,
-      maxOutputTokens: m.maxOutputTokens ?? null,
-      images: m.supportsImages === true,
-      cli: cliEnabled.has(m.id),
-      reasoning: m.reasoning?.effort != null,
-      // The catalog declares the model's default effort (e.g. "high"), not a
-      // tier list — surface it so the card can show it on catalog-only rows.
-      reasoningEffort: typeof m.reasoning?.effort === 'string' ? m.reasoning.effort : null,
-    }))
-  return { models, fetchedAt: Date.now() }
-}
-
-/**
- * Quota-side signals the plugin credentials can actually reach (probed
- * 2026-08-18, scripts/probe-quota.mjs): GET /v2/accounts (account metadata —
- * plan type, enterprise) and POST /v2/billing/meter/get-dosage-notify (the
- * official CLI's low-quota banner source; empty while healthy). There is NO
- * numeric remaining-quota API on the CLI/api-key surface — response headers
- * carry none, and the web console's plan API is cookie-authed. Quota is
- * account-level and shared with WorkBuddy (same Tencent-Cloud.coding-copilot
- * auth realm), so these signals already reflect WorkBuddy consumption.
- * Cached 60s; never throws.
- */
-let quotaCache = { at: 0, value: null }
-
-async function fetchQuotaSnapshot(settings) {
-  const s = settings()
-  const cred = await resolveCredential(settings)
-  if (!cred) return { error: '凭据不可用：请先配置 API Key 或完成 OAuth 登录' }
-  const headers = {
-    Accept: 'application/json',
-    Authorization: cred.authorization,
-    ...cred.headers,
-    'User-Agent': USER_AGENT,
-    'X-Product': 'SaaS',
-  }
-  // Same dialect as fetchModelCatalog: api-key mode also carries the raw key
-  // in x-api-key (the gateway authenticates these routes by it).
-  const active = s.apiKeys.find((k) => k.name === s.activeApiKey)
-  if (s.authMode !== 'oauth') {
-    const raw = active?.key ?? resolveEnvKey(s.apiKeyEnv)
-    if (raw) headers['x-api-key'] = raw
-  }
-  const readJsonBody = (r) => r.json().catch(() => null)
-  const [accBody, dosageBody] = await Promise.all([
-    fetch(`${s.baseURL}/v2/accounts`, { headers }).then(readJsonBody, () => null),
-    fetch(`${s.baseURL}/v2/billing/meter/get-dosage-notify`, {
-      method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: '{}',
-    }).then(readJsonBody, () => null),
-  ])
-  const accounts = accBody?.code === 0 ? accBody.data?.accounts ?? [] : null
-  // The "current" account is the one flagged lastLogin (observed live), else first.
-  const current = accounts?.find((a) => a?.lastLogin === true) ?? accounts?.[0] ?? null
-  const dosage = dosageBody?.code === 0 ? dosageBody.data ?? null : null
-  return {
-    account: current ? {
-      nickname: current.nickname ?? '',
-      type: current.type ?? '',
-      enterpriseName: current.enterpriseName ?? '',
-      pluginEnabled: current.pluginEnabled === true,
-    } : null,
-    accountsError: accBody?.code === 0 ? null : `code ${accBody?.code ?? 'http'}`,
-    dosage: dosage ? {
-      code: dosage.dosageNotifyCode ?? 0,
-      text: dosage.dosageNotifyZh || dosage.dosageNotifyEn || '',
-      skipUrl: dosage.skipUrl ?? '',
-    } : null,
-    dosageError: dosageBody?.code === 0 ? null : `code ${dosageBody?.code ?? 'http'}`,
-    fetchedAt: Date.now(),
-  }
-}
-
-function quotaSnapshot(settings) {
-  if (quotaCache.value && Date.now() - quotaCache.at < 60_000) {
-    return Promise.resolve(quotaCache.value)
-  }
-  return fetchQuotaSnapshot(settings)
-    .catch((err) => ({ error: err?.message ?? String(err) }))
-    .then((value) => {
-      quotaCache = { at: Date.now(), value }
-      return value
-    })
-}
 
 function sendJSON(res, status, payload) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
@@ -1559,10 +1127,52 @@ function sameOrigin(req) {
   }
 }
 
+/**
+ * 安全审计 [6]+[7]：/dsh-tap/settings 是本地特权面（读 OAuth 状态/桥端口/
+ * 目录，POST 改设置与凭据）。GET 与 POST 一体设防，统一判定不做分支复制：
+ *  - Host 门：Host 头必须解析为回环 hostname——防 DNS rebinding（攻击域
+ *    解析到 127.0.0.1 后借浏览器直读）与 LAN 直连。代价：经 LAN IP 访问
+ *    设置卡被拒，属有意收紧。
+ *  - Origin 门：带 Origin 头时其 host:port 必须与 Host 一致——浏览器跨站
+ *    请求必带 Origin，不一致即跨站伪造。
+ * Returns null to proceed, else the refusal reason (送 403 响应体).
+ */
+function localGuardFailure(req) {
+  const host = req.headers.host
+  const hostname = typeof host === 'string' ? hostHeaderHostname(host) : null
+  if (!hostname || !isLoopbackHostname(hostname)) {
+    return `本接口仅限本机访问：Host 必须是回环地址（127.0.0.1/localhost/::1），收到 ${host ?? '(缺失)'}`
+  }
+  const origin = req.headers.origin
+  if (origin !== undefined) {
+    let originMatches = false
+    try {
+      originMatches = new URL(origin).host === host
+    } catch {
+      originMatches = false
+    }
+    if (!originMatches) return `Origin 与 Host 不一致（疑似跨站请求）：${origin}`
+  }
+  return null
+}
+
 /** Mask a key for display: first 4 and last 4 characters. */
 function maskKey(key) {
   if (typeof key !== 'string' || key.length <= 8) return '****'
   return `${key.slice(0, 4)}…${key.slice(-4)}`
+}
+
+/**
+ * File layer safe to ship to the browser: plaintext apiKeys[].key masked away.
+ * Same policy as the GET view — f9aeeaa covered GET only; the four POST
+ * responses that also carried the raw file layer regressed it. The card
+ * consumes `user` solely for top-level field presence (overriddenFor →
+ * hasOwnProperty), never nested key material — masking here is lossless.
+ */
+function maskedUserLayer(user) {
+  return Array.isArray(user.apiKeys)
+    ? { ...user, apiKeys: user.apiKeys.map((k) => ({ ...k, key: maskKey(k.key) })) }
+    : user
 }
 
 /** The GET view: resolved settings with secrets masked, plus OAuth status. */
@@ -1575,19 +1185,63 @@ function settingsView(resolveNow) {
       ...s,
       apiKeys: (s.apiKeys ?? []).map((k) => ({ name: k.name, masked: maskKey(k.key) })),
     },
-    user,
-    fields: SETTINGS_FIELDS,
-    oauth: oauthStatus(),
+    // The raw file layer carries plaintext apiKeys[].key — never ship it to
+    // the browser (the card only checks top-level field presence).
+    user: maskedUserLayer(user),
+    oauth: provider.oauth.oauthStatus(),
     bridge: {
       running: bridgeRuntime.running,
       port: bridgeRuntime.port,
       lastError: bridgeRuntime.lastError,
     },
+    trae: {
+      oauth: traeProvider.credentialView(),
+      bridge: {
+        running: traeRuntime.running,
+        port: traeRuntime.port,
+        lastError: traeRuntime.lastError,
+      },
+      models: {
+        disabled: Object.keys(readTraeModelState().disabled),
+        sync: traeProvider.catalogView()
+          ? { at: traeProvider.catalogView().at, count: traeProvider.catalogView().count, candidate: traeProvider.catalogView().candidate }
+          : null,
+      },
+    },
     models: {
       staticIds: readStaticModels().map((m) => m.id),
       disabled: Object.keys(state.disabled),
       extraIds: Object.keys(state.extra),
+      // G5：每模型覆盖值（contextWindow/maxTokens），设置卡据此显示与校验。
+      overrides: state.overrides ?? {},
       effectiveCount: computeEffectiveModels().length,
+      // G4：选择器真实内容——设置卡勾选状态的唯一权威（动态目录启用后
+      // 目录模型默认在内，不在 extra 里，不能靠 disabled/extra 反推）。
+      effectiveIds: computeEffectiveModels().map((m) => m.id),
+      // G4 动态目录同步状态：null = 静态兜底（未同步/同步失败且无旧目录）
+      sync: dynamicCatalog
+        ? { at: dynamicCatalog.fetchedAt, count: dynamicCatalog.count, source: 'gateway' }
+        : null,
+    },
+    qoder: {
+      oauth: qoderProvider.credentialView(),
+      bridge: {
+        running: qoderRuntime.running,
+        port: qoderRuntime.port,
+        lastError: qoderRuntime.lastError,
+      },
+      models: {
+        disabled: Object.keys(readQoderModelState().disabled),
+        // 逐模型偏好读侧（UI 契约 qoderModelSetPrefs 的镜像；只含已设置键，
+        // 无 effort 键 = 不注入、无 contextVariant 键 = 目录默认档）。
+        modelPrefs: readQoderModelPrefs(),
+        // 每模型上下文变体清单（目录 context_config；无变体 = []，UI 据此隐藏
+        // 该模型的上下文选择）。
+        variants: qoderProvider.catalogView()?.variants ?? {},
+        sync: qoderProvider.catalogView()
+          ? { at: qoderProvider.catalogView().at, count: qoderProvider.catalogView().count }
+          : null,
+      },
     },
   }
 }
@@ -1599,16 +1253,38 @@ function settingsView(resolveNow) {
  *   POST {action:'oauth-start'}                             → {authUrl}
  *   POST {action:'oauth-status'}                            → oauthStatus()
  *   POST {action:'oauth-logout'}                            → clears tokens
+ *   POST {action:'qoder-oauth-start'|'qoder-oauth-status'|'qoder-oauth-logout'}
+ *                                                           → Qoder CN 设备流（Phase 1 仅登录）
+ *   POST {patch:{qoderModelSetEnabled:{id,enabled}}}        → Qoder 逐模型启停 → 镜像
+ *   POST {patch:{qoderModelSetPrefs:{id,prefs}}}            → Qoder 逐模型思考强度/上下文
+ *                                                             变体（prefs 完整替换；{}
+ *                                                             = 删记录回默认）→ 镜像
  *   POST {action:'model-list'}                              → gateway catalog
+ *   POST {action:'model-sync'}                              → G4 resync /v3/config → mirror
+ *   POST {action:'provider-list'|'provider-add'|'provider-remove'|'provider-refresh'}
+ *                                                           → G6 extra OpenAI-compat providers
  *   POST {action:'usage'}                                   → usage meter + bridge state + quota snapshot
  */
 function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
   ctx.inject(['webServer'], (wsctx) => {
     wsctx.webServer.register({
       kind: 'exact',
-      path: '/dsh-codebuddy-plugin/settings',
+      path: '/dsh-tap/settings',
       handler: (request, response) => {
+        // 安全审计 [6]+[7]：GET 与 POST 都先过本地门（回环 Host + Origin 一致）。
+        const guardFail = localGuardFailure(request)
+        if (guardFail) {
+          sendJSON(response, 403, { ok: false, error: guardFail })
+          return
+        }
         if (request.method === 'GET') {
+          // 升级排查用：?probe=host-config 报宿主配置层实况（选路/可写性/
+          // entry 是否可见/revision/有效 provider 清单），同过本地门。
+          const probe = new URL(request.url, 'http://127.0.0.1').searchParams.get('probe')
+          if (probe === 'host-config') {
+            sendJSON(response, 200, { ok: true, probe: hostConfig.probe() })
+            return
+          }
           sendJSON(response, 200, settingsView(resolveNow))
           return
         }
@@ -1616,54 +1292,225 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
           sendJSON(response, request.method === 'POST' ? 403 : 405, { ok: false })
           return
         }
-        let raw = ''
+        // Buffer 收集 + 一次解码（踩坑 #28，同 core/bridge.js）：
+        // provider displayName 等中文经逐分片隐式解码同样会损坏。
+        const chunks = []
         request.on('data', (c) => {
-          raw += c
+          chunks.push(c)
         })
-        request.on('end', () => {
+        request.on('end', async () => {
           try {
-            const body = JSON.parse(raw)
+            const body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
             if (body?.action === 'oauth-start') {
-              startOAuth(resolveNow().baseURL)
+              provider.oauth.startOAuth(resolveNow().baseURL)
                 .then((r) => sendJSON(response, 200, { ok: true, authUrl: r.authUrl }))
                 .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
               return
             }
             if (body?.action === 'oauth-status') {
-              sendJSON(response, 200, { ok: true, oauth: oauthStatus() })
+              sendJSON(response, 200, { ok: true, oauth: provider.oauth.oauthStatus() })
               return
             }
             if (body?.action === 'model-list') {
-              fetchModelCatalog(resolveNow)
-                .then((catalog) => sendJSON(response, 200, {
-                  ok: true,
-                  catalog,
-                  staticIds: readStaticModels().map((m) => m.id),
-                  // id → reasoning tier keys from cordis.patch.yml (e.g.
-                  // ["off","low","medium","high","max"]); the card renders
-                  // these on static rows.
-                  staticEfforts: Object.fromEntries(
-                    readStaticModels()
-                      .filter((m) => m.reasoningEfforts && typeof m.reasoningEfforts === 'object')
-                      .map((m) => [m.id, Object.keys(m.reasoningEfforts)]),
-                  ),
-                  state: readModelState(),
-                }))
+              provider.catalog.fetchModelCatalog(resolveNow)
+                .then((catalog) => {
+                  // G5：ceilings = 基清单∪extra 的实际上限（校验上限与 title）；
+                  // profiles = ceilings 应用覆盖后的有效值（输入框显示值），
+                  // 覆盖所有已知 id（含禁用行——禁用不清覆盖值）。
+                  const ceilings = {}
+                  for (const m of computeBaseModels()) {
+                    ceilings[m.id] = { contextWindow: m.contextWindow ?? null, maxTokens: m.maxTokens ?? null }
+                  }
+                  for (const [id, p] of Object.entries(readModelState().extra)) {
+                    if (!ceilings[id] && p) ceilings[id] = { contextWindow: p.contextWindow ?? null, maxTokens: p.maxTokens ?? null }
+                  }
+                  const overrides = readModelState().overrides
+                  const profiles = {}
+                  for (const [id, c] of Object.entries(ceilings)) {
+                    const o = overrides[id] || {}
+                    profiles[id] = {
+                      contextWindow: o.contextWindow != null ? o.contextWindow : c.contextWindow,
+                      maxTokens: o.maxTokens != null ? o.maxTokens : c.maxTokens,
+                    }
+                  }
+                  sendJSON(response, 200, {
+                    ok: true,
+                    catalog,
+                    staticIds: readStaticModels().map((m) => m.id),
+                    // G4：选择器真实内容（勾选语义 = 在不在选择器里）
+                    effectiveIds: computeEffectiveModels().map((m) => m.id),
+                    profiles,
+                    ceilings,
+                    // id → 档位名清单，卡片据此给任意行出档位 select。
+                    // `efforts` = 基清单（patch 静态 reasoningEfforts ∪ 目录
+                    // supportedEfforts 声明）——目录声明优先；"off 但线值为空"
+                    // （= 省略参数 = 默认态）不进清单。`staticEfforts` 保留为
+                    // patch 静态表视图（旧契约）。
+                    efforts: Object.fromEntries(
+                      computeBaseModels()
+                        .map((m) => [m.id, effortTiersFor(m.id)])
+                        .filter(([, tiers]) => tiers.length > 0),
+                    ),
+                    staticEfforts: Object.fromEntries(
+                      readStaticModels()
+                        .filter((m) => m.reasoningEfforts && typeof m.reasoningEfforts === 'object')
+                        .map((m) => [m.id, Object.keys(m.reasoningEfforts)]),
+                    ),
+                    state: readModelState(),
+                  })
+                })
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            // G4：手动刷新——重新同步 /v3/config 并重铺 settings.yaml 镜像。
+            if (body?.action === 'model-sync') {
+              syncModelsFromGateway(resolveNow)
+                .then((r) => sendJSON(response, 200, { ok: true, sync: r, models: settingsView(resolveNow).models }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            // G6：多服务商注册表（key 型 OpenAI 兼容上游）。
+            if (body?.action === 'provider-list') {
+              sendJSON(response, 200, {
+                ok: true,
+                providers: extraProvidersView(),
+                presets: PROVIDER_PRESETS.map((p) => ({ id: p.id, displayName: p.displayName, baseURL: p.baseURL })),
+              })
+              return
+            }
+            if (body?.action === 'provider-add') {
+              addExtraProvider(body)
+                .then((r) => sendJSON(response, 200, { ok: true, added: r, providers: extraProvidersView() }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'provider-remove') {
+              try {
+                if (typeof body.id !== 'string') throw new Error('provider-remove 需要 id')
+                await removeExtraProvider(body.id)
+                sendJSON(response, 200, { ok: true, providers: extraProvidersView() })
+              } catch (err) {
+                sendJSON(response, 400, { ok: false, error: err.message })
+              }
+              return
+            }
+            if (body?.action === 'provider-refresh') {
+              if (typeof body.id !== 'string') {
+                sendJSON(response, 400, { ok: false, error: 'provider-refresh 需要 id' })
+                return
+              }
+              refreshExtraProviderModels(body.id)
+                .then((r) => sendJSON(response, 200, { ok: true, refreshed: r, providers: extraProvidersView() }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            // G7：本机登录态检测。扫描只读、findings 不含 secret；
+            // 导入是用户确认后的显式动作（设置卡"一键导入"按钮）。
+            if (body?.action === 'credential-scan') {
+              sendJSON(response, 200, { ok: true, findings: scanLocalCredentials() })
+              return
+            }
+            if (body?.action === 'credential-import') {
+              let spec
+              try {
+                spec = readImportCredential(scanLocalCredentials(), body?.source)
+              } catch (err) {
+                sendJSON(response, 400, { ok: false, error: err.message })
+                return
+              }
+              // 命中同名 preset（同 id 同 baseURL）走 preset 通道——拿到
+              // fallbackModels 等先验；否则按自定义上游严格校验（必须有 /models）。
+              const presetHit = PROVIDER_PRESETS.find((p) => p.id === spec.id && p.baseURL === spec.baseURL)
+              addExtraProvider(presetHit
+                ? { preset: presetHit.id, apiKey: spec.apiKey }
+                : { id: spec.id, baseURL: spec.baseURL, displayName: spec.displayName, apiKey: spec.apiKey })
+                .then((r) => sendJSON(response, 200, { ok: true, added: r, providers: extraProvidersView(), findings: scanLocalCredentials() }))
                 .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
               return
             }
             if (body?.action === 'oauth-logout') {
-              writeAuth({})
-              oauthPending.active = false
-              oauthPending.error = ''
-              sendJSON(response, 200, { ok: true, oauth: oauthStatus() })
+              provider.oauth.logout()
+              sendJSON(response, 200, { ok: true, oauth: provider.oauth.oauthStatus() })
+              return
+            }
+            // ---- TraeWork CN 通道（v0.8.x）----
+            if (body?.action === 'trae-oauth-start') {
+              traeProvider.oauth.startOAuth(resolveNow())
+                .then((r) => sendJSON(response, 200, { ok: true, authUrl: r.authUrl }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'trae-oauth-status') {
+              sendJSON(response, 200, { ok: true, trae: traeProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'trae-oauth-logout') {
+              traeProvider.oauth.logout()
+              sendJSON(response, 200, { ok: true, trae: traeProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'trae-model-sync') {
+              // 安全审计 [18] 纵深防御：dbPath 是读文件的调用方输入——必须
+              // 绝对路径、规范化后无 .. 段、扩展名限 .db/.vscdb。不存在的
+              // 路径不在此预检，交给既有同步错误路径（502 + 原因）。
+              const dbPath = body?.dbPath
+              if (dbPath !== undefined && !isSafeStateDbPath(dbPath)) {
+                throw new Error('dbPath 必须是绝对路径、不含 .. 段且以 .db/.vscdb 结尾')
+              }
+              traeProvider.syncCatalog(typeof dbPath === 'string' ? { dbPath } : {})
+                .then((r) => {
+                  syncTraeModelsToDshSettings()
+                  sendJSON(response, 200, { ok: r.ok, sync: r, trae: settingsView(resolveNow).trae })
+                })
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'trae-model-list') {
+              sendJSON(response, 200, {
+                ok: true,
+                view: traeProvider.catalogView(),
+                disabled: Object.keys(readTraeModelState().disabled),
+              })
+              return
+            }
+            // ---- Qoder CN 通道 ----
+            if (body?.action === 'qoder-oauth-start') {
+              qoderProvider.oauth.startOAuth(resolveNow())
+                .then((r) => sendJSON(response, 200, { ok: true, authUrl: r.authUrl }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'qoder-oauth-status') {
+              sendJSON(response, 200, { ok: true, qoder: qoderProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'qoder-oauth-logout') {
+              qoderProvider.oauth.logout()
+              sendJSON(response, 200, { ok: true, qoder: qoderProvider.credentialView() })
+              return
+            }
+            if (body?.action === 'qoder-model-sync') {
+              qoderProvider.syncCatalog()
+                .then((r) => {
+                  if (r.ok || qoderProvider.catalogView()) syncQoderModelsToDshSettings()
+                  sendJSON(response, 200, { ok: r.ok, sync: r, qoder: settingsView(resolveNow).qoder })
+                })
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            if (body?.action === 'qoder-model-list') {
+              sendJSON(response, 200, {
+                ok: true,
+                view: qoderProvider.catalogView(),
+                disabled: Object.keys(readQoderModelState().disabled),
+              })
               return
             }
             if (body?.action === 'usage') {
-              quotaSnapshot(resolveNow)
+              provider.catalog.quotaSnapshot(resolveNow)
                 .then((quota) => sendJSON(response, 200, {
                   ok: true,
-                  usage: buildUsageView(),
+                  usage: meter.view(),
                   bridge: {
                     enabled: resolveNow().bridgeEnabled === true,
                     running: bridgeRuntime.running,
@@ -1704,7 +1551,7 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               // Runs against modelState inside setModelEnabled; re-read the
               // layer afterwards so apiKeys edits above are not clobbered.
               const withKeys = { ...nextUser }
-              setModelEnabled(patch.modelSetEnabled)
+              await setModelEnabled(patch.modelSetEnabled)
               const after = readFileLayer()
               delete withKeys.modelState
               Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
@@ -1712,8 +1559,76 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               sendJSON(response, 200, {
                 ok: true,
                 value: settingsView(resolveNow).value,
-                user: after,
+                user: maskedUserLayer(after),
                 models: settingsView(resolveNow).models,
+              })
+              applyLive()
+              return
+            }
+            if (patch.modelSetLimits !== undefined) {
+              // G5：同 modelSetEnabled 的层叠纪律——setModelLimits 内部自写
+              // modelState，事后重读层并把本请求里的 apiKeys 改动合回。
+              const withKeys = { ...nextUser }
+              await setModelLimits(patch.modelSetLimits)
+              const after = readFileLayer()
+              delete withKeys.modelState
+              Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
+              writeFileLayer(after)
+              sendJSON(response, 200, {
+                ok: true,
+                value: settingsView(resolveNow).value,
+                user: maskedUserLayer(after),
+                models: settingsView(resolveNow).models,
+              })
+              applyLive()
+              return
+            }
+            if (patch.traeModelSetEnabled !== undefined) {
+              const withKeys = { ...nextUser }
+              await setTraeModelEnabled(patch.traeModelSetEnabled)
+              const after = readFileLayer()
+              delete withKeys.traeModelState
+              Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
+              writeFileLayer(after)
+              sendJSON(response, 200, {
+                ok: true,
+                value: settingsView(resolveNow).value,
+                user: maskedUserLayer(after),
+                trae: settingsView(resolveNow).trae,
+              })
+              applyLive()
+              return
+            }
+            if (patch.qoderModelSetEnabled !== undefined) {
+              const withKeys = { ...nextUser }
+              await setQoderModelEnabled(patch.qoderModelSetEnabled)
+              const after = readFileLayer()
+              delete withKeys.qoderModelState
+              Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
+              writeFileLayer(after)
+              sendJSON(response, 200, {
+                ok: true,
+                value: settingsView(resolveNow).value,
+                user: maskedUserLayer(after),
+                qoder: settingsView(resolveNow).qoder,
+              })
+              applyLive()
+              return
+            }
+            if (patch.qoderModelSetPrefs !== undefined) {
+              // 同 qoderModelSetEnabled 的层叠纪律：setQoderModelPrefs 内部自写
+              // qoderModelPrefs，事后重读层并把本请求里的 apiKeys 改动合回。
+              const withKeys = { ...nextUser }
+              await setQoderModelPrefs(patch.qoderModelSetPrefs)
+              const after = readFileLayer()
+              delete withKeys.qoderModelPrefs
+              Object.assign(after, { apiKeys: withKeys.apiKeys, activeApiKey: withKeys.activeApiKey })
+              writeFileLayer(after)
+              sendJSON(response, 200, {
+                ok: true,
+                value: settingsView(resolveNow).value,
+                user: maskedUserLayer(after),
+                qoder: settingsView(resolveNow).qoder,
               })
               applyLive()
               return
@@ -1728,14 +1643,18 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               else nextUser[key] = value
             }
             // Validate through the schema before persisting.
-            validateBaseURL(Config({ ...entryConfig, ...nextUser }).baseURL)
-            const resolved = Config({ ...entryConfig, ...nextUser })
+            const candidate = Config({ ...entryConfig, ...nextUser })
+            validateBaseURL(candidate.baseURL)
+            for (const f of ['traeAuthBaseURL', 'traeChatBaseURL', 'traeLoginHost', 'qoderLoginHost', 'qoderOpenapiBaseURL', 'qoderInferBaseURL']) {
+              validateBaseURL(candidate[f])
+            }
+            const resolved = candidate
             if (resolved.activeApiKey && !resolved.apiKeys.some((k) => k.name === resolved.activeApiKey)) {
               throw new Error('activeApiKey 不在 apiKeys 列表中')
             }
             writeFileLayer(nextUser)
             applyLive()
-            sendJSON(response, 200, { ok: true, value: settingsView(resolveNow).value, user: nextUser })
+            sendJSON(response, 200, { ok: true, value: settingsView(resolveNow).value, user: maskedUserLayer(nextUser) })
           } catch (err) {
             sendJSON(response, 400, { ok: false, error: err.message })
           }
@@ -1763,8 +1682,8 @@ export function apply(ctx, config = {}) {
       return
     }
     if (disposeSearch && disposeFetch) return
-    disposeSearch = ctx.web.registerSearchProvider(makeSearchProvider(resolveNow))
-    disposeFetch = ctx.web.registerFetchProvider(makeFetchProvider(resolveNow))
+    disposeSearch = ctx.web.registerSearchProvider(provider.makeSearchProvider(resolveNow))
+    disposeFetch = ctx.web.registerFetchProvider(provider.makeFetchProvider(resolveNow))
   }
 
   // Image generation tool on the tools seam: registered while
@@ -1782,36 +1701,45 @@ export function apply(ctx, config = {}) {
     }
     if (disposeImageTool) return
     try {
-      disposeImageTool = toolsCtx.tools.register(makeImageGenTool(resolveNow))
-      process.stderr.write('[dsh-codebuddy-plugin] image_generate tool registered\n')
+      disposeImageTool = toolsCtx.tools.register(provider.makeImageGenTool(resolveNow))
+      process.stderr.write('[dsh-tap] image_generate tool registered\n')
     } catch (err) {
       disposeImageTool = null
-      process.stderr.write(`[dsh-codebuddy-plugin] image_generate register failed: ${err?.message ?? err}\n`)
+      process.stderr.write(`[dsh-tap] image_generate register failed: ${err?.message ?? err}\n`)
     }
   }
   ctx.inject(['tools'], (tctx) => { toolsCtx = tctx; syncImageTool() })
 
-  // Settings namespace claim for Settings → 插件配置: dsh ≥ 0.1.0-rc.7
-  // dispatches `settings.plugin.item` cards keyed by a namespace the Host
-  // serves (api-proxy `settings.describe`, allowlist removed in rc.7), so the
-  // browser-half card (registered under the same key) only renders when this
-  // registration lands. Reads/writes still go through our own webServer route
-  // + file layer — the seam is only the dispatch claim. Lazy inject:
-  // compositions without the settings service skip it (rc.6 dispatched cards
-  // unconditionally, so the card still renders there). Registration is an
-  // effect on this fiber — plugin dispose unregisters the namespace.
-  ctx.inject(['settings'], (sctx) => {
-    try {
-      sctx.settings.register('dsh-codebuddy-plugin', Config)
-    } catch (err) {
-      process.stderr.write(`[dsh-codebuddy-plugin] settings namespace register failed: ${err?.message ?? err}\n`)
-    }
-  })
+  // 宿主配置层挂载（dsh 0.1.7 起 settings 服务换了形态，见 host-config.js）：
+  // - 0.1.7+：configure({auto:false}) 声明"本插件自带设置卡页面"，宿主不再按
+  //   Config schema 自动生成一个页面；模型镜像/路由存在性经 mutate 落 profile patch。
+  // - ≤0.1.6：register('dsh-tap', Config) 声明命名空间——旧 `settings.plugin.item`
+  //   卡片派发按 Host 服务的命名空间清单走（api-proxy `settings.describe`），
+  //   不注册卡片就不出现（踩坑 #30）。
+  // 两条路由都由 host-config 按能力自选；读写仍走我们自己的 webServer 路由 +
+  // 文件层，seam 只承担"宿主配置层"这一段。
+  hostConfig.attach(ctx)
 
   // Bridge lifecycle: running state keyed by the port it listens on.
   // bridgeRuntime mirrors reality for the settings view (listen is async —
   // `running` flips on the server's 'listening' event, failures land in
   // lastError via its 'error' event instead of crashing the process).
+  //
+  // One createBridge instance per apply(): it captures this apply's
+  // resolveNow (the entry config differs per apply); bridgeRuntime stays
+  // module-shared. The forensic env var NAMES stay here in the composition
+  // root — core/bridge.js only receives the path getters.
+  const bridge = createBridge({
+    settings: resolveNow,
+    provider,
+    withCredentials: (attempt) => withKeyRotation(resolveNow, attempt),
+    meter,
+    forensics: {
+      logPath: () => process.env.CODEBUDDY_BRIDGE_LOG,
+      dumpDir: () => process.env.CODEBUDDY_BRIDGE_DUMP,
+    },
+    runtime: bridgeRuntime,
+  })
   let stopBridge = null
   let runningPort = null
   const syncBridge = () => {
@@ -1827,37 +1755,123 @@ export function apply(ctx, config = {}) {
       bridgeRuntime.lastError = null
       return
     }
-    if (stopBridge && runningPort === s.bridgePort) return
+    // A wedged listener (EADDRINUSE race with a previous stop, or another
+    // instance holding the port) leaves lastError set — do NOT early-return
+    // then, or the bridge stays down until restart; fall through and retry.
+    if (stopBridge && runningPort === s.bridgePort && !bridgeRuntime.lastError) return
     if (stopBridge) stopBridge()
     runningPort = s.bridgePort
     bridgeRuntime.running = false
     bridgeRuntime.port = s.bridgePort
     bridgeRuntime.lastError = null
-    stopBridge = startBridge(resolveNow, runningPort)
+    stopBridge = bridge.listen(runningPort)
   }
   const applyLive = () => {
     syncProviders()
     syncImageTool()
     syncBridge()
+    syncTraeBridge()
+    syncQoderBridge()
+  }
+
+  // TraeWork CN 通道生命周期：迟绑定本代 settings；启用时起翻译网关、
+  // 尝试目录同步（静默失败——state.vscdb 不在本机时 Trae 分区只是空转）；
+  // 禁用时停网关并按纯净态纪律撤掉 providers.trae.models 镜像。
+  traeSettingsFn = resolveNow
+  let stopTraeBridge = null
+  let traeRunningPort = null
+  const syncTraeBridge = () => {
+    const s = resolveNow()
+    if (s.traeEnabled !== true) {
+      if (stopTraeBridge) {
+        stopTraeBridge()
+        stopTraeBridge = null
+        traeRunningPort = null
+      }
+      traeRuntime.running = false
+      traeRuntime.port = null
+      traeRuntime.lastError = null
+      syncTraeModelsToDshSettings()
+      return
+    }
+    // Same wedge self-heal as syncBridge above: lastError set = not actually
+    // listening, retry instead of early-returning.
+    if (stopTraeBridge && traeRunningPort === s.traeBridgePort && !traeRuntime.lastError) return
+    if (stopTraeBridge) stopTraeBridge()
+    traeRunningPort = s.traeBridgePort
+    traeRuntime.running = false
+    traeRuntime.port = s.traeBridgePort
+    traeRuntime.lastError = null
+    stopTraeBridge = traeProvider.gateway.listen(traeRunningPort)
+    traeProvider.syncCatalog().then((r) => {
+      if (r.ok) {
+        syncTraeModelsToDshSettings()
+        process.stderr.write(`[dsh-tap] trae catalog synced (${r.count} models)\n`)
+      } else if (traeProvider.catalogView()) {
+        syncTraeModelsToDshSettings()
+      }
+    })
+  }
+
+  // Qoder CN 通道生命周期：启用时起翻译网关并同步网关目录（失败静默——
+  // 未登录/网络故障时 Qoder 分区只是空转）；禁用时停网关并撤 providers.qoder
+  // 镜像（路由存在性管理）。wedge 自愈同 syncBridge：lastError 置位不早退。
+  qoderSettingsFn = resolveNow
+  let stopQoderBridge = null
+  let qoderRunningPort = null
+  const syncQoderBridge = () => {
+    const s = resolveNow()
+    if (s.qoderEnabled !== true) {
+      if (stopQoderBridge) {
+        stopQoderBridge()
+        stopQoderBridge = null
+        qoderRunningPort = null
+      }
+      qoderRuntime.running = false
+      qoderRuntime.port = null
+      qoderRuntime.lastError = null
+      syncQoderModelsToDshSettings()
+      return
+    }
+    if (stopQoderBridge && qoderRunningPort === s.qoderBridgePort && !qoderRuntime.lastError) return
+    if (stopQoderBridge) stopQoderBridge()
+    qoderRunningPort = s.qoderBridgePort
+    qoderRuntime.running = false
+    qoderRuntime.port = s.qoderBridgePort
+    qoderRuntime.lastError = null
+    stopQoderBridge = qoderProvider.gateway.listen(qoderRunningPort)
+    qoderProvider.syncCatalog().then((r) => {
+      if (r.ok) {
+        syncQoderModelsToDshSettings()
+        process.stderr.write(`[dsh-tap] qoder catalog synced (${r.count} models)\n`)
+      } else if (qoderProvider.catalogView()) {
+        syncQoderModelsToDshSettings()
+      }
+    }).catch(() => {})
   }
 
   applyLive()
   registerSettingsRoute(ctx, config, resolveNow, applyLive)
-  // Keep the settings.yaml model mirror in step with modelState across
-  // restarts (no-op when the feature was never used).
-  const state = readModelState()
-  if (Object.keys(state.disabled).length > 0 || Object.keys(state.extra).length > 0) {
-    syncModelsToDshSettings()
-  }
+  // 镜像写入统一交给下面 syncModelsFromGateway 的收尾（成功/失败两条路都会写），
+  // **此处不再先铺一次**：那一刻 dynamicCatalog 还是 null，有效清单只含静态基线，
+  // 会把宿主里上一次同步成功的完整清单打回残缺态（实测 28 → 16）；且 dsh 0.1.7
+  // 起每次写入都会触发 profile patch 重载 → 插件 re-apply → boot 再走一遍，
+  // 两次写入互相覆盖，最终停在残缺的那份（踩坑 #43 同批）。
+  // G4：启动时自动从 /v3/config 同步模型清单；失败无感回落静态清单
+  // （syncModelsFromGateway 内部已兜住一切异常，这里只记一行日志）。
+  syncModelsFromGateway(resolveNow).then((r) => {
+    process.stderr.write(r.ok
+      ? `[dsh-tap] model catalog synced from gateway (${r.count} models)\n`
+      : `[dsh-tap] model catalog sync failed (${r.error}) — ${r.kept ? 'keeping last synced list' : 'static fallback'}\n`)
+  })
   ctx.on('dispose', () => {
     if (stopBridge) stopBridge()
+    if (stopTraeBridge) stopTraeBridge()
+    if (stopQoderBridge) stopQoderBridge()
     if (disposeSearch) disposeSearch()
     if (disposeFetch) disposeFetch()
     if (disposeImageTool) disposeImageTool()
-    if (usageFlushTimer) {
-      clearTimeout(usageFlushTimer)
-      usageFlushTimer = null
-    }
-    flushUsage()
+    hostConfig.dispose()
+    meter.dispose()
   })
 }

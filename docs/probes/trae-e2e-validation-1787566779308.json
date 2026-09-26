@@ -1,0 +1,13 @@
+{
+  "at": "2026-08-24T10:19:16.930Z",
+  "inline_kimi26": {
+    "status": 200,
+    "err3003": true,
+    "providerModel": null,
+    "hasText": false
+  },
+  "remote_e2e": {
+    "ok": false,
+    "error": "trae remote create_session [404]: Not Found（边缘节点路由漂移/WAF 拦截，通常数分钟内自愈；可稍后重试或改用 inline 通道）"
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "at": "2026-09-21T23:10:24.428Z",
+  "openapi": "https://openapi.qoder.com.cn",
+  "chatModel": "q37fmodel",
+  "steps": [
+    {
+      "step": "before",
+      "data": {
+        "quotaUsage": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 203,
+            "remaining": 4197,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "quotaUsageOuter": {
+          "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+          "userType": "personal_standard",
+          "usageType": "credits",
+          "totalUsagePercentage": 0.05,
+          "isQuotaExceeded": false,
+          "expiresAt": 253402214400000,
+          "upgradeUrl": "https://qoder.com.cn/pricing?client=qoder",
+          "outerProviders": [
+            {
+              "provider": "cmcc"
+            }
+          ],
+          "userQuota": {
+            "total": 0,
+            "used": 0,
+            "remaining": 0,
+            "percentage": 0,
+            "unit": "credits"
+          },
+          "addOnQuota": {
+            "total": 4400,
+            "used": 203,
+            "remaining": 4197,
+            "percentage": 0.05,
+            "unit": "credits",
+            "detailUrl": "https://qoder.com.cn/account/usage"
+          },
+          "isPlanQuotaProrated": false
+        },
+        "meUsage": {
+          "displayMode": "qoder",
+          "qoderUsage": {
+            "userId": "019efdac-1bf3-792a-a63d-1b94c1ea9fb0",
+            "userType": "personal_standard",
+            "usageType": "credits",
+            "totalUsagePercentage": 0.05,
+            "isQuotaExceeded": false,
+            "expiresAt": 253402214400000,
+            "upgradeUrl": "https://qoder.com/pricing?client=qoder",
+            "userQuota": {
+              "total": 0,
+              "used": 0,
+              "remaining": 0,
+              "percentage": 0,
+              "unit": "credits"
+            },
+            "addOnQuota": {
+              "total": 4400,
+              "used": 203,
+              "remaining": 4197,
+              "percentage": 0.05,
+              "unit": "credits",
+              "detailUrl": "https://qoder.com/account/usage"
+            },
+            "isPlanQuotaProrated": false
+          }
+        },
+        "creditsHeatmap": {
+          "items": [
+            {
+              "date": "2026-09-22",
+              "value": 0
+            }
+          ],
+          "levels": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "total": 0,
+          "unit": "credits",
+          "year": 2026
+        },
+        "creditsSummary": {
+          "peakCredits": 318.4620101696,
+          "peakDate": "2026-07-23",
+          "totalCredits": 2004.69313754842,
+          "unit": "credits"
+        },
+        "userPlan": {
+          "user_type": "personal_standard",
+          "plan_tier_name": "Free",
+          "is_personal_version": true,
+          "is_paid_plan": false,
+          "is_highest_tier": false,
+          "feature_allowed": {
+            "wiki": false,
+            "quest": true,
+            "code_review": false,
+            "commit_indexing": false
+          },
+          "start_date": 1784964389025,
+          "end_date": 0
+        }
+      }
+    }
+  ]
+}

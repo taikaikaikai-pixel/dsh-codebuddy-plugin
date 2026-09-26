@@ -1,0 +1,29 @@
+{
+  "at": "2026-08-24T09:46:11.083Z",
+  "steps": {
+    "G_inline_kimi26": {
+      "status": 200,
+      "events": [
+        {
+          "ev": "error",
+          "code": 3003,
+          "message": "all models failed"
+        },
+        {
+          "ev": "done"
+        }
+      ],
+      "rawHead": "id:1\nevent:error\ndata:{\"code\":3003,\"message\":\"all models failed\",\"extra\":null}\n\nid:2\nevent:done\ndata:{\"finish_reason\":\"stop\"}\n\n",
+      "rawBytes": 127
+    },
+    "H_remote_mchost": {
+      "ok": false,
+      "error": "trae remote create_session [404]: Not Found"
+    },
+    "I_remote_solo": {
+      "ok": false,
+      "error": "trae remote create_session [404]: Not Found"
+    }
+  },
+  "verdict": "UNRESOLVED: 见证据详情"
+}

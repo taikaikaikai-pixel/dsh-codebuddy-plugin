@@ -1,0 +1,49 @@
+{
+  "at": "2026-08-23T21:41:20.558Z",
+  "request": {
+    "url": "https://trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat",
+    "body": {
+      "conversation_id": "probe-live",
+      "session_id": "probe-live",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "你好，请用一句话自我介绍。"
+            }
+          ]
+        }
+      ],
+      "model_name": "glm-5.3",
+      "is_custom_model": false,
+      "scene_params": {},
+      "request_seq": 1
+    }
+  },
+  "response": {
+    "status": 400,
+    "contentType": "application/json; charset=utf-8",
+    "headers": {
+      "connection": "keep-alive",
+      "content-length": "137",
+      "content-type": "application/json; charset=utf-8",
+      "date": "Sun, 23 Aug 2026 21:41:20 GMT",
+      "server": "volc-dcdn",
+      "server-timing": "inner; dur=12, cdn-cache;desc=MISS, origin;dur=42, edge;dur=0",
+      "strict-transport-security": "max-age=31536000; includeSubDomains",
+      "via": "<redacted:via>",
+      "x-dsa-origin-status": "400",
+      "x-dsa-trace-id": "178752128040b9898150408cdf41d9a0ddf9ad2455",
+      "x-request-ip": "<redacted:x-request-ip>",
+      "x-tt-logid": "202608240541209B8957A7433A3693C020",
+      "x-tt-timestamp": "1787521280.528",
+      "x-tt-trace-host": "0127b0cf403cfc4744f72d0413359221a67a06a67da7e7b52523e34b9954c82ddb0c2916fde849184c9d2e68750588e61d02d5ffd0cf29d249b7d91a29c40d299bf14734c2ef1e9045e60a8c3fca4790f0e19110f2aadcdc1b75312436cd71b84f",
+      "x-tt-trace-id": "00-2608240541209B8957A7433A3693C020-36EC1F925ED23D2F-00",
+      "x-tt-trace-tag": "id=5"
+    },
+    "bodyHead": "{\"code\":4001,\"message\":\"bad request: json: cannot unmarshal object into Go struct field LLMUtilsChatRequest.scene_params of type string\"}",
+    "bodyBytes": 137
+  }
+}
