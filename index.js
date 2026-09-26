@@ -1175,6 +1175,97 @@ function maskedUserLayer(user) {
     : user
 }
 
+/** cordis.patch.yml 顶层 patch 行的 entry id 清单（insert 行除外）——宿主实况对账的期望集合。 */
+function patchEntryIds() {
+  try {
+    const rows = YAML.parse(readFileSync(PATCH_FILE, 'utf8'))
+    return Array.isArray(rows) ? rows.map((r) => r?.id).filter((id) => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * 宿主实况对账（设置卡只读显示；踩坑 #43/#49 类静默失效的可见信号）：
+ * 期望态 = 插件自己的镜像纪律（codebuddy 有效清单长度 / trae·qoder 路由存在性）；
+ * 实际态 = hostConfig 读到的宿主配置层合成结果（forms = describe live value，
+ * legacy = settings.yaml）。上游把模块改名时 patch 条目被整条跳过、退出码仍 0，
+ * 运行时表现就是我们的镜像块从 describe 里消失或条目数对不上——这里把它算出来。
+ * id→模块名的权威映射仍是离线的 `dsh --dump-config`（bundle 清单段），这里只做
+ * 运行时可得的等价判定（describe 命名空间存在性 + provider 块计数）。
+ *
+ * patch 条目对账按条目性质分两路（2026-09-26 误报修正——「缺失：web」常驻假 warn）：
+ * allNamespaces 只覆盖**注册了 settings 命名空间**的条目；健康的 `web` 钉选行
+ * 从来不在其中，拿它当全量预言机就是常驻假 warn（用户会对 warn 脱敏）。
+ * - settings 条目（llm-pi-ai / agent-default-model）→ allNamespaces 存在性；
+ * - `web` 钉选 → 运行时效果直查：web 服务实例的 searchProviderId/fetchProviderId
+ *   公开字段（dsh-web 构造时从 config 落实例字段）。patch 行被跳过 ⇒ config 缺省
+ *   ⇒ 两字段 undefined——这是效果级判定，比命名空间在场更接近"用户可感知的事实"。
+ */
+function hostReconcileView(webService) {
+  const s = Config({ ...readFileLayer() })
+  const out = {
+    mode: hostConfig.mode(),
+    servicePresent: hostConfig.servicePresent(),
+    missingEntries: null, // forms 模式限定；legacy 无 describe 可查
+    webPin: null,
+    channels: {},
+    drift: [],
+  }
+  let providers = {}
+  try { providers = hostConfig.readProviders() ?? {} } catch { providers = {} }
+  if (out.mode === 'forms' && out.servicePresent) {
+    try {
+      const ns = hostConfig.probe().allNamespaces
+      if (Array.isArray(ns)) {
+        const have = new Set(ns)
+        out.missingEntries = patchEntryIds().filter((id) => !have.has(id) && id !== 'web')
+      }
+    } catch { out.missingEntries = null }
+  }
+  // web 钉选行：效果级直查（见 docstring）。searchEnabled=false 时我们的 provider
+  // 被注销，但钉选字段仍在（pin 是 config，不是注册状态）——两种状态下都能判。
+  // 注意 webPin 不进 drift[]：drift 是通道形状（channel/expected/actual 模型数），
+  // 区块头与对账分区分别直读 webPin.ok，避免污染通道行的 warn 不变量。
+  try {
+    const sp = webService?.()?.searchProviderId
+    const fp = webService?.()?.fetchProviderId
+    if (sp !== undefined || fp !== undefined || webService?.()) {
+      out.webPin = { searchProvider: sp ?? null, fetchProvider: fp ?? null, ok: sp === 'codebuddy' && fp === 'codebuddy' }
+    }
+  } catch { out.webPin = null }
+  // actual = 宿主层 provider 块的 models 数；块不存在 = null（路由缺席）。
+  const actualOf = (id) => {
+    const block = providers?.[id]
+    if (!block || typeof block !== 'object') return null
+    return Array.isArray(block.models) ? block.models.length : 0
+  }
+  const record = (channel, expected, actual, inferred) => {
+    out.channels[channel] = { expected, actual, ...(inferred ? { inferred: true } : null) }
+    const drifted = expected == null ? actual != null : actual == null || actual !== expected
+    if (drifted) out.drift.push({ channel, expected, actual })
+  }
+  // codebuddy：恒应有路由；期望 = 有效清单长度。legacy 模式下镜像缺席时
+  // settings.yaml 读不到 patch 静态基线（它由 bundle patch 层提供），回退静态数
+  // 并标 inferred——别把"读不到"误报成漂移。
+  const cbActualRaw = actualOf('codebuddy')
+  const cbInferred = cbActualRaw == null && out.mode !== 'forms'
+  record('codebuddy', computeEffectiveModels().length, cbActualRaw ?? (cbInferred ? readStaticModels().length : null), cbInferred)
+  // trae/qoder：路由存在性管理（镜像独占整块）——期望 = 启用且已同步且 ≥1 个
+  // 启用模型时的启用数，否则 null（不应存在镜像块）。
+  const traeView = traeProvider.catalogView()
+  const traeExpected = s.traeEnabled === true && traeView
+    ? traeView.profiles.filter((p) => !readTraeModelState().disabled[p.id]).length || null
+    : null
+  record('trae', traeExpected, actualOf('trae'))
+  const qoderView = qoderProvider.catalogView()
+  const qoderExpected = s.qoderEnabled === true && qoderView
+    ? qoderView.profiles.filter((p) => !readQoderModelState().disabled[p.id]).length || null
+    : null
+  record('qoder', qoderExpected, actualOf('qoder'))
+  return out
+}
+
 /** The GET view: resolved settings with secrets masked, plus OAuth status. */
 function settingsView(resolveNow) {
   const s = resolveNow()
@@ -1263,7 +1354,10 @@ function settingsView(resolveNow) {
  *   POST {action:'model-sync'}                              → G4 resync /v3/config → mirror
  *   POST {action:'provider-list'|'provider-add'|'provider-remove'|'provider-refresh'}
  *                                                           → G6 extra OpenAI-compat providers
+ *   POST {action:'trae-oauth-*'|'trae-model-*'|'trae-quota'（双池余额只读）}
+ *   POST {action:'qoder-oauth-*'|'qoder-model-*'|'qoder-quota'（配额只读）}
  *   POST {action:'usage'}                                   → usage meter + bridge state + quota snapshot
+ *   GET  响应另带 host = 宿主实况对账（镜像漂移检测，只读）
  */
 function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
   ctx.inject(['webServer'], (wsctx) => {
@@ -1285,7 +1379,9 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
             sendJSON(response, 200, { ok: true, probe: hostConfig.probe() })
             return
           }
-          sendJSON(response, 200, settingsView(resolveNow))
+          // host = 宿主实况对账（只读；P1）。只挂主 GET——POST 响应的局部视图
+          // 不带它，免得每次保存都多跑一遍 describe。
+          sendJSON(response, 200, { ...settingsView(resolveNow), host: hostReconcileView(() => ctx.web) })
           return
         }
         if (request.method !== 'POST' || !sameOrigin(request)) {
@@ -1473,6 +1569,13 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
               })
               return
             }
+            // P1-2：跨通道余额只读快照（上游只读、零写入；60s memoize 在 provider 内）。
+            if (body?.action === 'trae-quota') {
+              traeProvider.quota.snapshot()
+                .then((quota) => sendJSON(response, 200, { ok: true, quota }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
             // ---- Qoder CN 通道 ----
             if (body?.action === 'qoder-oauth-start') {
               qoderProvider.oauth.startOAuth(resolveNow())
@@ -1504,6 +1607,13 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
                 view: qoderProvider.catalogView(),
                 disabled: Object.keys(readQoderModelState().disabled),
               })
+              return
+            }
+            // P1-2：同 trae-quota（openapi 明文面裸 Bearer，零写入）。
+            if (body?.action === 'qoder-quota') {
+              qoderProvider.quota.snapshot()
+                .then((quota) => sendJSON(response, 200, { ok: true, quota }))
+                .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
               return
             }
             if (body?.action === 'usage') {

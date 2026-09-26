@@ -16,6 +16,7 @@
 import { createTraeOAuth } from './oauth.js'
 import { fetchLocalCatalog } from './catalog.js'
 import { createTraeGateway } from './gateway.js'
+import { createTraeQuota } from './quota.js'
 
 export const TRAE_PROVIDER_ID = 'trae'
 
@@ -71,6 +72,9 @@ export function createTraeProvider(deps) {
     credentialView() {
       return oauth.oauthStatus()
     },
+
+    /** 双额度池余额只读快照（60s memoize，永不 throw）。 */
+    quota: createTraeQuota({ settings: deps.settings, readAuth: deps.readAuth, oauth }),
   }
 
   const gateway = createTraeGateway({

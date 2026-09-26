@@ -19,6 +19,7 @@ import { createQoderOAuth } from './oauth.js'
 import { createCosyRuntime } from './cosy.js'
 import { fetchQoderCatalog } from './catalog.js'
 import { createQoderGateway } from './gateway.js'
+import { createQoderQuota } from './quota.js'
 
 export const QODER_PROVIDER_ID = 'qoder'
 
@@ -80,6 +81,9 @@ export function createQoderProvider(deps) {
     credentialView() {
       return oauth.oauthStatus()
     },
+
+    /** 账户配额只读快照（60s memoize，永不 throw）。 */
+    quota: createQoderQuota({ settings: deps.settings, oauth }),
   }
 
   const gateway = createQoderGateway({
