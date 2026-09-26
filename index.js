@@ -707,6 +707,21 @@ async function removeExtraProvider(id) {
   writeManagedProviders(readManagedProviders().filter((p) => p.id !== id))
 }
 
+/**
+ * P2-5「测一下」：只读验证——与 refresh 同一路径解析 key 并实拉目录
+ * （/models；无目录/静态目录上游走 probeChatKey 探针），**不写 provider 块**。
+ */
+async function testExtraProvider(id) {
+  const entry = readManagedProviders().find((p) => p.id === id)
+  if (!entry) throw new Error(`${id} 不在注册表里`)
+  const key = resolveEnvKey(entry.keyRef, DSH_CREDENTIALS_PATH)
+  if (!key) throw new Error(`凭据 ${entry.keyRef} 不在环境或 .credentials.yaml 里`)
+  const presetHit = PROVIDER_PRESETS.find((p) => p.id === entry.preset)
+  const adapter = createOpenAICompatProvider({ ...entry, fallbackModels: presetHit?.fallbackModels, staticCatalog: presetHit?.staticCatalog })
+  const models = await adapter.fetchModels(key)
+  return { id, modelCount: models.length }
+}
+
 /** 重新拉取模型清单（key 从 .credentials.yaml 活解析）。 */
 async function refreshExtraProviderModels(id) {
   const entry = readManagedProviders().find((p) => p.id === id)
@@ -1359,6 +1374,8 @@ function settingsView(resolveNow) {
  *   POST {action:'model-sync'}                              → G4 resync /v3/config → mirror
  *   POST {action:'provider-list'|'provider-add'|'provider-remove'|'provider-refresh'}
  *                                                           → G6 extra OpenAI-compat providers
+ *   POST {action:'provider-test'|'credential-test'}         → P2-5「测一下」凭据主动验证
+ *                                                             （available 布尔即结论，恒 200）
  *   POST {action:'trae-oauth-*'|'trae-model-*'|'trae-quota'（双池余额只读）}
  *   POST {action:'qoder-oauth-*'|'qoder-model-*'|'qoder-quota'（配额只读）}
  *   POST {action:'usage'}                                   → usage meter + bridge state + quota snapshot
@@ -1508,6 +1525,39 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive, retryGat
               refreshExtraProviderModels(body.id)
                 .then((r) => sendJSON(response, 200, { ok: true, refreshed: r, providers: extraProvidersView() }))
                 .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            // P2-5「测一下」：凭据主动验证。验证结论就是响应本体（available
+            // 布尔），失败不是路由故障——恒 200（参数错误除外）。
+            if (body?.action === 'provider-test') {
+              if (typeof body.id !== 'string') {
+                sendJSON(response, 400, { ok: false, error: 'provider-test 需要 id' })
+                return
+              }
+              testExtraProvider(body.id)
+                .then((r) => sendJSON(response, 200, { ok: true, available: true, detail: `目录 ${r.modelCount} 个模型` }))
+                .catch((err) => sendJSON(response, 200, { ok: true, available: false, error: err.message }))
+              return
+            }
+            // CodeBuddy = 目录面 GET /v3/config（零额度消耗）；Qoder = 签名目录
+            // GET（catalog 面 /algo，不是聊天面 prepareInferRequest）。Trae 不在本批。
+            if (body?.action === 'credential-test') {
+              const ch = body?.channel
+              if (ch === 'codebuddy') {
+                provider.catalog.fetchModelCatalog(resolveNow)
+                  .then((c) => sendJSON(response, 200, { ok: true, available: true, detail: `目录 ${c.models.length} 个模型` }))
+                  .catch((err) => sendJSON(response, 200, { ok: true, available: false, error: err.message }))
+                return
+              }
+              if (ch === 'qoder') {
+                qoderProvider.syncCatalog()
+                  .then((r) => sendJSON(response, 200, r.ok
+                    ? { ok: true, available: true, detail: `目录 ${r.count} 个模型` }
+                    : { ok: true, available: false, error: r.error }))
+                  .catch((err) => sendJSON(response, 200, { ok: true, available: false, error: err.message }))
+                return
+              }
+              sendJSON(response, 400, { ok: false, error: 'credential-test 需要 channel: codebuddy|qoder' })
               return
             }
             // G7：本机登录态检测。扫描只读、findings 不含 secret；
