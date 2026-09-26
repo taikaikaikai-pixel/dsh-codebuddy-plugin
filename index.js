@@ -1357,9 +1357,11 @@ function settingsView(resolveNow) {
  *   POST {action:'trae-oauth-*'|'trae-model-*'|'trae-quota'（双池余额只读）}
  *   POST {action:'qoder-oauth-*'|'qoder-model-*'|'qoder-quota'（配额只读）}
  *   POST {action:'usage'}                                   → usage meter + bridge state + quota snapshot
+ *   POST {action:'gateway-retry', channel}                  → P2-3 区块头「重试监听」：
+ *                                                             重跑该通道 sync*（enabled 限定，见路由处注释）
  *   GET  响应另带 host = 宿主实况对账（镜像漂移检测，只读）
  */
-function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
+function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive, retryGateway) {
   ctx.inject(['webServer'], (wsctx) => {
     wsctx.webServer.register({
       kind: 'exact',
@@ -1630,6 +1632,17 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive) {
                   quota,
                 }))
                 .catch((err) => sendJSON(response, 502, { ok: false, error: err.message }))
+              return
+            }
+            // P2-3：区块头「重试监听」。只对已启用通道重跑对应 sync*——禁用分支
+            // 会顺带撤镜像（写宿主层 ⇒ profile 重载，踩坑 #44），一次重试不该写配置。
+            // 响应立即返回：running 由 'listening' 事件异步翻转，客户端走退避补拉自愈。
+            if (body?.action === 'gateway-retry') {
+              const ch = body?.channel
+              if (ch !== 'codebuddy' && ch !== 'trae' && ch !== 'qoder') {
+                throw new Error('gateway-retry 需要 channel: codebuddy|trae|qoder')
+              }
+              sendJSON(response, 200, { ok: true, retried: retryGateway(ch) })
               return
             }
             const patch = body?.patch
@@ -1960,8 +1973,20 @@ export function apply(ctx, config = {}) {
     }).catch(() => {})
   }
 
+  // P2-3：设置卡「重试监听」动作的服务端落点——enabled 限定的定点重跑。
+  // 三个 sync* 的 wedge 自愈路径（lastError 置位 ⇒ 不早退、重新 listen）就是重试
+  // 语义本身；未启用通道返回 false 并跳过——sync* 的禁用分支会触发镜像撤铺
+  // （写宿主层 ⇒ profile 重载，踩坑 #44），一次「重试」不该顺带写配置。
+  const retryGateway = (channel) => {
+    const s = resolveNow()
+    if (channel === 'codebuddy' && s.bridgeEnabled === true) { syncBridge(); return true }
+    if (channel === 'trae' && s.traeEnabled === true) { syncTraeBridge(); return true }
+    if (channel === 'qoder' && s.qoderEnabled === true) { syncQoderBridge(); return true }
+    return false
+  }
+
   applyLive()
-  registerSettingsRoute(ctx, config, resolveNow, applyLive)
+  registerSettingsRoute(ctx, config, resolveNow, applyLive, retryGateway)
   // 镜像写入统一交给下面 syncModelsFromGateway 的收尾（成功/失败两条路都会写），
   // **此处不再先铺一次**：那一刻 dynamicCatalog 还是 null，有效清单只含静态基线，
   // 会把宿主里上一次同步成功的完整清单打回残缺态（实测 28 → 16）；且 dsh 0.1.7
