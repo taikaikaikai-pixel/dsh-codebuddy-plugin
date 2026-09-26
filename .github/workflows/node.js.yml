@@ -1,6 +1,5 @@
-# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
-
+# 离线回归套件（同款命令已在本地全绿预跑）。不带 --list 的 verify-models 与各 probe-* 脚本
+# 需要真实凭据/真实上游，不进 CI——清单见 AGENTS.md「常用命令」。
 name: Node.js CI
 
 on:
@@ -10,14 +9,13 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  verify:
 
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [22.x]   # 项目要求 Node ≥ 22（纯 ESM）
 
     steps:
     - uses: actions/checkout@v4
@@ -27,5 +25,11 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+    - run: node scripts/verify-models.mjs --list
+    - run: node scripts/verify-bridge.mjs
+    - run: node scripts/verify-rotation.mjs
+    - run: node scripts/verify-core-generic.mjs
+    - run: node scripts/verify-providers.mjs
+    - run: node scripts/verify-trae-provider.mjs
+    - run: node scripts/verify-qoder-provider.mjs
+    - run: node scripts/verify-host-config.mjs
