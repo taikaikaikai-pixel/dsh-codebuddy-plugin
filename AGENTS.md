@@ -52,6 +52,7 @@ TraeWork CN 通道：
 - **inline\_chat 不做模型路由**（恒走账户默认模型）；唯一真实的模型选择 = **remote 会话协议**（chat\_sessions + manual 策略，耗 work 额度池、不支持 OpenAI tools）→ docs/reverse/trae-cloud-api.md §5.1
 
 - 额度双池：raw 耗 IDE 池、remote 耗 work 池；读数走 `ide_user_ent_usage` 按 `available_endpoint` 分池 → docs/reverse/trae-cloud-api.md
+- 设置卡「余额」行：`trae-quota`/`qoder-quota` action（各自 provider 内 60s memoize，展开/收起边界采样不轮询，「—」不编造）；Qoder 配额面是 openapi 裸 Bearer（**非 COSY 签名**）→ docs/rules/gateway-facts.md 各通道节
 
 Qoder CN 通道：
 
@@ -114,6 +115,7 @@ Qoder CN 通道：
 47. **宿主主题由 `body[data-ds-dark-theme]` 属性驱动**：`prefers-color-scheme` 媒体仿真对本宿主零效果（三种仿真截图 md5 互等）⇒ 浅色不变式要走摘属性路径；原生控件配色必须显式绑该属性（`color-scheme` used value 由 html/body 传播，插件不写就恒深色，浅色下未勾选 checkbox 呈**深色实心块**、看着像已开启）
 48. **`page.screenshot({fullPage:true})` 在本宿主是空操作**：产出恒为视口 1440×900（"尺寸对 ≠ 内容在"）⇒ 区块级基线走元素句柄截图 + 逐张看图；配套教训 = 文档自述要与产物同批更新（"报告声称的适配在产物里零命中"与"两向同验"过誉都出现过）
 49. **上游给 provider 模块改名/拆包 ⇒ profile patch 里旧模块名的条目被整条静默跳过**（rc.2 的 `llm-deepseek` → `dsh-llm-deepseek-api-key`）——包还在、版本也对、退出码还是 0；升级后必跑 `--dump-config 2>err` 逐行读 stderr，id→模块名的权威映射看 dump 的 bundle 清单段（`repair-profile-links.js --dry-run` 的"补缺链"清单是改名/拆分的免费预警）
+50. **存在性预言机只对健康时必在场的条目有效**——settings `describe` 的 `allNamespaces` 只覆盖注册 settings 命名空间的条目，`web` 钉选行永远缺席 ⇒ 拿它当全量 patch 条目预言机 = 常驻假 warn（训练用户忽略 warn，比没有更糟）；非 settings 条目改效果级直查（`ctx.web.searchProviderId` 实例字段）；新 UI 行的"无 warn 态"也是不变量，首拍逐张看图
 
 ## 常用命令
 

@@ -40,6 +40,8 @@
 
 - 官方本地 harness（:40005 axum，chat/start\_chat/subscribe\_events）**懒启动**且启动参数未知；其数据库加密；令牌不在 state.vscdb/凭据管理器任何可读位置——harness 驱动路线存档未采用（trae-cloud-api.md §3）
 
+- **余额只读面（设置卡「余额」行，2026-09-26 P1 落地）**：`POST {traeAuthBaseURL}/trae/api/v2/pay/ide_user_ent_usage` 带 `{require_usage:true, req_source:0}` 一次返回全部资源包（`req_source:1` 只回 `available_endpoint=0` 子集）；按 `available_endpoint` 分池（0=IDE/raw、1=work/remote），头组 = 网关头组 + 凭证三头。插件 `providers/trae/quota.js` 60s memoize、永不 throw；POST action `trae-quota` 消费，采样纪律 = 展开/收起边界各一次、不周期轮询、取不到显示「—」不编造
+
 ### Qoder CN 通道事实（2026-09-22 实测，裁判 docs/goals/qoder-cn-provider-design.md + wiki/10-provider-qoder.md）
 
 - **聊天信封三种失败形态**（翻译网关 error taxonomy，证据 docs/probes/qoder-chat-live-\*.json）：a) 传输层非 2xx（401/429 透传、其余 502）；b) `event:error` 帧（stackTrace）；c) **带内失败帧**——HTTP 200 信封装业务错误对象：body 为 JSON 字符串、解析后**无 choices/usage、有 code/message**（实测形态 `{"code":"400","message":"[FAIL]node:oa_qwen-plus-main msg:Execution failed: null"}`，statusCodeValue:400）。网关按 c 识别上抛：流式错误 chunk+[DONE]，非流式 502 `qoder_upstream_error`
@@ -56,6 +58,8 @@
 - **逐模型 billable 标志**（2026-09-22 官方 transcript 统计）：qfmodel 帧 `billable:false`（免费预览档，烧多少都不计 credits）、dfmodel 帧 `billable:true`；插件侧裸请求所有模型均回 `billable:true`（但不落计数器，见下条归因）。"官方今天用了却没统计"的先查是不是用的免费档模型
 - **用量记账两链路分离：配额计数实时且与形态无关，统计视图（热力图/汇总/明细）是延迟批处理且由归因链驱动**（2026-09-22 臂9 定论，证据 docs/probes/qoder-attribution-arm9-*.json）：①**额度扣减**（`quota/usage` 的 `addOnQuota.used`）对**裸 OpenAI body 同样实时入账**（两发大输出各 ~0.9 credits，45s 内整数读数 197→199）——早前"裸 body 不记账"的判定是**整数取整读数吞掉 0.002 级小额探测**的假象（踩坑 #40 的预警实证）；官方 GUI 客户端聊天（Max，5.04 credits）同样 ~1 分钟内 192→197。②**统计视图**（`credits-heatmap`/`credits-summary`/网页明细）对官方客户端自己的聊天也不即时收录（42 分钟/71 分钟/6 小时三个数据点均为 0）——属**按日批处理**；要让插件用量进入该层，需官方归因链：聊天 body 归因信封 + business 块 + 收尾 business/finish（mode auth）+ /api/v1/tracking（mode sign）双上报（bundle `A6e`/`g4i`/`aPl` 原文实证，字段全表在 wiki/10-provider-qoder.md）。插件网关 0.9.9 起全部对齐（verify-qoder [19] 12 断言锁定案）；上报 fire-and-forget 不影响主链路
 - **客户端 transcript 里的 usage 是加工记录不是线缆帧**（2026-09-22，踩坑 #40）：transcript 里的 usage 带 `request_id`/`speed`/`inference_geo`/`context_usage_ratio` 且 `billable:false`，而真实线缆帧（我们抓的 SSE 原文）只有 tokens/credits 且 `billable:true`——客户端落盘前做了 enrich，逆向时不能以 transcript 字段为线缆真相
+
+- **账户配额只读面（设置卡「余额」行，2026-09-26 P1 落地，真实联调验证）**：`GET {qoderOpenapiBaseURL}/api/v2/quota/usage` 用**裸 Bearer**（**非 COSY 签名**——签名是聊天/目录面的口径，配额面不吃那套），返回 `userQuota`/`addOnQuota`（各带 total/used/remaining/unit）+ `isQuotaExceeded`；读数为整数（小额消耗被取整吞掉，踩坑 #40 同族——判别实验用量要大于分辨率）。插件 `providers/qoder/quota.js` 60s memoize、永不 throw；POST action `qoder-quota` 消费，采样纪律同 Trae（边界采样、不轮询、「—」不编造）
 
 ### CodeBuddy 思考强度事实（2026-09-22 实测；复跑 `node scripts/probe-codebuddy-efforts.mjs`，证据 docs/probes/codebuddy-efforts-\*.json）
 

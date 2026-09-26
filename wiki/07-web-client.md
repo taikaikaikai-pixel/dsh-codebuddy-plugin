@@ -28,13 +28,14 @@ window.__ModuleLoader__.load({
 5. **两种 `<details>` 的分工**：`details.cbc-adv`（summary「高级」）= 纯工程项（域名族 / `baseURL` / `qoderClientId` / 认证与聊天域…）；`details.cbc-help`（`HelpNote`，summary「使用说明」）= >60 字的背景说明。两者都是原生 `<details>`、零 JS 状态、父组件重渲染不复位；短的就地点提示直显、不进折叠。
 6. **通用区块头取样**：「额度 / 服务商数」不在 GET 视图里 ⇒ 卡片挂载时各做一次 `action:'usage'` 与 `provider-list`（取到前显示 `额度 — · 服务商 —`）。**取样口径两句分明（spec §3 终审措辞更正——旧写法「一次性、不轮询」会被下游读成「永不更新」）**：① **不做周期轮询**（头部四行常驻，定时打 usage = 每次开卡都多付一份上游额度只读，成本考虑）② **「通用」区块由展开转收起时重采一次**（`sampleGeneralHead()` + `useRef` 记前值、deps `[!!openBlocks.general]`；头部是"区块头 = 状态单一真源"的载体，只采挂载那一刻会让它停在"打开页面那一瞬"的快照、与正下方每 10s 轮询的正文自相矛盾；展开时不采——正文自己会拉）。**api-key 模式不编数字**：`quota.numericQuota` 为假（数值额度是 OAuth 专享）时落「额度 估算（累计 x）」分支，OAuth 声明了数值额度却读取失败（`resourceError`）时只显 `额度 —`（`generalSummary` 三分支）。用量 10s 轮询**严格随区块展开启停**（`sectionProps.usage.active = !!openBlocks.general`）；`credential-scan` **不上移**——仍在通用区块首次挂载才做（它会扫本机文件，不该每次开卡都触发）。
 7. **保存反馈落点**：`save(patch, blockId)` → `saved = {block, at}`，「已保存 ✓」flash（`cbc-saveflash`）出现在**触发该次保存的区块头**，1.8s 自愈；它是常驻占位、用 `visibility` 切换，所以出现/消失不会挤压同行 checkbox 的水平位置。
+8. **宿主实况对账 + 跨通道余额（0.11.0 P1）**：通用区块第三分区「宿主实况」渲染 GET 视图的 `host` 字段（本分区自身零请求）——配置层模式 / 三通道镜像（期望=插件镜像纪律、实际=host-config 读宿主配置层）/ patch 条目（settings 命名空间条目对 allNamespaces）/ web 钉选（效果级直查 `ctx.web.searchProviderId/fetchProviderId`，原因见踩坑 #50：allNamespaces 对非 settings 条目是假预言机）；漂移 ⇒ 区块头尾部「宿主漂移」+ tone 只升不降。Trae/Qoder 凭据组各加「余额」行（`trae-quota`/`qoder-quota` action）：展开/收起边界各采一次、登录翻转重采、不周期轮询、provider 内 60s memoize、取不到/未登录显示「—（原因）」绝不编造数值。
 
 | 区块 | 分区（`BLOCK_SECTIONS`） | 展开后内容 |
 |---|---|---|
 | CodeBuddy | `login` / `models` / `tools` / `bridge` | 凭据（登录方式、多 Key 管理与脱敏列表、env 引用、失败冷却）、模型（同步目录 + 筛选 + 逐模型启停 + ctx/输出幽灵输入 + 思考档位 select）、工具（搜索与抓取开关/条数/正文上限、生图开关/模型）、网关（流式桥开关、端口、会话头归因、会话头格式、每会话并发上限）、高级（`baseURL`） |
-| TraeWork CN | `trae` | 凭据（OAuth 登录/登出 + 令牌状态行）、模型（同步目录 + 筛选 + 逐模型启停）、网关（:3902 端口、聊天传输、首字节超时）、高级（认证 / 聊天 / 登录域）。**启用开关只在区块头** |
-| Qoder CN | `qoder` | 凭据（设备流登录/登出，pending 3s 轮询收敛、needsRelogin 引导重登）、模型（同步目录 + 筛选 + 启停 + 思考强度/上下文变体两个 select）、网关（:3903 端口）、高级（登录域 / OpenAPI / infer / client_id）。**启用开关只在区块头** |
-| 通用 | `usage` / `providers` | 额度与用量（hero 大数字 + 周期进度条、资源包聚合、今日/累计统计卡、轮次表、手动「刷新」与时间戳）、服务商（preset/自定义添加、刷新模型、删除、本机凭据扫描导入） |
+| TraeWork CN | `trae` | 凭据（OAuth 登录/登出 + 令牌状态行 + **余额行**（IDE/work 双池，0.11.0））、模型（同步目录 + 筛选 + 逐模型启停）、网关（:3902 端口、聊天传输、首字节超时）、高级（认证 / 聊天 / 登录域）。**启用开关只在区块头** |
+| Qoder CN | `qoder` | 凭据（设备流登录/登出，pending 3s 轮询收敛、needsRelogin 引导重登 + **余额行**（附加/订阅配额，0.11.0））、模型（同步目录 + 筛选 + 启停 + 思考强度/上下文变体两个 select）、网关（:3903 端口）、高级（登录域 / OpenAPI / infer / client_id）。**启用开关只在区块头** |
+| 通用 | `usage` / `providers` / `hostrecon` | 额度与用量（hero 大数字 + 周期进度条、资源包聚合、今日/累计统计卡、轮次表、手动「刷新」与时间戳）、服务商（preset/自定义添加、刷新模型、删除、本机凭据扫描导入）、宿主实况（0.11.0：镜像/web 钉选对账，自身零请求） |
 
 除上表外每个 schema 字段都有落点：`keyCooldownMs` 在 CodeBuddy·凭据、`quotaTotalManual` 在通用·额度与用量（api-key 估算语境）。
 

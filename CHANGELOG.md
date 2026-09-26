@@ -1,10 +1,13 @@
 # Changelog
 
-## Unreleased（仓库基建收尾，无插件代码变更）
+## 0.11.0 (2026-09-26)
 
-- **git 拓扑收敛**：0.8.3–0.10.1 开发线经 merge（`6bd8f31`）回流默认分支 `main`（此前 `origin/main` 停在 v0.7.4 时代、落后 85 提交）；分支 `v0.8.3`（本地+远端）删除；补齐标签 `v0.7.4` / `v0.9.0`–`v0.10.1`（0.9.7/0.9.8 同提交 `240b48f`；0.8.x 的发布提交已被历史改写吞掉、无可打点，跳过）。repo 级提交身份切换为 `taikaikaikai-pixel` noreply 地址。
-- **CI 修复**：`.github/workflows/node.js.yml` 从 GitHub 模板默认值改为项目实况——Node 22 单档（项目要求 ≥22）、`npm ci` + 八个离线 verify 脚本（原模板跑的 `npm test` 脚本不存在；且 workflow 此前只存在于 main、main 又从未收到代码，CI 实际从未运行过）。同款命令本地预跑 8/8 exit 0。
-- **防复发纪律入文档**：STATE.md「分支拓扑」节重写为单线单分支现状 + 三条纪律（长期分支只有 main / release 当场打 tag / 永不 rebase 已推送历史）；AGENTS.md 维护纪律加 Git 一行。
+- **设置卡 P1：补「看不见的事实」——宿主实况对账 + 跨通道余额落点**（goal 驱动，判定表与落点 `docs/goals/settings-card-ux-redesign.md` §4；两项全程只读，零真实写入纪律不破）
+  - **宿主实况对账**（「通用」区块第三分区，数据 = GET 视图新增 `host` 字段，本分区自身不发请求）：①配置层模式行（forms/legacy + settings 服务在位性）；②三通道镜像对账——codebuddy 期望 = 有效清单长度、trae/qoder 期望 = 启用且已同步时的启用数（否则应为「无镜像」），实际 = `hostConfig` 读到的宿主配置层 provider 块模型数（块缺席 = null），不一致即漂移；③patch 条目对账——settings 命名空间条目（llm-pi-ai / agent-default-model）对 `describe` 的 allNamespaces 查存在性；④**web 钉选对账 = 效果级直查** web 服务实例的 `searchProviderId`/`fetchProviderId`（dsh-web 构造时把 config 钉选落实例字段，patch 行被跳过则 undefined——比命名空间在场更接近用户可感知事实）。漂移 ⇒ 所属区块头状态行尾部追加「宿主漂移」+ tone 只升不降；对账分区逐行落 warn。数据源全部运行时可得（host-config 读取 + 服务实例字段），**不跑 `dsh --dump-config`**（每次 GET 起子进程太重；id→模块名的权威映射仍是离线手册动作，HelpNote 注明）——这是踩坑 #43/#49 类静默失效（上游改模块名 ⇒ patch 条目整条跳过、退出码仍 0）在卡上的第一个可见出口
+  - **跨通道余额**：Trae/Qoder 凭据组各加「余额」行，POST action `trae-quota` / `qoder-quota`（过既有本地门 + sameOrigin）。Trae 走 `POST {traeAuthBaseURL}/trae/api/v2/pay/ide_user_ent_usage`（`{require_usage:true, req_source:0}` 一次取全部包；按 `available_endpoint` 分 IDE/work 双池）；Qoder 走 `GET {qoderOpenapiBaseURL}/api/v2/quota/usage`（openapi 明文面裸 Bearer，**不走 COSY 签名**——签名是聊天/目录面的口径）。采样纪律沿用通用区块头口径：**不周期轮询**、展开/收起边界各采一次、登录态翻转重采、provider 内 60s memoize（`providers/trae/quota.js` / `providers/qoder/quota.js`，永不 throw）；取不到/未登录显示「—（原因）」，**绝不编造数值**。消耗账本保持跨通道单账（usage-meter 不动）
+  - **新坑 #50**（重拍基线逐张看图抓到，断言全绿抓不到）：首版把 `allNamespaces` 当 patch 条目的全量预言机，而它只覆盖注册了 settings 命名空间的条目——健康的 `web` 钉选行永远缺席 ⇒「缺失：web」常驻假 warn。修为按条目性质双路预言机（见上④）；`[R1]` 的"warn 数 === drift 数"不变量只罩通道行、罩不住 entries 行，正是漏网路径
+  - **验证**：`card-accordion.js` 129 → **160 断言全绿**（新增 `[R1]`×3 对账行与 host 字段逐字对齐 / `[R2]`×5 通道漂移就地 warn / `[R3]`×8 余额读数与采样纪律（展开恰采 1、收起再 +1、3s 不轮询）/ `[R4]`×6 未登录零请求 +「—（未登录）」不编造 / `[R5]`×7 web 钉选漂移：头部落点 + webpin 行带实际值 + 两路口径分离）；`qoder-slot-check` 13 / `qoder-tab-phase2` 11 / `qoder-prefs-check` 37 复跑全绿；离线七套件全绿；`shots-baseline` 10 张重拍 0 失败（逐张看图，宿主实况分区全绿点）。真实只读联调：`qoder-quota` 回真实 `addOnQuota` 读数、`trae-quota` 本机未登录如实回 `{error:"未登录"}`。md5 对账 `~/.dsh/codebuddy-plugin.json` 每轮跑前跑后一致（`7127964e…`）。**成本口径**：设置卡每次展开 trae/qoder 区块至多触发一次真实上游只读（各自的配额端点，60s memoize 收敛），对账分区零请求；零写入 ≠ 零上游只读（设计文档 §0 已知限制 e 同口径）
+- **仓库基建收尾随本版出货**（原 Unreleased 段，无插件代码变更）：git 拓扑收敛（0.8.3–0.10.1 开发线经 merge（`6bd8f31`）回流默认分支 `main`（此前 `origin/main` 停在 v0.7.4 时代、落后 85 提交）；分支 `v0.8.3`（本地+远端）删除；补齐标签 `v0.7.4` / `v0.9.0`–`v0.10.1`（0.9.7/0.9.8 同提交 `240b48f`；0.8.x 的发布提交已被历史改写吞掉、无可打点，跳过）。repo 级提交身份切换为 `taikaikaikai-pixel` noreply 地址）；CI 修复（`.github/workflows/node.js.yml` 从 GitHub 模板默认值改为项目实况——Node 22 单档、`npm ci` + 八个离线 verify 脚本，原模板跑的 `npm test` 不存在；本地预跑 8/8 exit 0）；防复发纪律入文档（STATE.md「分支拓扑」节重写为单线单分支现状 + 三条纪律；AGENTS.md 维护纪律加 Git 一行）
 
 ## 0.10.1 (2026-09-26)
 
