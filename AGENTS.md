@@ -177,3 +177,5 @@ node scripts/probe-quota.mjs                    # 额度信号探测（accounts/
 
 - 版本历史只写 CHANGELOG.md，不在本文铺章节。
 
+- Git 纪律：长期分支只有 `main`；每次 `chore(release)` 当场打 annotated tag `vX.Y.Z` 并随分支推送；**永不 rebase 已推送历史**（CHANGELOG 引用提交 SHA，0.8.x 的 tag 已因历史改写无法补）。沿革与细则见 docs/rules/STATE.md「分支拓扑」；CI 清单见 .github/workflows/node.js.yml。
+
