@@ -1,77 +1,96 @@
 # dsh-tap
 
-CodeBuddy（`copilot.tencent.com`）插件包，为 DeepSeek Harness（dsh）提供：**模型清单跟随网关目录动态同步**（DeepSeek、智谱 GLM、Moonshot Kimi、MiniMax、腾讯混元、auto 自动路由，多数支持可调思考强度与图片输入），**CodeBuddy 网络搜索 / 网页抓取后端**（接入 dsh 原生 `web_search` / `web_fetch` 工具），**`image_generate` 生图工具**（混元生图后端），以及 **key 型 OpenAI 兼容上游注册表**（火山引擎 Ark、阿里云百炼等，模型统一进选择器）；v0.8.3 起内置第二上游 **TraeWork CN 订阅额度通道**（自持设备密钥的 OAuth + 本地 OpenAI↔Trae 翻译网关 + 本机目录同步，详见下节）；v0.9.7/0.9.8 起内置第三上游 **Qoder CN 通道**（PKCE 设备流 OAuth + COSY WASM 签名 + OpenAI↔加密信封翻译网关 :3903 + 网关目录同步，详见下节）。
+DeepSeek Harness（dsh）的**非官方上游插件包**：把三个模型上游接入 dsh 的对话模型选择器与工具链，并自带 Web UI 设置卡。纯 ESM、无构建步骤，Node ≥ 22。
 
-## 特性
+| 上游 | 版本 | 凭据方式 | 本地网关 | 模型目录来源 |
+|------|------|----------|----------|--------------|
+| **CodeBuddy**（腾讯 `copilot.tencent.com`，默认通道） | v0.1.0 起 | OAuth（推荐）或 API Key（多把 Key 逐请求轮询 + 失败冷却） | 流式桥 `127.0.0.1:3901` | 网关 `/v3/config` 动态同步 + 静态兜底清单 |
+| **TraeWork CN**（字节 TRAE SOLO CN 订阅额度） | v0.8.x 起 | 自持 ECDSA P-256 设备密钥的 OAuth 设备流 | OpenAI↔Trae 翻译网关 `127.0.0.1:3902` | 本机 state.vscdb 只读提取 |
+| **Qoder CN**（阿里 qoder.cn 订阅额度） | v0.9.7/0.9.8 起 | PKCE S256 设备流 OAuth | OpenAI↔COSY 加密信封翻译网关 `127.0.0.1:3903` | 签名 `GET /algo/api/v2/model/list` |
 
-- **配置层**（`cordis.patch.yml`）：`llm-pi-ai` 的 codebuddy provider 路由、默认模型、`web` 行的 provider 钉选
-- **运行时层**（`index.js`，零依赖）：把网关 `/agenttool/v1/search`、`/agenttool/v1/webfetch` 注册进 `ctx.web`，把 `image_generate` 注册进 `ctx.tools`，并运行 127.0.0.1 流式桥——所有请求（含主聊天）的统一凭据入口，OAuth 或 API Key 任选（api-key 模式多 Key 自动轮询 + 失败冷却）
-- **协议**：OpenAI Chat Completions（`openai-completions`），流式（stream-only）
-- **端点**：`https://copilot.tencent.com/v2`（经本地桥转发）
-- **默认模型**：`deepseek-v3`
-- **凭据**：设置卡 CodeBuddy 区块「凭据」组选择 OAuth（浏览器授权，推荐）或 API Key（卡内管理 / 环境变量兜底），插件文件不含密钥
+另含 **key 型 OpenAI 兼容上游注册表**：预设火山引擎 Ark、阿里云百炼、DeepSeek、智谱 BigModel、Moonshot AI、OpenRouter、Qwen Code 7 家，或自定义（id + baseURL）+ API Key，模型统一进对话选择器、免重启。
 
-## 模型列表
+## 快速开始
 
-下表是插件静态兜底清单（2026-08-16 实测全部可用，全部支持 tool_calls；参数与网关自有目录 `GET /v3/config` 核对）。**v0.8 起清单默认动态化**：启动时自动从 `/v3/config` 同步网关目录并入对话选择器（目录新模型自动出现，同名静态条目尺寸随目录刷新），静态清单只在网关不可达时兜底；设置卡 CodeBuddy 区块「模型」组可手动再同步（单按钮「同步目录」）、逐模型启停、逐模型调节上下文/输出上限。
+### 安装
 
-| 模型 | 厂商 | contextWindow | maxTokens | reasoningEfforts | 图片 |
-|------|------|---------------|-----------|------------------|------|
-| deepseek-v3 | DeepSeek | 131072 | 32768 | — | — |
-| deepseek-v3.2 | DeepSeek | 131072 | 32768 | — | — |
-| deepseek-r1 | DeepSeek | 131072 | 32768 | low / medium / high / max | — |
-| deepseek-v4-pro | DeepSeek | 1000000 | 50000 | off / low / medium / high / max | ✔ |
-| deepseek-v4-flash | DeepSeek | 1000000 | 50000 | off / low / medium / high / max | ✔ |
-| glm-5.1 | 智谱 | 200000 | 48000 | off / low / medium / high / max | ✔ |
-| glm-5.2 | 智谱 | 1000000 | 48000 | off / low / medium / high / max | ✔ |
-| glm-5v-turbo | 智谱 | 200000 | 64000 | off / low / medium / high / max | ✔ |
-| kimi-k2.5 | Moonshot | 164000 | 32000 | off / low / medium / high / max | ✔ |
-| kimi-k2.6 | Moonshot | 256000 | 32000 | off / low / medium / high / max | ✔ |
-| kimi-k2.7 | Moonshot | 256000 | 32000 | low / medium / high / max | ✔ |
-| kimi-k3 | Moonshot | 262144 | 32768 | low / medium / high / max | — |
-| kimi-k3-1 | Moonshot | 1000000 | 32000 | low / medium / high / max | ✔ |
-| minimax-m2.7 | MiniMax | 200000 | 48000 | low / medium / high / max | ✔ |
-| minimax-m3 | MiniMax | 512000 | 128000 | off / low / medium / high / max | ✔ |
-| hy3 | 腾讯混元 | 192000 | 64000 | off / low / medium / high / max | ✔ |
-| hy3-preview | 腾讯混元 | 262144 | 32768 | off / low / medium / high / max | — |
-| auto | 自动路由 | 262144 | 32768 | — | — |
+```sh
+# 本地路径安装（把本插件装进 web profile）
+dsh plugin --profile web add /path/to/dsh-tap
 
-思考强度档位 2026-08-16 经 `--efforts` 逐一实测：所有列出的模型均接受对应档位且无报错；标注 `off` 的模型不传参数时实测无思考输出，未标注 `off` 的模型默认即思考。各档位的思考长度由模型自适应决定，非严格递增。
+# 或从 GitHub 安装
+dsh plugin --profile web add github:taikaikaikai-pixel/dsh-codebuddy-plugin
+```
 
-目录已不列出、但 `/v2` 端点仍正常服务的旧 id（deepseek-v3 / v3.2 / r1、kimi-k3、hy3-preview、auto）继续保留，参数按各模型官方规格。
+安装后重启 `dsh` 进程生效。dsh ≥ 0.1.6 在侧栏「插件」→ Plugin Manager → dsh-tap 打开设置卡；更旧宿主在 Settings → 插件配置 → dsh-tap。
 
-## TraeWork CN 订阅额度通道（v0.8.3）
+### 凭据
 
-把字节 TraeWork CN / TRAE SOLO CN 的订阅额度接成 dsh 的第二上游（provider id `trae`）：
+- **CodeBuddy**：设置卡 CodeBuddy 区块「凭据」组切换登录方式。**OAuth 登录**（推荐）= 浏览器完成官方登录页授权，无需任何环境变量，令牌自动续期；**API Key** = 卡内添加一把或多把 Key（多把自动轮询 + 失败冷却），或写 `~/.dsh/.credentials.yaml` 的 `CODEBUDDY_API_KEY` / 同名环境变量兜底。
+- **TraeWork CN**：启用通道（区块头开关）→「凭据」组登录（浏览器授权一次）→ 模型自动出现。
+- **Qoder CN**：「凭据」组登录（浏览器授权）→ 区块头启用通道 → 模型自动出现。
 
-- **凭据**：插件用**自持 ECDSA P-256 设备密钥**走完整 OAuth 设备流（浏览器授权一次），refresh 的 DeviceProof 由自己签名——不读取、不提取官方 IDE 的任何凭据；令牌只存 `~/.dsh/trae-plugin-auth.json`
-- **翻译网关**：`127.0.0.1:3902`（`traeBridgePort` 可调）把 OpenAI Chat Completions 翻译成 Trae 云端协议（`trae-api-cn.mchost.guru/api/agent/v3/llm_utils_chat`，SSE 互转），dsh 主聊天选择 trae 模型即走此通道
-- **模型目录**：从本机 TRAE SOLO CN 的缓存数据库（state.vscdb）只读提取（24 个 preset 模型：DeepSeek-V4、GLM-5.x、Kimi-K3、Doubao-Seed、Qwen3.8 等），启用通道自动同步进选择器；提取器带敏感字段 scrub（详见 `docs/reverse/trae-model-catalog.md`）
-- **使用**：设置卡 → `TraeWork CN` 区块 → 区块头右侧勾选框启用通道 → 展开后在「凭据」组登录（浏览器授权）→ 模型自动出现在选择器
-- **首次联调**：聊天信封/SSE 语法来自二进制逆向（置信度中），换机器或协议变动后跑一次 `node scripts/probe-trae-live.mjs --login` 再 `--chat "你好"` 校准（证据与依据见 `docs/reverse/trae-cloud-api.md`）
-- 回归：`npm run verify:trae-provider`（**89 断言**，mock 全链路）+ 浏览器套件 `qoder-slot-check.js` / `qoder-tab-phase2.js`（仓库外 `dsh-ui-test/`，区块驱动、零真实写入）
+三家凭据分别存 `~/.dsh/codebuddy-plugin-auth.json`、`~/.dsh/trae-plugin-auth.json`、`~/.dsh/qoder-plugin-auth.json`，永不回传浏览器；API Key 只回脱敏显示（`ck_a…5678`）。
 
-## Qoder CN 订阅额度通道（v0.9.7/v0.9.8）
+### 默认行为
 
-把阿里 Qoder CN（qoder.cn）的订阅额度接成 dsh 的第三上游（provider id `qoder`）：
+装好即生效：静态补丁把 CodeBuddy provider 路由指向本地流式桥（默认模型 `deepseek-v3`）、`web_search`/`web_fetch` 钉选 CodeBuddy 后端、注册 `image_generate` 生图工具；三家目录在启用/登录后自动同步进选择器。所有主聊天与工具请求经本地网关统一收口凭据，调用方不自带密钥。
 
-- **凭据**：PKCE S256 设备流 OAuth（授权页浏览器完成，插件只轮询——poll 404=未完成；refresh 强制 `drt-` 前缀）；machine_id 自持持久化，令牌只存 `~/.dsh/qoder-plugin-auth.json`，永不回传浏览器
-- **聊天签名**：官方 `api2-v2` OpenAI 兼容面裸 Bearer 恒 401（已废弃）——真实聊天面走 `QoderContext.prepareInferRequest` 签名 + WASM 加密 body，POST 到 region 发现给出的 infer 节点（CN = `gateway.qoder.com.cn`）的 `agent_chat_generation`；签名器 = `qoder_auth.wasm` 官方原字节 + 手写 wasm-bindgen 胶水
-- **翻译网关**：`127.0.0.1:3903`（`qoderBridgePort` 可调）把 OpenAI Chat Completions 翻译成 COSY 加密信封、SSE 信封拆封回标准 OpenAI chunk（单轮/多轮/模型切换/tools 全通）；`usage.credits` 进同一张用量计量表
-- **模型目录**：签名 `GET /algo/api/v2/model/list`（14 个 openai 条目，Qwen3.8-Max/Flash、DeepSeek-V4、GLM-5.3、Kimi-K3、auto 等），启用通道自动同步进选择器；逐模型启停
-- **使用**：设置卡 → `Qoder CN` 区块 → 展开后在「凭据」组登录（浏览器授权）→ 区块头右侧勾选框启用通道 → 模型自动出现在选择器
-- 回归：`node scripts/verify-qoder-provider.mjs`（**154 断言**，mock 设备流全流程 + 网关翻译 + 目录投影 + 配对/归因锁定案）；换机器或协议变动后 `node scripts/probe-qoder-live.mjs --login` 再 `--chat "你好"` 校准（证据落 `docs/probes/`，依据 `docs/goals/qoder-cn-provider-design.md`）
+## 模型
 
-## 网络搜索与网页抓取
+**清单默认动态化**：CodeBuddy 通道启动时自动从网关 `GET /v3/config` 同步目录（目录新模型自动出现），网关不可达时无感回落下表静态清单，选择器绝不变空；设置卡各通道「模型」组可手动「同步目录」、逐模型启停、行内调节上下文/输出上限。
 
-dsh 原生的 `web_search` / `web_fetch` 工具会被本插件接到 CodeBuddy 网关的 `/agenttool` 端点上（与官方 CLI 同源，索引较新），凭据复用 `CODEBUDDY_API_KEY`。安装后无需额外配置——补丁已在 `web` 行钉选 codebuddy 后端；如需临时切回，设置环境变量 `DSH_WEB_SEARCH_PROVIDER` / `DSH_WEB_FETCH_PROVIDER` 为其他 provider id。
+静态兜底清单 **23 个模型**（2026-09-22 按网关目录对齐尺寸；下表为该快照，运行时以目录同步结果为准）：
 
-## 图片输入（识图）
+| 模型 | 厂商 | contextWindow | maxTokens | 图片 |
+|------|------|---------------|-----------|------|
+| deepseek-v3 | DeepSeek | 131072 | 32768 | — |
+| deepseek-v3.2 | DeepSeek | 131072 | 32768 | — |
+| deepseek-r1 | DeepSeek | 131072 | 32768 | — |
+| deepseek-v4-pro | DeepSeek | 1000000 | 128000 | ✔ |
+| deepseek-v4-flash | DeepSeek | 1000000 | 50000 | ✔ |
+| deepseek-v4.1-flash | DeepSeek | 1000000 | 128000 | ✔ |
+| deepseek-v3-2-volc | DeepSeek | 96000 | 32000 | — |
+| glm-5.1 | 智谱 | 200000 | 48000 | ✔ |
+| glm-5.2 | 智谱 | 1000000 | 64000 | ✔ |
+| glm-5.3 | 智谱 | 1000000 | 64000 | ✔ |
+| glm-5.0-turbo | 智谱 | 200000 | 48000 | — |
+| glm-5v-turbo | 智谱 | 200000 | 64000 | ✔ |
+| kimi-k2.5 | Moonshot | 164000 | 32000 | ✔ |
+| kimi-k2.6 | Moonshot | 256000 | 32000 | ✔ |
+| kimi-k2.7 | Moonshot | 256000 | 32000 | ✔ |
+| kimi-k3 | Moonshot | 262144 | 32768 | — |
+| kimi-k3-1 | Moonshot | 1000000 | 32000 | ✔ |
+| minimax-m2.7 | MiniMax | 200000 | 48000 | ✔ |
+| minimax-m3 | MiniMax | 512000 | 64000 | ✔ |
+| hy3 | 腾讯混元 | 192000 | 64000 | ✔ |
+| hy3-x | 腾讯混元 | 192000 | 64000 | ✔ |
+| hy3-preview | 腾讯混元 | 262144 | 32768 | — |
+| auto | 自动路由 | 262144 | 32768 | — |
 
-两种用法：
+**思考强度**：逐模型行内下拉（存 `effortByModel`，出站注入 `reasoning_effort`，请求方显式携带时不覆盖）。档位来源 = 网关目录新形态能力清单（`supportedEfforts`/`canDisableThinking`）∪ 静态实测表（2026-09-22 162 臂复测，证据 `docs/probes/codebuddy-efforts-matrix-2026-09-22.json`）。`off` 档只在"省略参数即不思考"的真开关模型上出现——`canDisableThinking:true` 不等于存在可靠的关思考拼写，插件不臆造线值。
 
-1. **原生图片输入**：上表标注"图片 ✔"的 12 个模型接受 `image_url` 输入（base64 data URL 或公网 URL），已实测可用。
-2. **Web UI 贴图 + describe-image 工具**（装了 `@linxin666/dsh-web-ui-all` 时）：浏览器端会把贴图重写为 describe-image 引用，由该工具调用视觉端点。CodeBuddy 网关**只支持流式**（非流式报 11101），而 describe-image 发经典非流式请求——本插件在 `127.0.0.1:3901` 内置了一个**流式桥**（接收非流式请求 → 转流式发给网关 → 聚合成标准 JSON 返回）。在 `~/.dsh/settings.yaml` 配置即可启用：
+注意：**dsh 内置的"获取可用模型"对本网关永远无效**——CodeBuddy 网关没有 OpenAI 风格的 `GET /models`（404）。目录里存在 ≠ `/v2` 可路由（`glm-4.6v`/`kimi-k2-thinking`/`minimax-m2.5`/`hy4-preview-x` 恒报 11102，刻意不进静态清单）。
+
+## 工具
+
+### 网络搜索与网页抓取
+
+dsh 原生 `web_search` / `web_fetch` 被接到 CodeBuddy 网关的 `/agenttool` 端点（与官方 CLI 同源，索引较新），凭据复用 CodeBuddy 登录态。补丁已钉选 codebuddy 后端，无需配置；临时切回其他后端可设 `DSH_WEB_SEARCH_PROVIDER` / `DSH_WEB_FETCH_PROVIDER`。
+
+| 设置 | 默认 | 说明 |
+|------|------|------|
+| 一键开关 `searchEnabled` | 开 | 禁用即注销 codebuddy 后端，开启即时恢复 |
+| 搜索默认条数 `searchMaxResults` | 5 | `web_search` 未指定时（1–20） |
+| 抓取正文上限 `fetchBodyCap` | 200000 | `web_fetch` 返回正文字符上限 |
+
+### 图像生成
+
+`image_generate` 按提示词出图（约 20 秒/张，模型 `hunyuan-image-v3.0-art`，走 `/v2/images/generations`），PNG 落盘会话工作区（无工作区时 `~/.dsh/generated-images/`）。开关 `imageGenEnabled`（默认开）。
+
+### 识图（describe-image）
+
+标注"图片 ✔"的模型接受 `image_url` 输入。装了 `@linxin666/dsh-web-ui-all` 时，Web UI 贴图会经 describe-image 工具走视觉端点——该工具发非流式请求，而 CodeBuddy 网关只支持流式（非流式报 11101），流式桥为此把非流式请求转流式再聚合成标准 JSON。在 dsh 侧配置（dsh ≤ 0.1.6 写 `~/.dsh/settings.yaml`；0.1.7+ 写 profile 的 cordis patch）：
 
 ```yaml
 describe-image:
@@ -81,134 +100,77 @@ describe-image:
   apiStyle: chat-completions
 ```
 
-桥只监听回环地址，端口在设置卡 CodeBuddy 区块「网关」组修改（`bridgePort`，默认 3901）。`chat/completions` 之外的路径（如 `/agenttool/*`）原样透传。
+## 设置卡
 
-## 可选设置（dsh ≥ 0.1.6：侧栏「插件」→ dsh-tap；旧宿主：Settings → 插件配置 → dsh-tap）
+v0.10.0 起是**四区块通道手风琴**：`CodeBuddy → TraeWork CN → Qoder CN → 通用`，默认全部收起，首屏即四条状态行（登录态 / 模型数 / 网关端口 / 额度与服务商数；warn/err 就地出现在所属区块头，不展开也读得到）。展开后按 `凭据 → 模型 → [工具] → 网关 → 高级` 分组（只有 CodeBuddy 有「工具」组），修改即保存、立即生效。展开才挂载、收起不卸载——草稿与已拉目录跨收起保留。
 
-设置卡自 0.10.0 起是**四区块通道手风琴**：**CodeBuddy → TraeWork CN → Qoder CN → 通用**，默认全部收起，首屏即四条状态行（登录态 / 模型数 / 网关端口 / 额度与服务商数；warn·err 就地出现在所属区块头）。展开某区块后按 `凭据 → 模型 → [工具] → 网关 → 高级` 分组（只有 CodeBuddy 有「工具」组；纯工程项收在「高级」折叠里），修改即保存、立即生效。设置持久化在 `~/.dsh/codebuddy-plugin.json`，优先级：该文件 > 插件组合配置 > 默认值。
+设置持久化在 `~/.dsh/codebuddy-plugin.json`（优先级：该文件 > 插件组合配置 > 默认值）。模型启停/上限等宿主侧写入经 `host-config.js` 按宿主版本选路：**dsh 0.1.7+ 写 profile 的 cordis patch**（Settings forms seam），**≤0.1.6 写 `~/.dsh/settings.yaml`**。
 
-### 模型
+### 登录与凭据（CodeBuddy）
 
-模型清单**默认跟网关目录走**：启动时自动同步 `/v3/config`（设置卡各区块「模型」组的单按钮「同步目录」可手动再同步，旁边显示上次同步时间与目录规模）；网关拉不到时无感回落静态清单，选择器绝不变空。列表中每个模型：
+- **API Key 模式**：多把 Key 逐请求轮询，遇 401/403/429/5xx/网络错误自动在同一请求内换下一把，失败 Key 冷却 `keyCooldownMs`（默认 60000ms）后自动回到轮换；单选仅决定目录拉取用的 Key，全不选时回落环境变量引用。
+- **OAuth 模式**：浏览器完成 `copilot.tencent.com/login` 授权，插件轮询握手（约 10 分钟超时），完成后显示账号昵称与令牌到期时间，到期前自动续期。流程与官方 CLI 一致。
 
-- **勾选启用/禁用**：勾选状态 = 是否出现在对话模型选择器（写入 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.codebuddy.models` 覆盖层，下次请求生效，无需重启）
-- **行内调节上下文/输出上限**：ctx 与输出两栏可直接改（覆盖值存 `modelState.overrides`），不得超过目录给定的该模型实际上限；清空输入框即恢复目录默认
-- **逐模型思考强度**：静态清单带档位表的模型行内出下拉框（默认 / off / low / medium / high / max 中该模型实际支持的档），所选档位存档 `effortByModel`，桥出站按档位表注入 `reasoning_effort`；选"默认"即不注入，请求方显式携带时不覆盖
-- 徽标区分来源（"插件"静态 / "目录"网关）与能力（CLI / 图）；**思考强度逐模型可调**（档位 select 存 `effortByModel`，桥出站注入 `reasoning_effort`）
+### 服务商注册表（通用区块）
 
-### 服务商
+- 添加时先实测 `GET /models` 验证 key 并拉目录；无 `/models` 的上游自动改用最小 chat 探针 + 内置清单兜底；公开目录型（OpenRouter）走 chat 探针验 key + 静态精选目录。
+- provider 块落宿主配置层（同上选路），key 落 `~/.dsh/.credentials.yaml`（权限 0600，只回脱敏显示）；每行可"刷新模型"与"删除"（连同凭据一起清）。
+- **本机凭据扫描**：只读扫描本机已装 agent 工具的登录态文件，检测到即提示"一键导入"——逐个确认的显式动作，扫描绝不回传任何 secret 值。
 
-key 型 OpenAI 兼容上游注册表（v0.8 新增）：预设**火山引擎 Ark**、**阿里云百炼**、**DeepSeek**、**智谱 BigModel**、**Moonshot AI**、**OpenRouter**、**Qwen Code** 7 家，或自定义（id + baseURL）+ API Key。
+### 额度与用量（通用区块）
 
-- 添加时会先实测 `GET /models` 验证 key 并拉取目录，模型写进选择器**免重启**（provider 块落 `~/.dsh/settings.yaml` 的 `llm-pi-ai.providers.<id>`，key 落 `~/.dsh/.credentials.yaml` 的 `<ID>_API_KEY`，文件权限 0600，只回脱敏显示）
-- 无 `/models` 端点的上游（Qwen Code）自动改用最小 chat 探针验 key + 内置模型清单兜底；**公开目录型**上游（OpenRouter，/models 任意 key 都 200 且全量 400+ 条）走 chat 探针验 key + 静态精选目录（staticCatalog，docs/rules/extra-providers.md E-P7）
-- 每行可"刷新模型"（重拉目录）与"删除"（连同凭据一起清）
-- **本机凭据**行（v0.8 G7）：只读扫描本机已安装 agent 工具（Qwen Code 等）的登录态/凭据文件，检测到即提示"一键导入"——导入是逐个确认的显式动作，扫描绝不回传任何 secret 值
+展开时 10s 轮询、收起即停：
 
-### 网络搜索与抓取
+- **消耗量（精确）**：桥对每个请求的网关 `usage.credit` 恒开计量（搜索/抓取/生图同样入账），持久化在 `~/.dsh/codebuddy-plugin-usage.json`；展示今日/累计 credit 与请求数、最近轮次（含缓存命中率）。
+- **账户额度信号**：套餐类型与企业名（`GET /v2/accounts`）、额度不足告警文案（`get-dosage-notify`）。
+- **数字剩余额度（OAuth 模式）**：`/billing/meter/get-user-resource`（每分钟缓存）；api-key 模式不开放，改显"手填总额 − 本插件计量累计"的估算值并标注。
+- **网关状态**：运行中 / 端口占用（EADDRINUSE）/ 已禁用。
 
-| 设置 | 默认 | 说明 |
-|------|------|------|
-| 一键开关 `searchEnabled` | 开 | 禁用即从 `ctx.web` 注销 codebuddy 后端（web_search/web_fetch 将报 provider 未注册），开启即时恢复 |
-| 搜索默认条数 `searchMaxResults` | 5 | `web_search` 未指定时（1–20） |
-| 抓取正文上限 `fetchBodyCap` | 200000 | `web_fetch` 返回正文字符上限 |
-
-### 图像生成
+### 流式桥（CodeBuddy 网关）
 
 | 设置 | 默认 | 说明 |
 |------|------|------|
-| 一键开关 `imageGenEnabled` | 开 | 注册/注销 `image_generate` 工具（dsh 原生 tools 缝） |
-| 生图模型 `imageGenModel` | hunyuan-image-v3.0-art | 网关 `/v2/images/generations` 的模型 |
+| 启用 `bridgeEnabled` | 开 | **禁用即停本地监听，主聊天随之中断** |
+| 端口 `bridgePort` | 3901 | 须与 cordis.patch.yml 的 baseURL 端口一致，否则主聊天断 |
+| 会话归因注入 `sessionHeadersEnabled` | 开 | 按入站会话 id 补全会话头；调用方已设置的头保留原值 |
+| 会话头格式 `sessionHeaderFormat` | openai | `openai` 或 `openrouter` |
+| 每会话并发上限 `maxConcurrentPerSession` | 4 | 同会话超额 FIFO 排队；无会话 id 不限流 |
 
-`image_generate` 按提示词出图（约 20 秒/张），PNG 落盘会话工作区（无工作区时 `~/.dsh/generated-images/`），结果返回本地路径与源 URL。
+桥在 127.0.0.1 是统一出口与**唯一凭据入口**：流式入站透传 SSE、非流式入站聚合为标准 JSON，其余路径（如 `/agenttool/*`）原样透传。端口被占用时只告警不崩溃。Trae/Qoder 翻译网关同理：启用通道即起在 3902/3903（`traeBridgePort`/`qoderBridgePort` 可调），禁用/退出即停。
 
-### 流式桥（智能代理 + 凭据收口）
+## 开发与验证
 
-| 设置 | 默认 | 说明 |
-|------|------|------|
-| 启用 `bridgeEnabled` | 开 | 一键开关；**禁用即停本地监听，主聊天随之中断**（模型请求经由此桥） |
-| 端口 `bridgePort` | 3901 | 修改后自动重启监听；须与 `cordis.patch.yml` 的 baseURL 端口一致，否则主聊天断 |
-| 会话归因注入 `sessionHeadersEnabled` | 开 | 按入站会话 id（`X-Conversation-ID`/`X-Session-ID` 等头或请求体）注入网关会话头；逐头处理——调用方已设置的头保留原值，缺失的头按会话 id 补全 |
-| 会话头格式 `sessionHeaderFormat` | openai | `openai`（session_id/x-client-request-id/x-session-affinity）或 `openrouter`（x-session-id） |
-| 每会话并发上限 `maxConcurrentPerSession` | 4 | 同会话超额请求 FIFO 排队；无会话 id 不限流 |
+### 校验套件（全部离线，mock 上游；断言数为 2026-09-23 复跑口径）
 
-桥在 127.0.0.1 作为统一网关出口与**唯一凭据入口**：主聊天（`llm-pi-ai` 的 codebuddy 路由即指向此桥）、describe-image、tools 的请求都由桥按登录方式（OAuth/Key）解析凭据，调用方发的哨兵 Authorization 从不出宿主机。chat/completions 走会话归因 + 并发管理，流式入站（`stream:true`）透传 SSE、非流式入站（`stream:false` 或缺省）聚合为标准 `chat.completion` JSON；其余路径（如 `/agenttool/*`）直接透传。端口被占用时（如另一个 dsh 实例已在运行）插件只告警不崩溃，桥状态在 CodeBuddy 区块头状态行（以及通用区块「额度与用量」分区末行）可见。
+| 命令 | 覆盖 |
+|------|------|
+| `node scripts/verify-models.mjs --list` | 离线自检模型解析（当前 23 条） |
+| `node scripts/verify-models.mjs --sync` / `--efforts [id…]` | 在线目录漂移对比 / 档位探测（消耗额度） |
+| `npm run verify` | 在线逐模型真实探测（消耗额度） |
+| `npm run verify:bridge` | 流式桥端到端（mock 网关，断言响应完成） |
+| `npm run verify:rotation` | 多 Key 轮询 / 冷却 / failover |
+| `npm run verify:core` | `core/` provider 无关性证伪（静态纯净扫描 + 第二上游全链路） |
+| `npm run verify:providers` | 多服务商骨架（/models 404 兜底 + 认证方言） |
+| `npm run verify:trae-provider` | Trae 通道全链路（89 断言） |
+| `npm run verify:qoder` | Qoder 通道全链路（154 断言） |
+| `npm run verify:host-config` | 宿主配置层选路 / 冲突重试 / 降级（36 断言） |
 
-### 额度与用量
+联调探针：换机器或上游协议变动后，`node scripts/probe-trae-live.mjs --login` 再 `--chat "你好"`、`node scripts/probe-qoder-live.mjs --login` 再 `--chat "你好"` 校准（证据落 `docs/probes/`）。Qoder 专项差分探针见 `scripts/probe-qoder-*.mjs`。
 
-实时（「通用」区块展开时 10s 轮询；收起即停）显示：
+诊断入口：`GET /dsh-tap/settings?probe=host-config` 报宿主配置层选路 / 可写性 / revision / 有效 provider 清单——升级后排查不必猜。
 
-- **消耗量（精确）**：桥对每个 chat 请求的网关 `usage.credit` 恒开计量（搜索/抓取/生图路径同样入账），持久化在 `~/.dsh/codebuddy-plugin-usage.json`；展示今日/累计 credit 与请求数、最近轮次（按 >45s 间隔聚类的近似口径，含缓存命中率）
-- **账户额度信号**：套餐类型与企业名（`GET /v2/accounts`）、额度不足时网关的告警文案（`get-dosage-notify`，官方 CLI 同源）。额度是账户级的，与 WorkBuddy 共用
-- **数字剩余额度（OAuth 模式）**：`/billing/meter/get-user-resource` 实测可用（资源包逐条 + 本周期/总量口径剩余，每分钟缓存）；api-key 模式该 API 不开放（OAuth 专享），卡片改显「手填总额 − 本插件计量累计」的**估算**值并标注（证据 docs/probes/oauth-token-2026-08-19.jsonl，规则 docs/rules/quota-signals.md R-Q7）
-- **桥状态**：运行中 / 端口占用（EADDRINUSE）/ 已禁用
+### 架构与文档地图
 
-### 登录
+三层（静态补丁 → 组合根 → 凭据边缘层 + 各上游适配器 + 浏览器半）的职责边界与改动生效方式见 **AGENTS.md**；深入叙述：
 
-- **登录方式**：`API Key`（默认）或 `OAuth 登录`
-- **API Key 模式**：可添加多个 Key（名称 + key，卡内脱敏显示）；**多把 Key 逐请求轮询**，遇 401/403/429/5xx/网络错误自动在同一请求内换下一把，失败 Key 冷却 `keyCooldownMs`（默认 60000ms，可配）后自动回到轮换；单选仅决定模型目录拉取用的 Key，一个都不选时回落到"环境变量引用"（环境变量或 `~/.dsh/.credentials.yaml`，默认 `CODEBUDDY_API_KEY`）
-- **OAuth 模式**：点击"登录 CodeBuddy 账号"会打开官方登录页（`copilot.tencent.com/login`），插件轮询握手结果（约 10 分钟超时），完成后显示账号昵称与令牌到期时间；令牌存 `~/.dsh/codebuddy-plugin-auth.json`（设置接口永不回传），到期前自动用 refresh token 续期。流程与官方 CLI 一致（`/v2/plugin/auth/state` → 浏览器登录 → `/v2/plugin/auth/token` 轮询 → `/v2/plugin/login/account`）
-
-### 高级
-
-网关地址 `baseURL`（默认 `https://copilot.tencent.com`，http/https 绝对地址），一般无需修改。
-
-实现说明：设置卡走插件自建的 `GET/POST /dsh-tap/settings` 路由而非 dsh 官方 settings 命名空间——当前 dsh 组合存在两份 `settings` 服务实例（bundle 入口侧与 Web 客户端连接侧互不相通），命名空间注册对设置页不可见；这与 dsh-html-visualizer 自建设置路由是同一原因。
-
-## 安装
-
-```sh
-# 进入任意工作目录，把本插件安装到 web profile
-dsh plugin --profile web add /path/to/dsh-tap
-```
-
-或直接从 GitHub 安装（纯 ESM、无构建步骤，git 源检出即用）：
-
-```sh
-dsh plugin --profile web add github:taikaikaikai-pixel/dsh-tap
-```
-
-或通过 npm 包名安装（发布后）：
-
-```sh
-dsh plugin --profile web add dsh-tap
-```
-
-安装后重启 Web UI（或重启 `dsh` 进程）生效。
-
-## 凭据配置
-
-两种方式（设置卡 CodeBuddy 区块「凭据」组切换）：
-
-- **OAuth 登录**（推荐）：浏览器完成官方登录页授权即可，无需任何环境变量；令牌自动续期，覆盖模型对话、搜索、抓取、识图全部路径。
-- **API Key**：设置卡内添加一个或多个 Key（多把自动轮询 + 失败冷却）；或在 `~/.dsh/.credentials.yaml` 写入 `CODEBUDDY_API_KEY: "ck_你的key"`（或同名环境变量）作为兜底引用。
-
-所有请求（含主聊天）都经 `127.0.0.1:3901` 的流式桥统一取凭据——桥按上述登录方式解析，调用方不自带密钥。
-
-## 维护：校验与同步模型
-
-注意：**dsh 内置的"获取可用模型"对本网关无效**——网关没有 OpenAI 风格的 `GET /models` 端点（404），模型清单只能手工维护或用下面的脚本同步。网关自有目录在 `GET /v3/config`（`x-api-key` 认证，UA 必须形如 `CLI/unknown CodeBuddy/2.136.0`，否则报 12403）。
-
-```sh
-# 离线：仅列出本地配置的模型，自检 YAML 是否解析正常
-node scripts/verify-models.mjs --list
-
-# 在线：逐个模型发最小请求，报告可用性（未知 id 报错 11102）
-node scripts/verify-models.mjs
-# 或
-npm run verify
-
-# 在线：拉取 /v3/config 目录，对比参数漂移并生成修正后的 YAML 条目
-node scripts/verify-models.mjs --sync
-
-# 在线：探测模型接受哪些 reasoning_effort 档位及思考量变化
-node scripts/verify-models.mjs --efforts [模型id ...]
-
-# 离线：流式桥端到端回归（mock 网关，断言聚合/透传/会话头/并发排队完成）
-node scripts/verify-bridge.mjs
-# 或
-npm run verify:bridge
-```
+| 要什么 | 去哪 |
+|--------|------|
+| 网关事实全表（headers/错误码/目录/额度/缓存） | `docs/rules/gateway-facts.md`（+ 同目录各专题） |
+| 踩坑全本（#1–#49，每条含代价与修复） | `docs/pitfalls.md` |
+| Trae / Qoder 协议逆向与设计依据 | `docs/reverse/`、`docs/goals/` |
+| 原始实测证据 | `docs/probes/` |
+| 架构与各上游模块叙述 | `wiki/01-architecture.md` ~ `10-provider-qoder.md` |
+| 版本史 | `CHANGELOG.md` |
 
 ## 卸载
 
@@ -218,10 +180,10 @@ dsh plugin --profile web rm dsh-tap
 
 ## 免责声明
 
-- 本项目是**非官方的第三方开源插件**，与腾讯（CodeBuddy / WorkBuddy）、DeepSeek 及各模型厂商**无任何隶属、赞助或背书关系**；相关名称与商标归其各自权利人所有。
+- 本项目是**非官方的第三方开源插件**，与腾讯（CodeBuddy / WorkBuddy）、字节（Trae / TRAE SOLO）、阿里（Qoder）、DeepSeek 及各模型厂商**无任何隶属、赞助或背书关系**；相关名称与商标归其各自权利人所有。
 - 本项目按 MIT 协议**"原样"提供，不附带任何明示或默示担保**（包括但不限于适销性、特定用途适用性与不侵权担保）。使用者须自行承担使用风险。
-- 使用者应确保其使用方式符合 [CodeBuddy 服务条款](https://www.codebuddy.cn/) 及相关平台规则；因使用本插件导致的账号限制、额度扣减、服务中断或任何直接或间接损失，作者不承担任何责任。
-- 网关接口为未公开的内部形态，**可能随时变更或失效**，本项目不承诺持续可用。
+- 使用者应确保其使用方式符合各上游平台（CodeBuddy、TraeWork、Qoder）的服务条款及相关规则；因使用本插件导致的账号限制、额度扣减、服务中断或任何直接或间接损失，作者不承担任何责任。
+- 各网关接口均为未公开的内部形态，**可能随时变更或失效**，本项目不承诺持续可用。
 - 凭据（API Key / OAuth 令牌）仅存储于使用者本机 `~/.dsh/` 目录，请妥善保管，切勿提交到任何公开仓库。
 
 ## 许可
