@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.0 (2026-09-26)
+
+- **设置卡 P3：打磨——冷启动引导 + 头部开关误触缓解**（goal 驱动，判定表 `docs/goals/settings-card-ux-redesign.md` §4；纯 `lib/client.js` 前端改动，后端契约零变化）
+  - **P3-6 冷启动引导**（提交 `52ed8d5`）：首次被采纳的 GET 视图里三通道均无凭据（CodeBuddy 按 authMode 看 `oauth.signedIn`/`activeApiKey`，Trae/Qoder 看各自 `oauth.signedIn`）⇒ 自动展开 CodeBuddy 区块一次——`useRef` 守卫，同一挂载内只引导一次（用户手动收起后不被后续 load 撬开）、**不引入持久化状态**；任一通道有凭据即保持默认全收
+  - **P3-7 头部开关误触缓解**（提交 `6ec82ba`，设计文档 §8 风险表首选方案）：Trae/Qoder 区块头启用开关**收起态**第一次点击只进确认态——0 POST、就地提示「再点一次确认启用/停用」（`.cbc-headconfirm`，warn 色）、受控 checkbox 弹回原态；4s 窗内第二次点击才落盘，超时自动复位（沿用 askConfirm 模式）。**展开态直切不确认**——用户正看着分区内容，误触面不同。回退方案「开关移入展开区第一行」不启用。title/aria-label 随确认态切换
+  - **验证**：`card-accordion.js` 187 → **197 断言全绿**（新增 `[L1]`×8 冷启动引导：无凭据自动展开+其余三区仍收 / 手动收起+再次保存后不重复引导 / 有凭据对照默认全收 / 两 mock 通道无 pageerror 无告警；`[C3]` 重写为确认语义 ×7：收起态首击 0 POST+提示+弹回 / 4s 窗内二击恰 1 POST 且 patch 单字段 / 4s 超时自动复位 / 展开态直切恰 1 POST）。**RED 实测**：撤掉 P3-6 产品代码复跑，恰 `[L1]` 两条红、其余 193 全绿（`logs/card-accordion-p36-red.log`）；`[C3]` 首条断言与产品代码因果直连（无确认逻辑时首击即 POST ⇒ 必红）。`qoder-slot-check` 13 / `qoder-tab-phase2` 11 / `qoder-prefs-check` 37 复跑全绿（phase2 只读开关状态不点击，不受确认语义影响）；离线七套件 + `verify-models.mjs --list`（23 模型）复跑全绿。零真实写入：`~/.dsh/codebuddy-plugin.json` md5 跑前跑后恒为 `7127964e…`。**成本口径**：两项均零新增上游调用（确认态与引导判定都是纯客户端，数据来自既有 GET 视图）
+
 ## 0.12.0 (2026-09-26)
 
 - **设置卡 P2：既有能力 UI 化——状态行就地动作 + 模型口径透明 + 凭据主动验证**（goal 驱动，判定表与落点 `docs/goals/settings-card-ux-redesign.md` §4；后端全部走既有 POST action 模式，脱敏纪律不破）
