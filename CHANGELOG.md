@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0 (2026-09-26)
+
+- **设置卡 P2：既有能力 UI 化——状态行就地动作 + 模型口径透明 + 凭据主动验证**（goal 驱动，判定表与落点 `docs/goals/settings-card-ux-redesign.md` §4；后端全部走既有 POST action 模式，脱敏纪律不破）
+  - **P2-3 状态行可操作化**（提交 `a993be4`）：仅 warn/err 态的通道区块头尾部出两个就地动作，正常态零动作零噪音。**重试监听** = 新 POST action `gateway-retry`（channel 限定三通道；服务端 enabled 限定点重跑对应 `sync*`——wedge 自愈路径本身就是重试语义；禁用通道跳过，避免连带镜像撤铺写宿主层），客户端复用踩坑 #45 的退避补拉。**复制诊断** = 纯客户端从 GET 视图聚合 running/端口/lastError/最近同步时间写剪贴板（视图本就脱敏，零请求增量）。`BlockHead` 增 actions 槽（独立交互元素，不嵌套展开 button）
+  - **P2-4 模型口径透明**（提交 `54f3668`）：`providers/codebuddy/catalog.js` 导出 `UNROUTABLE_MODELS`（id→原因，唯一真源；证据 = codebuddy-efforts-matrix-2026-09-22 六臂全 11102 + routing-2026-08-19；`hy4-preview-x` 2026-09-26 复核已离开目录，集合保留防重现）。model-list 响应带 `unroutable` 表、GET 视图 `models.sync` 增 `routable` 计数；同步行/列表底行口径「目录 N · 可路由 M」；死条目行置灰 +「不可路由」徽标（title 带原因），勾选框未启用时禁用（防加死模型）、已启用保留可勾掉（出清通道）——不改镜像/选择器行为，transparency only。实测对账：目录 31 · 可路由 28，glm-4.6v 在选且死、另两枚已禁用，两态皆有
+  - **P2-5 凭据主动验证「测一下」**（提交 `d2d2228`）：新 POST action `credential-test`（channel=codebuddy|qoder）与 `provider-test`（id）；**验证结论即响应本体**（`available` 布尔，恒 200——验证失败不是路由故障）。CodeBuddy 走目录面 GET /v3/config（零额度消耗）；Qoder 走签名目录 GET（catalog 面 /algo，**非聊天面** `prepareInferRequest`）；key 型服务商走 `testExtraProvider`——与 refresh 同路径活解析 key、/models 或 probeChatKey 探针，只读不写块。三处落点就地显示「✓ 可用（目录 N 个模型）」/「✗ 具体错误」，不进全局横幅。实测：codebuddy ✓（目录 31）、qoder ✓（目录 14）、参数错误 400、未注册 provider available:false
+  - **新坑 #51**：CDP `overridePermissions` 授 `clipboard-read` 会把同族 `clipboard-write` 一并显式 deny，之后连可信点击的瞬时激活都救不回 `writeText`（恒 NotAllowedError）；完全不授权反而正常。「复制诊断」的剪贴板断言因此 = 零授权 + `page.click` 可信点击 + writeText 间谍（`window.__clip`）读回（套件 [I1] 段注释锁定"别改回 overridePermissions"）
+  - **验证**：`card-accordion.js` 160 → **187 断言全绿**（新增 `[I1]`×9 warn 头就地动作 / `[J1]`×8 目录·可路由口径与置灰 / `[K1]`×10 测一下三通道与参数错误；`mockInstaller` 的 responses 支持 action|channel 细分键）；`qoder-slot-check` 13 / `qoder-tab-phase2` 11 / `qoder-prefs-check` 37 复跑全绿；离线七套件（verify-bridge / rotation / core-generic / providers / trae / qoder / host-config）+ `verify-models.mjs --list`（23 模型）复跑全绿；真实实例 `gateway-retry` 三态实测（ok / 400 / disabled-skip）。零真实写入：`~/.dsh/codebuddy-plugin.json` md5 跑前跑后恒为 `7127964e…`。**成本口径**：「测一下」每次点击 = 一次真实上游只读（codebuddy 目录面零额度；qoder 签名目录只读；key 型为 /models 或 1-token 探针），不点不发；重试监听零上游调用（只重跑本地 listen）；复制诊断零请求
+
 ## 0.11.0 (2026-09-26)
 
 - **设置卡 P1：补「看不见的事实」——宿主实况对账 + 跨通道余额落点**（goal 驱动，判定表与落点 `docs/goals/settings-card-ux-redesign.md` §4；两项全程只读，零真实写入纪律不破）
