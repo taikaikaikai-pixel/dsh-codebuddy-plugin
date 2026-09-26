@@ -1,7 +1,7 @@
 {
   "name": "dsh-tap",
-  "version": "0.10.0",
-  "description": "CodeBuddy (copilot.tencent.com) provider bundle for DeepSeek Harness (dsh): a runtime-synced model catalogue (DeepSeek, GLM, Kimi, MiniMax, Hunyuan, auto) with adjustable reasoning efforts, CodeBuddy web search / web fetch backends for the stock dsh tools, and a settings card in the Web UI.",
+  "version": "0.10.1",
+  "description": "Unofficial upstream bundle for DeepSeek Harness (dsh): CodeBuddy (copilot.tencent.com) with a runtime-synced model catalogue, web search/fetch, image generation and a streaming bridge; TraeWork CN and Qoder CN subscription channels via local OpenAI translation gateways; plus a key-type OpenAI-compatible provider registry - all managed from a 4-block accordion settings card.",
   "type": "module",
   "main": "index.js",
   "exports": {

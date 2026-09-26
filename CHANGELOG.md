@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.1 (2026-09-26)
+
+- **设置卡手风琴的终审/复审修复三连**（`79452a1` + `ef4d417` + `7326ac4`，均为 `lib/client.js` + 回归套件）：通用区块头收起时重采 + `load` 代次标记 + 吞错补因；保存后补拉链读最新采纳态 + 收起重采回归锁；退避链**启动点**同样改读最新采纳态（补上 R1 只改续跑点的对称缺口，消除 A2 自引入的假「未监听」停摆路径）+ 补 `[B5]` 常驻回归锁（兼作 A2 请求代次门的时序锁）。`card-accordion.js` 129 断言全绿。
+- **README 重写**：三上游对照表、23 模型静态清单改为 `verify-models.mjs --list` 现跑口径（旧表停在 2026-08-16 的 18 条）、安装地址修正为 git remote 实际仓库、宿主配置层写入路径改为 `host-config.js` 选路口径（0.1.7+ profile patch / ≤0.1.6 settings.yaml）、补验证套件表与文档地图；`package.json` description 同步更新为三上游口径。
+- **docs**：踩坑 #49 入本（上游模块改名让 profile patch 条目静默失效，dsh 0.1.7-rc.2 实录）；Qoder 用量计数器只读基线证据落盘。
+- **杂项**：`.zcodeignore` 入库（ZCode 工具排除规则，防护段与 `.gitignore` 同源）。
+
 ## 0.10.0 (2026-09-23)
 
 - **设置卡交互模型换代：8 标签页 → 4 区块通道手风琴**（驱动 = 用户"这个项目的前端页面的交互，有点麻烦。不够简单"；痛点定位轮结论 = **找不到、太散**；设计与逐条证据 `docs/goals/settings-card-ux-redesign.md`，实施计划 `docs/goals/settings-card-ux-redesign-plan.md`。**后端契约零变化**——GET/POST `/dsh-tap/settings` 的全部 action 与响应结构不动、槽位双注册不动；纯 `lib/client.js` 重写）
