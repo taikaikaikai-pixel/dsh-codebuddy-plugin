@@ -18,6 +18,21 @@
 import { USER_AGENT } from './headers.js'
 
 /**
+ * 「目录在列 ≠ /v2 可路由」的已知死条目（恒 11102 service info not found，
+ * 踩坑 #42 同族）。判定证据：docs/probes/codebuddy-efforts-matrix-2026-09-22.json
+ * （六臂全 11102）+ docs/probes/routing-2026-08-19.jsonl；2026-09-26 复核
+ * hy4-preview-x 已离开目录（集合保留——重现即再置灰）。
+ * 用途 = 设置卡「可路由 M」计数 + 行置灰徽标；**不改**镜像/选择器行为
+ * （ transparency only，移除是另一个决策）。上游修复后从表里删 id 即可。
+ */
+export const UNROUTABLE_MODELS = {
+  'glm-4.6v': '目录在列但 /v2/chat/completions 恒 11102 service info not found',
+  'kimi-k2-thinking': '目录在列但 /v2/chat/completions 恒 11102 service info not found',
+  'minimax-m2.5': '目录在列但 /v2/chat/completions 恒 11102 service info not found',
+  'hy4-preview-x': '目录在列但 /v2/chat/completions 恒 11102 service info not found',
+}
+
+/**
  * @param {{ resolveCredential: (settingsFn: () => object) => Promise<object|null>,
  *           envKey: (envName: string|undefined) => string|null }} deps
  */

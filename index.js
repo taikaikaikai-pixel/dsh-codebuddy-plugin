@@ -57,6 +57,7 @@ import { createUsageMeter } from './core/usage-meter.js'
 import { createBridge } from './core/bridge.js'
 import { createCodeBuddyProvider } from './providers/codebuddy/index.js'
 import { CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/codebuddy/errors.js'
+import { UNROUTABLE_MODELS } from './providers/codebuddy/catalog.js'
 import { createTraeProvider } from './providers/trae/index.js'
 import { TRAE_CREDENTIAL_UNAVAILABLE_MESSAGE } from './providers/trae/errors.js'
 import { PROVIDER_ID_RE, createOpenAICompatProvider } from './providers/openai-compat.js'
@@ -1309,9 +1310,13 @@ function settingsView(resolveNow) {
       // G4：选择器真实内容——设置卡勾选状态的唯一权威（动态目录启用后
       // 目录模型默认在内，不在 extra 里，不能靠 disabled/extra 反推）。
       effectiveIds: computeEffectiveModels().map((m) => m.id),
-      // G4 动态目录同步状态：null = 静态兜底（未同步/同步失败且无旧目录）
+      // G4 动态目录同步状态：null = 静态兜底（未同步/同步失败且无旧目录）。
+      // P2-4：routable = 目录数 − 已知不可路由（恒 11102）在列数。
       sync: dynamicCatalog
-        ? { at: dynamicCatalog.fetchedAt, count: dynamicCatalog.count, source: 'gateway' }
+        ? {
+          at: dynamicCatalog.fetchedAt, count: dynamicCatalog.count, source: 'gateway',
+          routable: dynamicCatalog.profiles.filter((p) => !UNROUTABLE_MODELS[p.id]).length,
+        }
         : null,
     },
     qoder: {
@@ -1437,6 +1442,9 @@ function registerSettingsRoute(ctx, entryConfig, resolveNow, applyLive, retryGat
                     staticIds: readStaticModels().map((m) => m.id),
                     // G4：选择器真实内容（勾选语义 = 在不在选择器里）
                     effectiveIds: computeEffectiveModels().map((m) => m.id),
+                    // P2-4：已知不可路由条目（目录在列但 /v2 恒 11102）——
+                    // 列表置灰+徽标与「可路由 M」计数的数据源。
+                    unroutable: UNROUTABLE_MODELS,
                     profiles,
                     ceilings,
                     // id → 档位名清单，卡片据此给任意行出档位 select。
